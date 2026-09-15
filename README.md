@@ -256,8 +256,19 @@ Compose orquestra o ambiente completo localmente.
   (não os do Google, que nunca saem do backend). Nota: `authlib.jose` está
   deprecado em favor de `joserfc` — migração prevista sem impacto funcional.
 
+- **ADR-007 — Faixa de Python e versões das libs de IA.** `python = "^3.11"`
+  foi apertado para `>=3.11,<=3.13`, e a família LangChain foi alinhada à era
+  0.2.x (`langchain`, `langchain-core`, `langgraph`), porque `crewai ^0.70`
+  exige `langchain >=0.2.16,<0.3.0` e Python `<=3.13`. Isso garante um
+  `poetry.lock` resolvível e reproduzível no runtime `python:3.11-slim`.
+
 ---
 
-**Aviso de segurança**: credenciais compartilhadas em chat/prompt devem ser
-consideradas comprometidas. Rotacione `GOOGLE_CLIENT_SECRET` e `SECRET_KEY`
-antes de subir para produção.
+**Aviso de segurança**: credenciais compartilhadas em chat/prompt foram
+consideradas comprometidas e **rotacionadas**:
+
+- `SECRET_KEY` — regenerada (novo valor já no `.env`).
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — removidas do `.env`. Gere
+  novas no [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+  (OAuth 2.0 Client IDs → **Reset secret**) e preencha o `.env`. Enquanto
+  vazias, o SSO Google fica desabilitado (a API sobe normalmente).

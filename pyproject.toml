@@ -7,7 +7,7 @@ readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<=3.13"
 
 # --- API ---
 fastapi = "^0.115.0"
@@ -36,8 +36,8 @@ httpx = "^0.27.2"             # client HTTP async (OIDC, provedores)
 
 # --- Agentes de IA ---
 crewai = "^0.70.0"
-langchain = "^0.3.0"
-langchain-core = "^0.3.0"
+langchain = "^0.2.16"
+langchain-core = "^0.2.0"
 langgraph = "^0.2.0"
 
 # --- Observabilidade ---
