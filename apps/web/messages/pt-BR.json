@@ -1,0 +1,114 @@
+{
+  "common": {
+    "brand": "AImaginator",
+    "skipLink": "Pular para o conteúdo principal",
+    "footerNote": "AImaginator — geração e edição de imagens com IA."
+  },
+  "nav": {
+    "gallery": "Galeria",
+    "studio": "Estúdio",
+    "login": "Entrar com Google"
+  },
+  "landing": {
+    "headline": "Transforme palavras em imagens.",
+    "subheadline": "AImaginator é um gerador de imagens por IA que cria e edita imagens a partir de prompts em linguagem natural. Descreva o que você quer, gere em segundos e refine o resultado de forma iterativa.",
+    "promptPlaceholder": "Descreva a imagem que você quer criar...",
+    "promptButton": "Criar imagem",
+    "promptStatusLoading": "Abrindo o estúdio...",
+    "stepsTitle": "Como funciona",
+    "steps": [
+      {
+        "title": "Descrever",
+        "description": "Escreva um prompt em linguagem natural descrevendo a imagem desejada. Quanto mais específicos os detalhes, melhor o resultado.",
+        "imageAlt": "Exemplo de imagem de IA de arquitetura branca minimalista."
+      },
+      {
+        "title": "Gerar",
+        "description": "O modelo de IA processa o prompt e produz uma primeira imagem em tempo real, com progresso exibido passo a passo.",
+        "imageAlt": "Exemplo de imagem de IA de paisagem de montanhas com lago."
+      },
+      {
+        "title": "Refinar",
+        "description": "Ajuste o prompt ou envie uma imagem para editar detalhes iterativamente até o resultado corresponder à sua intenção.",
+        "imageAlt": "Exemplo de imagem de IA da luz do sol atravessando uma floresta."
+      }
+    ],
+    "examplesTitle": "Exemplos da galeria",
+    "examples": [
+      {
+        "prompt": "Barcos de pesca flutuando sobre água turquesa cristalina, vistos de cima",
+        "imageAlt": "Imagem de IA: barcos de pesca sobre água turquesa vistos de cima."
+      },
+      {
+        "prompt": "Retrato macro em close de um gato em uma rua da cidade",
+        "imageAlt": "Imagem de IA: retrato em close de um gato em uma rua da cidade."
+      },
+      {
+        "prompt": "Montanhas nevadas sob um céu estrelado com a Via Láctea",
+        "imageAlt": "Imagem de IA: montanhas nevadas sob um céu estrelado."
+      },
+      {
+        "prompt": "Retrato artístico de uma pessoa iluminada por luz neon suave",
+        "imageAlt": "Imagem de IA: retrato artístico com luz neon suave."
+      },
+      {
+        "prompt": "Um campo de flores coloridas ao amanhecer, luz quente",
+        "imageAlt": "Imagem de IA: um campo de flores coloridas ao amanhecer."
+      }
+    ],
+    "previewDialogTitle": "Prompt usado",
+    "closePreview": "Fechar",
+    "faqTitle": "Perguntas frequentes",
+    "faq": [
+      {
+        "question": "O que é o AImaginator?",
+        "answer": "AImaginator é um web app e uma API que gera e edita imagens com IA a partir de prompts em linguagem natural. Você descreve a imagem e o modelo a produz em tempo real."
+      },
+      {
+        "question": "Preciso criar uma conta?",
+        "answer": "Sim. Entre com sua conta Google para gerar imagens. A galeria pública pode ser acessada sem login."
+      },
+      {
+        "question": "Posso editar imagens existentes?",
+        "answer": "Sim. No estúdio você envia uma imagem e descreve as edições desejadas, iterando sobre o resultado."
+      },
+      {
+        "question": "Como funciona o progresso em tempo real?",
+        "answer": "O status da geração é transmitido da API via server-sent events (SSE), mostrando o progresso percentual até a imagem ficar pronta ou ocorrer erro."
+      }
+    ]
+  },
+  "studio": {
+    "title": "Estúdio",
+    "loginRequired": "Entre com sua conta Google para acessar o estúdio de geração.",
+    "loginButton": "Entrar com Google",
+    "promptLabel": "Prompt",
+    "promptPlaceholder": "Descreva a imagem...",
+    "uploadLabel": "Imagem opcional para editar",
+    "uploadHint": "PNG ou JPEG — opcional, enviada junto ao prompt para edição.",
+    "generateButton": "Gerar",
+    "generatingButton": "Gerando...",
+    "progressLabel": "Progresso da geração",
+    "status": {
+      "idle": "Ocioso. Descreva uma imagem para começar.",
+      "queued": "Na fila. Aguardando um worker disponível.",
+      "processing": "Processando a geração.",
+      "done": "Concluído. A imagem foi gerada com sucesso.",
+      "failed": "A geração falhou."
+    },
+    "resultAlt": "Resultado gerado a partir do seu prompt.",
+    "historyTitle": "Gerações recentes",
+    "historyEmpty": "Nenhuma geração até agora.",
+    "errorLabel": "Erro"
+  },
+  "gallery": {
+    "title": "Galeria pública",
+    "description": "Imagens geradas pela comunidade AImaginator. Cada cartão mostra o prompt usado para criar a imagem.",
+    "loadMore": "Carregar mais",
+    "empty": "Nenhuma imagem pública ainda.",
+    "by": "por"
+  },
+  "errors": {
+    "generic": "Algo deu errado. Tente novamente."
+  }
+}

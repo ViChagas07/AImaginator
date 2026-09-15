@@ -1,0 +1,89 @@
+[tool.poetry]
+name = "aimaginator"
+version = "0.1.0"
+description = "AImaginator — API + web app de geracao e edicao de imagens via IA (monolito modular, Clean Architecture)"
+authors = ["ViChagas07"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+# --- API ---
+fastapi = "^0.115.0"
+uvicorn = { extras = ["standard"], version = "^0.30.0" }
+pydantic = "^2.9.0"
+pydantic-settings = "^2.5.0"
+python-multipart = "^0.0.9"   # uploads (edicao de imagem)
+sse-starlette = "^2.1.3"      # Server-Sent Events
+
+# --- Persistencia ---
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.35" }
+asyncpg = "^0.29.0"
+alembic = "^1.13.0"
+
+# --- Cache ---
+redis = "^5.0.8"
+
+# --- Mensageria ---
+celery = { extras = ["redis"], version = "^5.4.0" }
+kombu = "^5.4.0"              # RabbitMQ via amqp
+
+# --- Auth (OAuth2 + OIDC) ---
+authlib = "^1.3.2"
+itsdangerous = "^2.2.0"       # cookies de sessao assinados
+httpx = "^0.27.2"             # client HTTP async (OIDC, provedores)
+
+# --- Agentes de IA ---
+crewai = "^0.70.0"
+langchain = "^0.3.0"
+langchain-core = "^0.3.0"
+langgraph = "^0.2.0"
+
+# --- Observabilidade ---
+prometheus-client = "^0.20.0"
+sentry-sdk = { extras = ["fastapi", "celery"], version = "^2.14.0" }
+structlog = "^24.4.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-asyncio = "^0.24.0"
+pytest-cov = "^5.0.0"
+hypothesis = "^6.112.0"       # property-based testing (inputs adversariais)
+respx = "^0.21.1"             # mock de httpx
+fakeredis = "^2.24.0"         # redis em memoria para testes
+ruff = "^0.6.0"
+mypy = "^1.11.0"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests", "modules"]
+pythonpath = ["."]
+addopts = "-q --strict-markers"
+markers = [
+    "unit: testes unitarios puros",
+    "integration: testes de integracao (db/redis fake)",
+    "eval: avaliacoes EDD de agentes de IA",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["."]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "S", "ASYNC", "RUF"]
+ignore = ["S101"]  # asserts em testes sao esperados
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+exclude = ["apps/web/", ".venv/"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

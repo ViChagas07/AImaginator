@@ -1,0 +1,34 @@
+# ============================================================
+# AImaginator — imagem do Worker Celery (geracao de imagens)
+# ============================================================
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --upgrade pip poetry
+
+COPY pyproject.toml README.md ./
+RUN poetry config virtualenvs.create false \
+    && poetry install --without dev --no-interaction --no-ansi
+
+COPY alembic.ini ./
+COPY alembic ./alembic
+COPY apps ./apps
+COPY modules ./modules
+COPY workers ./workers
+COPY shared_kernel ./shared_kernel
+COPY infra ./infra
+
+# Filas por custo (bulkhead em nivel de worker): generation.priority e
+# generation.standard. A DLQ e consumida por operacao manual (spec secao 14).
+CMD ["celery", "-A", "workers.celery_app.celery:celery_app", "worker", "--loglevel=info", "--queues=generation.standard,generation.priority"]

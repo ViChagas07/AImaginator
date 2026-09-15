@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "project": "AImaginator",
+    "description": "Grafo de contexto (GraphiFy) do monolito modular — especificacao secao 5.",
+    "updated_at": "2026-09-15"
+  },
+  "nodes": [
+    { "id": "shared_kernel", "type": "module", "label": "Shared Kernel", "files": ["shared_kernel/errors.py", "shared_kernel/security_errors.py", "shared_kernel/types.py"] },
+    { "id": "infra_settings", "type": "module", "label": "Infra/Settings", "files": ["infra/settings.py", "infra/database.py", "infra/redis_client.py"] },
+
+    { "id": "users", "type": "module", "label": "Users", "files": ["modules/users/contracts.py"] },
+    { "id": "users_entity", "type": "entity", "label": "User", "files": ["modules/users/domain/entities.py"] },
+    { "id": "users_repo_port", "type": "port", "label": "UserRepositoryPort", "files": ["modules/users/application/ports.py"] },
+    { "id": "users_repo_sql", "type": "adapter", "label": "SQLAlchemyUserRepository", "files": ["modules/users/adapters/repository.py", "modules/users/adapters/models.py"] },
+
+    { "id": "auth", "type": "module", "label": "Auth", "files": ["modules/auth/contracts.py"] },
+    { "id": "auth_uc_login", "type": "usecase", "label": "StartGoogleLogin", "files": ["modules/auth/application/use_cases.py"] },
+    { "id": "auth_uc_callback", "type": "usecase", "label": "CompleteGoogleLogin", "files": ["modules/auth/application/use_cases.py"] },
+    { "id": "auth_oidc", "type": "port", "label": "GoogleOIDCService", "files": ["modules/auth/application/oidc_service.py"] },
+    { "id": "auth_jwt", "type": "port", "label": "JWTService", "files": ["modules/auth/application/jwt_service.py"] },
+    { "id": "auth_pkce", "type": "entity", "label": "PKCE (RFC 7636)", "files": ["modules/auth/application/pkce.py"] },
+
+    { "id": "rate_limiting", "type": "module", "label": "Rate Limiting", "files": ["modules/rate_limiting/token_bucket.py", "modules/rate_limiting/circuit_breaker.py", "modules/rate_limiting/bulkhead.py"] },
+
+    { "id": "image_generation", "type": "module", "label": "Image Generation", "files": ["modules/image_generation/contracts.py"] },
+    { "id": "ig_entity", "type": "entity", "label": "Generation (state machine)", "files": ["modules/image_generation/domain/entities.py"] },
+    { "id": "ig_guard", "type": "entity", "label": "PromptInjectionGuard", "files": ["modules/image_generation/domain/prompt_guard.py"] },
+    { "id": "ig_urlpolicy", "type": "entity", "label": "UrlPolicy (anti-SSRF)", "files": ["modules/image_generation/domain/url_policy.py"] },
+    { "id": "ig_uc_generate", "type": "usecase", "label": "GenerateImageFromPrompt", "files": ["modules/image_generation/application/use_cases/generate_image.py"] },
+    { "id": "ig_uc_edit", "type": "usecase", "label": "EditImageFromPrompt", "files": ["modules/image_generation/application/use_cases/edit_image.py"] },
+    { "id": "ig_uc_process", "type": "usecase", "label": "ProcessGeneration (worker)", "files": ["modules/image_generation/application/use_cases/process_generation.py"] },
+    { "id": "ig_uc_read", "type": "usecase", "label": "GetGeneration / ListUserGenerations", "files": ["modules/image_generation/application/use_cases/read_generations.py"] },
+    { "id": "ig_uc_showcase", "type": "usecase", "label": "ListPublicShowcase", "files": ["modules/image_generation/application/use_cases/list_showcase.py"] },
+    { "id": "ig_port_agent", "type": "port", "label": "ImageAgentPort", "files": ["modules/image_generation/application/ports/image_agent_port.py"] },
+    { "id": "ig_port_repo", "type": "port", "label": "GenerationRepositoryPort", "files": ["modules/image_generation/application/ports/generation_repository.py"] },
+    { "id": "ig_port_events", "type": "port", "label": "EventPublisherPort", "files": ["modules/image_generation/application/ports/event_publisher.py"] },
+    { "id": "ig_port_fetch", "type": "port", "label": "ImageFetcherPort", "files": ["modules/image_generation/application/ports/image_fetcher.py"] },
+    { "id": "ig_port_queue", "type": "port", "label": "TaskQueuePort", "files": ["modules/image_generation/application/ports/task_queue.py"] },
+    { "id": "ig_adapter_agent", "type": "adapter", "label": "LangGraphImageAgent", "files": ["modules/image_generation/adapters/ai_agents/orchestrator.py", "modules/image_generation/adapters/ai_agents/providers.py"] },
+    { "id": "ig_adapter_repo", "type": "adapter", "label": "SQLAlchemyGenerationRepository", "files": ["modules/image_generation/adapters/repositories/generation_repository.py", "modules/image_generation/adapters/repositories/models.py"] },
+    { "id": "ig_adapter_swr", "type": "adapter", "label": "SWRCache", "files": ["modules/image_generation/adapters/cache/swr.py"] },
+    { "id": "ig_adapter_fetch", "type": "adapter", "label": "SecureImageFetcher", "files": ["modules/image_generation/adapters/secure_image_fetcher.py"] },
+    { "id": "ig_adapter_events", "type": "adapter", "label": "RedisEventPublisher", "files": ["modules/image_generation/adapters/redis_event_publisher.py"] },
+    { "id": "ig_adapter_queue", "type": "adapter", "label": "CeleryTaskQueue", "files": ["modules/image_generation/adapters/celery_task_queue.py"] },
+
+    { "id": "observability", "type": "module", "label": "Observability", "files": ["modules/observability/metrics.py", "modules/observability/sentry_setup.py", "modules/observability/logging_config.py"] },
+
+    { "id": "apps_api", "type": "module", "label": "API (FastAPI)", "files": ["apps/api/main.py", "apps/api/dependencies.py"] },
+    { "id": "workers", "type": "module", "label": "Workers (Celery)", "files": ["workers/celery_app/celery.py", "workers/celery_app/tasks.py"] },
+    { "id": "apps_web", "type": "module", "label": "Web (Next.js)", "files": ["apps/web/app", "apps/web/components", "apps/web/stores"] }
+  ],
+  "edges": [
+    { "from": "auth_uc_login", "to": "auth_oidc", "type": "depends_on" },
+    { "from": "auth_uc_callback", "to": "auth_oidc", "type": "depends_on" },
+    { "from": "auth_uc_callback", "to": "auth_jwt", "type": "depends_on" },
+    { "from": "auth_uc_callback", "to": "users_repo_port", "type": "depends_on" },
+    { "from": "auth_oidc", "to": "auth_pkce", "type": "depends_on" },
+    { "from": "auth_oidc", "to": "rate_limiting", "type": "uses" },
+
+    { "from": "ig_uc_generate", "to": "ig_guard", "type": "depends_on" },
+    { "from": "ig_uc_generate", "to": "users_entity", "type": "depends_on" },
+    { "from": "ig_uc_generate", "to": "ig_port_repo", "type": "depends_on" },
+    { "from": "ig_uc_generate", "to": "ig_port_queue", "type": "depends_on" },
+    { "from": "ig_uc_edit", "to": "ig_guard", "type": "depends_on" },
+    { "from": "ig_uc_edit", "to": "ig_urlpolicy", "type": "depends_on" },
+    { "from": "ig_uc_process", "to": "ig_port_agent", "type": "depends_on" },
+    { "from": "ig_uc_process", "to": "ig_port_events", "type": "depends_on" },
+    { "from": "ig_uc_process", "to": "ig_port_repo", "type": "depends_on" },
+    { "from": "ig_uc_showcase", "to": "ig_adapter_swr", "type": "depends_on" },
+    { "from": "ig_uc_showcase", "to": "ig_port_repo", "type": "depends_on" },
+
+    { "from": "ig_port_repo", "to": "ig_adapter_repo", "type": "implemented_by" },
+    { "from": "ig_port_agent", "to": "ig_adapter_agent", "type": "implemented_by" },
+    { "from": "ig_port_fetch", "to": "ig_adapter_fetch", "type": "implemented_by" },
+    { "from": "ig_port_events", "to": "ig_adapter_events", "type": "implemented_by" },
+    { "from": "ig_port_queue", "to": "ig_adapter_queue", "type": "implemented_by" },
+    { "from": "users_repo_port", "to": "users_repo_sql", "type": "implemented_by" },
+
+    { "from": "apps_api", "to": "auth", "type": "uses" },
+    { "from": "apps_api", "to": "image_generation", "type": "uses" },
+    { "from": "apps_api", "to": "rate_limiting", "type": "uses" },
+    { "from": "apps_api", "to": "observability", "type": "uses" },
+    { "from": "workers", "to": "image_generation", "type": "uses" },
+    { "from": "workers", "to": "observability", "type": "uses" },
+    { "from": "apps_web", "to": "apps_api", "type": "uses" },
+    { "from": "ig_adapter_agent", "to": "ig_guard", "type": "depends_on" },
+    { "from": "ig_adapter_agent", "to": "rate_limiting", "type": "uses" }
+  ]
+}

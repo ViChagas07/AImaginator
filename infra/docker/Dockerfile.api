@@ -1,0 +1,44 @@
+# ============================================================
+# AImaginator — imagem da API FastAPI (Python 3.11, Poetry)
+# ============================================================
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Dependencias de sistema: build-essential (wheels), curl (healthcheck).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instala Poetry e as dependencias do projeto (main, sem dev).
+# NOTA: o grupo principal inclui CrewAI/LangChain/LangGraph (libs pesadas de IA)
+#       que sao importadas de forma lazy; o build e o mais demorado por causa delas.
+RUN pip install --upgrade pip poetry
+
+COPY pyproject.toml README.md ./
+RUN poetry config virtualenvs.create false \
+    && poetry install --without dev --no-interaction --no-ansi
+
+# Codigo-fonte do monolito (modulos, apps, workers, shared_kernel, infra).
+COPY alembic.ini ./
+COPY alembic ./alembic
+COPY apps ./apps
+COPY modules ./modules
+COPY workers ./workers
+COPY shared_kernel ./shared_kernel
+COPY infra ./infra
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=10s --timeout=5s --retries=10 --start-period=20s \
+    CMD curl -fsS http://localhost:8000/healthz || exit 1
+
+# Aplica as migrations e sobe a API. A geracao de imagem NUNCA roda no request
+# HTTP — ela e enfileirada no Celery (spec secao 14).
+CMD ["sh", "-c", "alembic upgrade head && uvicorn apps.api.main:app --host 0.0.0.0 --port 8000"]

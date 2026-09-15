@@ -1,0 +1,161 @@
+name: CI
+
+# ============================================================
+# AImaginator — pipeline (spec secoes 19 e 21):
+#   segredos -> lint -> test -> eval -> build -> deploy
+# Falha em qualquer estagio bloqueia o merge (branch protection).
+# ============================================================
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ------------------------------------------------------------------
+  # 1. Nenhum segredo hardcoded (gitleaks) — spec secao 21
+  # ------------------------------------------------------------------
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ------------------------------------------------------------------
+  # 2. Lint backend (Ruff)
+  # ------------------------------------------------------------------
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check .
+
+  # ------------------------------------------------------------------
+  # 3. Testes backend (unit + integration, com Postgres e Redis reais)
+  # ------------------------------------------------------------------
+  backend-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: aimaginator
+          POSTGRES_PASSWORD: aimaginator
+          POSTGRES_DB: aimaginator
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U aimaginator"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      SECRET_KEY: "ci-only-secret-key-0123456789abcdef0123456789abcdef"
+      DATABASE_URL: postgresql+asyncpg://aimaginator:aimaginator@localhost:5432/aimaginator
+      REDIS_URL: redis://localhost:6379/0
+      RUN_DB_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+        with:
+          version: "2.1.1"
+          virtualenvs-create: true
+          virtualenvs-in-project: false
+      - name: Install dependencies
+        run: |
+          poetry install --with dev --no-interaction --no-ansi
+          # lupa habilita EVAL (scripts Lua) no fakeredis
+          poetry run pip install lupa
+      - name: Unit + integration tests
+        run: poetry run pytest tests -q --tb=short
+
+  # ------------------------------------------------------------------
+  # 4. Evals EDD do pipeline de agentes (spec secao 6)
+  # ------------------------------------------------------------------
+  backend-eval:
+    runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: "ci-only-secret-key-0123456789abcdef0123456789abcdef"
+      DATABASE_URL: postgresql+asyncpg://aimaginator:aimaginator@localhost:5432/aimaginator
+      REDIS_URL: redis://localhost:6379/0
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+        with:
+          version: "2.1.1"
+          virtualenvs-create: true
+          virtualenvs-in-project: false
+      - name: Install dependencies
+        run: poetry install --with dev --no-interaction --no-ansi
+      - name: Agent evals
+        run: poetry run pytest specs/evals -m eval -q --tb=short
+
+  # ------------------------------------------------------------------
+  # 5. Frontend (lint + vitest + build)
+  # ------------------------------------------------------------------
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test -- --run
+      - run: npm run build
+
+  # ------------------------------------------------------------------
+  # 6. Deploy do frontend na Vercel (apenas em main) — spec secao 19
+  # ------------------------------------------------------------------
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: [secrets-scan, backend-lint, backend-test, backend-eval, frontend]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - name: Pull Vercel environment
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build for production
+        run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy to Vercel
+        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

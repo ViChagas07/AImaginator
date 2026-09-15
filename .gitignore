@@ -1,0 +1,56 @@
+# ============ SEGREDOS — NUNCA COMMITAR ============
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/
+
+# ============ Python ============
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+dist/
+*.egg-info/
+.ipynb_checkpoints/
+
+# ============ Node / Next.js ============
+node_modules/
+.next/
+out/
+.next-cache/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+coverage/
+
+# ============ Observabilidade local ============
+grafana_data/
+prometheus_data/
+
+# ============ SO / IDE ============
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+
+# ============ Testes / Evals ============
+.eval_cache/
+.hypothesis/
+test-results/
+playwright-report/
+
+# ============ Registros de sessao do agente (podem conter segredos) ============
+session-ses_*.md

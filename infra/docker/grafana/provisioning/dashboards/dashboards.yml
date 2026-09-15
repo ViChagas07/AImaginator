@@ -1,0 +1,13 @@
+# Grafana — provider de dashboards versionados como codigo.
+apiVersion: 1
+
+providers:
+  - name: "AImaginator"
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
