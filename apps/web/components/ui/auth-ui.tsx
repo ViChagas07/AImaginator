@@ -8,6 +8,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Eye, EyeOff } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { RandomBibleVerse } from "./random-bible-verse";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -309,18 +310,22 @@ export function AuthUI({ signInContent = {}, signUpContent = {} }: AuthUIProps) 
         <div className="absolute inset-x-0 bottom-0 h-[100px] bg-gradient-to-t from-background to-transparent" />
         
         <div className="relative z-10 flex h-full flex-col items-center justify-end p-2 pb-6">
-            <blockquote className="space-y-2 text-center text-foreground">
-              <p className="text-lg font-medium">
-                “<Typewriter
-                    key={currentContent.quote.text}
-                    text={currentContent.quote.text}
-                    speed={60}
-                  />”
-              </p>
-              <cite className="block text-sm font-light text-muted-foreground not-italic">
-                  — {currentContent.quote.author}
-              </cite>
-            </blockquote>
+            {isSignIn ? (
+              <RandomBibleVerse />
+            ) : (
+              <blockquote className="space-y-2 text-center text-foreground">
+                <p className="text-lg font-medium">
+                  “<Typewriter
+                      key={currentContent.quote.text}
+                      text={currentContent.quote.text}
+                      speed={60}
+                    />”
+                </p>
+                <cite className="block text-sm font-light text-muted-foreground not-italic">
+                    — {currentContent.quote.author}
+                </cite>
+              </blockquote>
+            )}
         </div>
       </div>
     </div>
