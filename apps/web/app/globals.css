@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @theme {
   --color-canvas: #0B0B12;
@@ -8,6 +9,25 @@
   --color-muted: #8E8E9C;
   --color-accent-from: #FF3D8A;
   --color-accent-to: #4C6FFF;
+
+  /*
+   * shadcn/ui tokens used by the AuthUI login component. Mapped to the
+   * existing dark palette (canvas/surface) and kept separate from the
+   * accent gradient to avoid overriding the app's primary CTA styling.
+   */
+  --color-background: #0B0B12;
+  --color-primary: #FF3D8A;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #1E1E29;
+  --color-secondary-foreground: #F2F2F7;
+  --color-muted-foreground: #8E8E9C;
+  --color-accent: #1E1E29;
+  --color-accent-foreground: #F2F2F7;
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: #2A2A37;
+  --color-input: #2A2A37;
+  --color-ring: #4C6FFF;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;

@@ -10,7 +10,7 @@ const csp = [
   "default-src 'self'",
   `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://images.unsplash.com",
+  "img-src 'self' data: https://images.unsplash.com https://cdn.21st.dev",
   "font-src 'self'",
   `connect-src 'self' ${API_BASE_URL}`,
   "base-uri 'self'",
