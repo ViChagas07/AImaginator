@@ -311,7 +311,7 @@ export function AuthUI({ signInContent = {}, signUpContent = {} }: AuthUIProps) 
         
         <div className="relative z-10 flex h-full flex-col items-center justify-end p-2 pb-6">
             {isSignIn ? (
-              <RandomBibleVerse className="max-w-[13rem] self-end sm:max-w-[16rem] lg:max-w-[19rem]" />
+              <RandomBibleVerse className="max-w-[11rem] sm:max-w-[13rem] lg:max-w-[15rem]" />
             ) : (
               <blockquote className="space-y-2 text-center text-foreground">
                 <p className="text-lg font-medium">

@@ -163,21 +163,21 @@ export function RandomBibleVerse({ className }: { className?: string }) {
   return (
     <blockquote
       className={cn(
-        "space-y-1 rounded-lg bg-black/25 px-3 py-2 text-right backdrop-blur-sm",
+        "space-y-1 rounded-lg bg-black/25 px-3 py-2 text-center backdrop-blur-sm",
         className,
       )}
     >
-      <p className="min-h-[2.5rem] text-xs font-medium leading-snug text-foreground sm:text-sm lg:text-base">
+      <p className="min-h-[2rem] text-[11px] font-medium leading-snug text-foreground sm:text-xs lg:text-sm">
         {verse ? (
           <span className="transition-opacity duration-500">“{verse.text}”</span>
         ) : (
-          <span className="inline-flex flex-col gap-1" aria-hidden="true">
-            <span className="block h-3 w-44 animate-pulse rounded-sm bg-foreground/20 sm:h-3.5 sm:w-56" />
-            <span className="block h-3 w-32 animate-pulse rounded-sm bg-foreground/20 sm:h-3.5 sm:w-40" />
+          <span className="inline-flex flex-col items-center gap-1" aria-hidden="true">
+            <span className="block h-2.5 w-36 animate-pulse rounded-sm bg-foreground/20 sm:h-3 sm:w-44" />
+            <span className="block h-2.5 w-28 animate-pulse rounded-sm bg-foreground/20 sm:h-3 sm:w-36" />
           </span>
         )}
       </p>
-      <cite className="block text-[10px] font-light leading-none text-foreground/75 not-italic sm:text-xs">
+      <cite className="block text-[9px] font-light leading-none text-foreground/75 not-italic sm:text-[11px]">
         {verse ? `— ${verse.reference}` : "\u00A0"}
       </cite>
     </blockquote>
