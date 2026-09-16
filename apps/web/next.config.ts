@@ -8,11 +8,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8
 
 const csp = [
   "default-src 'self'",
-  `script-src 'self'${isDev ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: https://images.unsplash.com https://cdn.21st.dev",
   "font-src 'self'",
-  `connect-src 'self' ${API_BASE_URL}`,
+  `connect-src 'self' ${API_BASE_URL} https://bible-api.com`,
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'",
