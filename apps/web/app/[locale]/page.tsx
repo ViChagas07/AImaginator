@@ -98,10 +98,10 @@ export default async function LandingPage({params}: PageProps<"/[locale]">) {
         >
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-canvas/60 px-4 text-center">
             <Image
-              src="/Aimaginator_Slogan_pic-removebg-preview.png"
+              src="/AImaginator_pic_transparent.png"
               alt={t("logoAlt")}
-              width={562}
-              height={444}
+              width={1412}
+              height={1114}
               priority
               className="animate-hero-enter h-auto w-[150px] drop-shadow-[0_10px_32px_rgba(76,111,255,0.35)] motion-reduce:animate-none sm:w-[190px] lg:w-[220px]"
             />

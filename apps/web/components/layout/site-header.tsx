@@ -1,3 +1,4 @@
+import Image from "next/image";
 import {getTranslations} from "next-intl/server";
 import {Link} from "@/i18n/navigation";
 import {AuthButton} from "@/components/layout/auth-button";
@@ -11,8 +12,16 @@ export async function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
         <Link
           href="/"
-          className="text-lg font-semibold tracking-tight text-foreground"
+          className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground"
         >
+          <Image
+            src="/AImaginator_pic_transparent.png"
+            alt=""
+            width={1412}
+            height={1114}
+            priority
+            className="h-9 w-auto"
+          />
           {tCommon("brand")}
         </Link>
         <nav
