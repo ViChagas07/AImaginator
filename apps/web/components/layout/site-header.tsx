@@ -1,5 +1,6 @@
 import {getTranslations} from "next-intl/server";
 import {Link} from "@/i18n/navigation";
+import {AuthButton} from "@/components/layout/auth-button";
 
 export async function SiteHeader() {
   const t = await getTranslations("nav");
@@ -30,12 +31,7 @@ export async function SiteHeader() {
           >
             {t("studio")}
           </Link>
-          <a
-            href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"}/api/v1/auth/google/login`}
-            className="rounded-md bg-surface-raised px-4 py-2 text-sm text-foreground"
-          >
-            {t("login")}
-          </a>
+          <AuthButton />
         </nav>
       </div>
     </header>
