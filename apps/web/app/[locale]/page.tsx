@@ -1,4 +1,5 @@
 import type {Metadata} from "next";
+import Image from "next/image";
 import {getTranslations} from "next-intl/server";
 import {ImageStreamHero} from "@/components/ui/image-stream-hero";
 import {PromptBar} from "@/components/home/prompt-bar";
@@ -96,6 +97,14 @@ export default async function LandingPage({params}: PageProps<"/[locale]">) {
           className="h-[420px] sm:h-[520px] lg:h-[640px]"
         >
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-canvas/60 px-4 text-center">
+            <Image
+              src="/Aimaginator_Slogan_pic-removebg-preview.png"
+              alt={t("logoAlt")}
+              width={562}
+              height={444}
+              priority
+              className="animate-hero-enter h-auto w-[150px] drop-shadow-[0_10px_32px_rgba(76,111,255,0.35)] motion-reduce:animate-none sm:w-[190px] lg:w-[220px]"
+            />
             <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               {t("headline")}
             </h1>
