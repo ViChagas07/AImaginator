@@ -15,7 +15,7 @@ export function AuthButton() {
     void fetchMe();
   }, [status, fetchMe]);
 
-  if (status !== "unauthenticated") return null;
+  if (status === "authenticated") return null;
 
   return (
     <Link
