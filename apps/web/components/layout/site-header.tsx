@@ -15,14 +15,13 @@ export async function SiteHeader() {
           className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground"
         >
           <Image
-            src="/AImaginator_pic_transparent.png"
-            alt=""
-            width={1412}
-            height={1114}
+            src="/Aimaginator_Slogan_pic-removebg-preview.png"
+            alt={tCommon("brand")}
+            width={476}
+            height={317}
             priority
-            className="h-9 w-auto"
+            className="h-10 w-auto"
           />
-          {tCommon("brand")}
         </Link>
         <nav
           aria-label={tCommon("brand")}

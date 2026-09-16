@@ -10,6 +10,15 @@
   --color-accent-to: #4C6FFF;
 
   /*
+   * Primary CTA gradient stops (top → bottom):
+   * violet → indigo → teal → sky.
+   */
+  --color-cta-violet: #7C3AED;
+  --color-cta-indigo: #4F46E5;
+  --color-cta-teal: #0D9488;
+  --color-cta-sky: #7DD3FC;
+
+  /*
    * shadcn/ui tokens used by the AuthUI login component. Mapped to the
    * existing dark palette (canvas/surface) and kept separate from the
    * accent gradient to avoid overriding the app's primary CTA styling.
@@ -55,6 +64,25 @@
     var(--color-accent-from),
     var(--color-accent-to)
   );
+}
+
+/*
+ * Primary CTA vertical gradient (violet → indigo → teal → sky), top to
+ * bottom. Defined once as a reusable token so other CTAs can share the
+ * same progression without hardcoding the stops.
+ */
+:root {
+  --gradient-cta: linear-gradient(
+    180deg,
+    var(--color-cta-violet) 0%,
+    var(--color-cta-indigo) 40%,
+    var(--color-cta-teal) 75%,
+    var(--color-cta-sky) 100%
+  );
+}
+
+.bg-cta-gradient {
+  background-image: var(--gradient-cta);
 }
 
 html {
