@@ -111,7 +111,7 @@ export default async function LandingPage({params}: PageProps<"/[locale]">) {
             </p>
           </div>
         </ImageStreamHero>
-        <div className="relative z-10 mx-auto -mt-12 max-w-2xl px-4 sm:px-6">
+        <div className="relative z-10 mx-auto -mt-4 max-w-4xl px-2 sm:px-6">
           <PromptBar />
         </div>
       </section>

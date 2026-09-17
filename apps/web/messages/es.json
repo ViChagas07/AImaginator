@@ -216,6 +216,90 @@
           "body": "Las dudas, solicitudes o quejas sobre privacidad pueden enviarse a nuestro Delegado de Protección de Datos (DPO) al correo privacy@aimaginator.app. Responderemos lo antes posible y, en cualquier caso, dentro de los plazos establecidos por la LGPD."
         }
       ]
+    },
+    "terms": {
+      "kicker": "LEA CON ATENCIÓN",
+      "title": "Términos de uso",
+      "description": "Las reglas que rigen el uso de AImaginator y sus servicios.",
+      "updated": "Última actualización: septiembre de 2026",
+      "sections": [
+        {
+          "title": "Aceptación de estos Términos",
+          "body": "Al acceder o usar AImaginator, confirmas que has leído, entendido y aceptas quedar vinculado a estos Términos de uso. Si no estás de acuerdo con alguna parte de estos Términos, no debes usar la plataforma."
+        },
+        {
+          "title": "Descripción del Servicio",
+          "body": "AImaginator es una aplicación web y una API que genera y edita imágenes mediante inteligencia artificial a partir de prompts en lenguaje natural. Las funciones, los modelos y la disponibilidad pueden cambiar con el tiempo sin previo aviso."
+        },
+        {
+          "title": "Cuentas y Elegibilidad",
+          "body": "Para generar imágenes debes iniciar sesión con una cuenta de Google mediante OAuth 2.0. Eres responsable de mantener la confidencialidad de tu cuenta y de toda la actividad que se realice en ella. Debes tener al menos 13 años, o la edad mínima requerida en tu jurisdicción, para usar el servicio."
+        },
+        {
+          "title": "Uso Aceptable",
+          "body": "Aceptas no usar AImaginator para crear contenido ilegal, dañino, difamatorio, discriminatorio, de odio, sexualmente explícito que involucre a menores o que infrinja los derechos de terceros. También aceptas no intentar realizar ingeniería inversa, interrumpir, sobrecargar u obtener acceso no autorizado a la plataforma, sus API o su infraestructura."
+        },
+        {
+          "title": "Contenido del Usuario y Licencias",
+          "body": "Conservas la propiedad de los prompts que envías y de las imágenes que generas. Al usar el servicio, otorgas a AImaginator una licencia mundial, no exclusiva y libre de regalías para procesar, almacenar y mostrar tu contenido únicamente para prestar el servicio. Al publicar una imagen en la galería pública, otorgas a AImaginator y a sus usuarios una licencia para verla y compartirla en relación con la plataforma."
+        },
+        {
+          "title": "Propiedad Intelectual",
+          "body": "La marca, el software, el diseño y la documentación de AImaginator son propiedad de AImaginator o de sus licenciantes y están protegidos por las leyes de propiedad intelectual aplicables. Nada en estos Términos te otorga derecho alguno a usar nuestras marcas o código, salvo que se permita expresamente."
+        },
+        {
+          "title": "Exenciones y Limitación de Responsabilidad",
+          "body": "El servicio se proporciona \"tal cual\" y \"según disponibilidad\", sin garantías de ningún tipo. El contenido generado por IA puede ser inexacto, sesgado o imperfecto, y eres el único responsable de revisarlo antes de usarlo. En la máxima medida permitida por la ley, AImaginator no será responsable de daños indirectos, incidentales o consecuentes derivados del uso de la plataforma."
+        },
+        {
+          "title": "Terminación",
+          "body": "Podemos suspender o cancelar tu acceso a AImaginator, con o sin previo aviso, si incumples estos Términos o si determinamos que tu uso representa un riesgo para la plataforma o para otros usuarios."
+        },
+        {
+          "title": "Cambios en estos Términos",
+          "body": "Podemos actualizar estos Términos de uso periódicamente. Publicaremos la versión revisada en esta página con la fecha de actualización. El uso continuado de la plataforma después de que los cambios entren en vigor constituye la aceptación de los nuevos Términos."
+        },
+        {
+          "title": "Legislación Aplicable y Contacto",
+          "body": "Estos Términos se rigen por las leyes de Brasil, sin tener en cuenta los principios de conflicto de leyes. Las preguntas sobre estos Términos pueden enviarse a privacy@aimaginator.app."
+        }
+      ]
+    },
+    "cookies": {
+      "kicker": "CÓMO USAMOS LAS COOKIES",
+      "title": "Cookies",
+      "description": "Comprende cómo AImaginator usa cookies y tecnologías similares y cómo puedes controlarlas.",
+      "updated": "Última actualización: septiembre de 2026",
+      "sections": [
+        {
+          "title": "¿Qué son las cookies?",
+          "body": "Las cookies son pequeños archivos de texto que los sitios web almacenan en tu dispositivo cuando los visitas. Permiten que el sitio recuerde tus acciones y preferencias a lo largo del tiempo y se usan ampliamente para que los sitios web funcionen de forma más eficiente."
+        },
+        {
+          "title": "Cómo usamos las cookies",
+          "body": "Usamos cookies para mantenerte conectado, recordar tu preferencia de idioma, entender cómo se usa la plataforma y detectar y prevenir errores o abusos. Algunas cookies son esenciales para el funcionamiento del servicio."
+        },
+        {
+          "title": "Tipos de cookies que usamos",
+          "body": "Las cookies estrictamente necesarias permiten la autenticación y la seguridad. Las cookies de preferencia recuerdan elecciones como tu idioma (pt-BR, en u otro idioma admitido). Las cookies de análisis y rendimiento nos ayudan a medir el uso, de forma anonimizada siempre que sea posible, para mejorar la experiencia."
+        },
+        {
+          "title": "Cookies de terceros",
+          "body": "Algunos terceros, como Google para la autenticación OAuth, pueden establecer sus propias cookies cuando inicias sesión. Estas cookies se rigen por las políticas de privacidad de los respectivos terceros."
+        },
+        {
+          "title": "Gestionar tus cookies",
+          "body": "Puedes controlar o eliminar las cookies a través de la configuración de tu navegador y puedes retirar tu consentimiento en cualquier momento. Desactivar ciertas cookies puede afectar funcionalidades, como permanecer conectado."
+        },
+        {
+          "title": "Cambios en esta Política de Cookies",
+          "body": "Podemos actualizar esta política para reflejar cambios en la tecnología, la legislación o nuestras prácticas. La versión revisada se publicará en esta página con la fecha de actualización."
+        },
+        {
+          "title": "Contacto",
+          "body": "Las preguntas sobre nuestro uso de cookies pueden enviarse a nuestro Delegado de Protección de Datos a privacy@aimaginator.app."
+        }
+      ]
     }
   }
 }

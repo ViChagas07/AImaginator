@@ -18,16 +18,16 @@ export async function SiteFooter() {
   const socialLinks = [
     {
       key: "instagram",
-      href: "https://www.instagram.com/aimaginator",
+      href: "https://www.instagram.com/vi_chagas7/",
       Icon: InstagramIcon,
     },
-    {key: "x", href: "https://x.com/aimaginator", Icon: XIcon},
+    {key: "x", href: "https://x.com/alisson_chagas7", Icon: XIcon},
     {
       key: "linkedin",
-      href: "https://www.linkedin.com/company/aimaginator",
+      href: "https://www.linkedin.com/in/alisson-davi-0819242a7/",
       Icon: LinkedInIcon,
     },
-    {key: "github", href: "https://github.com/ViChagas07/AImaginator", Icon: GitHubIcon},
+    {key: "github", href: "https://github.com/ViChagas07", Icon: GitHubIcon},
   ];
 
   const productLinks = [
