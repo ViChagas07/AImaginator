@@ -315,5 +315,9 @@
         }
       ]
     }
+  },
+  "loader": {
+    "generating": "Gerando",
+    "ariaLabel": "Gerando imagem, aguarde"
   }
 }

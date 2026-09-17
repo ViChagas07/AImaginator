@@ -112,6 +112,80 @@
   transform: translateY(-1px);
 }
 
+/*
+ * AI generation loader: a rotating inner glow built from the brand gradient
+ * (rose → indigo → violet) with the "generating" word animated letter by
+ * letter on top. Colors reference the theme tokens defined above.
+ */
+.aigl-spinner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-color: transparent;
+  box-shadow:
+    inset 0 10px 20px var(--color-foreground),
+    inset 0 20px 30px var(--color-lilac),
+    inset 0 60px 60px var(--color-cta-indigo);
+  animation: aigl-rotate 2s linear infinite;
+}
+
+@keyframes aigl-rotate {
+  0% {
+    transform: rotate(90deg);
+    box-shadow:
+      inset 0 10px 20px var(--color-foreground),
+      inset 0 20px 30px var(--color-lilac),
+      inset 0 60px 60px var(--color-cta-indigo);
+  }
+  50% {
+    transform: rotate(270deg);
+    box-shadow:
+      inset 0 10px 20px var(--color-foreground),
+      inset 0 20px 10px var(--color-accent-from),
+      inset 0 40px 60px var(--color-accent-to);
+  }
+  100% {
+    transform: rotate(450deg);
+    box-shadow:
+      inset 0 10px 20px var(--color-foreground),
+      inset 0 20px 30px var(--color-lilac),
+      inset 0 60px 60px var(--color-cta-indigo);
+  }
+}
+
+.aigl-letter {
+  display: inline-block;
+  opacity: 0.4;
+  transform: translateY(0);
+  animation: aigl-letter 2s infinite;
+}
+
+@keyframes aigl-letter {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  40% {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aigl-spinner,
+  .aigl-letter {
+    animation: none;
+  }
+  .aigl-letter {
+    opacity: 1;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }

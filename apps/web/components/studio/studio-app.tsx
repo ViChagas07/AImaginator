@@ -4,7 +4,8 @@ import {useEffect, useRef} from "react";
 import {useTranslations} from "next-intl";
 import {Loader2, Send, TriangleAlert, X} from "lucide-react";
 import {useAuthStore} from "@/stores/auth";
-import {useGenerationStore} from "@/stores/generation";
+import {isGeneratingStatus, useGenerationStore} from "@/stores/generation";
+import {AIGeneratingLoader} from "@/components/ui/ai-generating-loader";
 
 export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const t = useTranslations("studio");
@@ -63,7 +64,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
     );
   }
 
-  const busy = gen.status === "queued" || gen.status === "processing";
+  const isGenerating = isGeneratingStatus(gen.status);
 
   return (
     <div className="space-y-10">
@@ -125,24 +126,29 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
         </div>
         <button
           type="submit"
-          disabled={busy || !gen.prompt.trim()}
-          aria-busy={busy}
+          disabled={isGenerating || !gen.prompt.trim()}
+          aria-busy={isGenerating}
           className="bg-accent-gradient inline-flex items-center gap-2 rounded-md px-6 py-3 text-base font-semibold text-foreground disabled:opacity-50"
         >
-          {busy ? (
+          {isGenerating ? (
             <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
           ) : (
             <Send className="h-5 w-5" aria-hidden />
           )}
-          {busy ? t("generatingButton") : t("generateButton")}
+          {isGenerating ? t("generatingButton") : t("generateButton")}
         </button>
       </form>
 
       <section aria-label={t("progressLabel")} className="space-y-3">
+        {isGenerating && (
+          <div className="flex justify-center py-2">
+            <AIGeneratingLoader />
+          </div>
+        )}
         <p className="text-sm text-muted" role="status" aria-live="polite">
           {t(`status.${gen.status}`)}
         </p>
-        {(busy || gen.status === "done") && (
+        {(isGenerating || gen.status === "done") && (
           <div
             role="progressbar"
             aria-valuenow={gen.progress}

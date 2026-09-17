@@ -307,5 +307,9 @@
         }
       ]
     }
+  },
+  "loader": {
+    "generating": "Generierung",
+    "ariaLabel": "Bild wird erstellt, bitte warten"
   }
 }

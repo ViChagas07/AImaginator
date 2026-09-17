@@ -41,6 +41,10 @@ type GenerationState = {
   setImage: (image: string | undefined) => void;
 };
 
+export function isGeneratingStatus(status: GenerationStatus): boolean {
+  return status === "queued" || status === "processing";
+}
+
 let source: EventSource | null = null;
 
 export const useGenerationStore = create<GenerationState>((set, get) => ({

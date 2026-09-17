@@ -307,5 +307,9 @@
         }
       ]
     }
+  },
+  "loader": {
+    "generating": "生成中",
+    "ariaLabel": "正在生成图像，请稍候"
   }
 }
