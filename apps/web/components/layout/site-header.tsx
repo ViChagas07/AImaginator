@@ -2,6 +2,7 @@ import Image from "next/image";
 import {getTranslations} from "next-intl/server";
 import {Link} from "@/i18n/navigation";
 import {AuthButton} from "@/components/layout/auth-button";
+import {LanguageSwitcher} from "@/components/layout/language-switcher";
 
 export async function SiteHeader() {
   const t = await getTranslations("nav");
@@ -9,23 +10,26 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b border-foreground/10 bg-canvas">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground"
-        >
-          <Image
-            src="/Aimaginator_Slogan_pic-removebg-preview.png"
-            alt={tCommon("brand")}
-            width={476}
-            height={317}
-            priority
-            className="h-10 w-auto"
-          />
-        </Link>
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground"
+          >
+            <Image
+              src="/Aimaginator_Slogan_pic-removebg-preview.png"
+              alt={tCommon("brand")}
+              width={476}
+              height={317}
+              priority
+              className="h-10 w-auto"
+            />
+          </Link>
+          <LanguageSwitcher />
+        </div>
         <nav
           aria-label={tCommon("brand")}
-          className="ml-auto flex items-center gap-2"
+          className="ms-auto flex items-center gap-2"
         >
           <Link
             href="/gallery"

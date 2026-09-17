@@ -3,9 +3,13 @@ import {SITE_URL} from "@/lib/constants";
 
 export function languageAlternates(pathname = "/") {
   const suffix = pathname === "/" ? "" : pathname;
-  return Object.fromEntries(
-    routing.locales.map((locale) => [locale, `${SITE_URL}/${locale}${suffix}`]),
+  const entries = routing.locales.map(
+    (locale): [string, string] => [locale, `${SITE_URL}/${locale}${suffix}`],
   );
+  return Object.fromEntries([
+    ...entries,
+    ["x-default", `${SITE_URL}/${routing.defaultLocale}${suffix}`],
+  ]);
 }
 
 const OPEN_GRAPH_LOCALES: Record<string, string> = {
@@ -14,7 +18,10 @@ const OPEN_GRAPH_LOCALES: Record<string, string> = {
   es: "es_ES",
   fr: "fr_FR",
   de: "de_DE",
-  it: "it_IT",
+  ja: "ja_JP",
+  zh: "zh_CN",
+  ru: "ru_RU",
+  ar: "ar_AR",
 };
 
 export function openGraphLocale(locale: string): string {

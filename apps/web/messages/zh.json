@@ -1,0 +1,311 @@
+{
+  "common": {
+    "brand": "AImaginator",
+    "skipLink": "跳到主要内容",
+    "footerNote": "AImaginator — AI 图片生成与编辑。",
+    "attachImage": "添加图片",
+    "removeImage": "移除图片",
+    "attachedImageAlt": "已添加的图片"
+  },
+  "nav": {
+    "gallery": "画廊",
+    "studio": "工作室",
+    "login": "让我们想象吧！✨"
+  },
+  "auth": {
+    "signIn": {
+      "title": "登录你的账户",
+      "subtitle": "在下方输入你的邮箱地址以登录",
+      "footerText": "还没有账户？",
+      "linkText": "注册"
+    },
+    "signUp": {
+      "title": "创建账户",
+      "subtitle": "在下方输入你的信息以注册",
+      "footerText": "已经有账户？",
+      "linkText": "登录"
+    },
+    "email": "邮箱",
+    "emailPlaceholder": "you@example.com",
+    "password": "密码",
+    "fullName": "全名",
+    "fullNamePlaceholder": "张三",
+    "signInButton": "登录",
+    "signUpButton": "注册",
+    "showPassword": "显示密码",
+    "hidePassword": "隐藏密码",
+    "orContinue": "或使用以下方式继续",
+    "googleButton": "使用 Google 继续",
+    "googleIconAlt": "Google 图标"
+  },
+  "landing": {
+    "headline": "把文字变成图像！",
+    "logoAlt": "AImaginator 标志",
+    "subheadline": "AImaginator 是一个 AI 图像生成器，可根据自然语言提示词创建和编辑图像。描述你想要的，几秒钟内生成，然后迭代式地完善结果。",
+    "promptPlaceholder": "描述你想要创建的图像...",
+    "promptButton": "创建图像",
+    "promptStatusLoading": "正在打开工作室...",
+    "stepsTitle": "使用方法",
+    "steps": [
+      {
+        "title": "描述",
+        "description": "用自然语言提示词描述你想要的图像。细节越具体，效果越好。",
+        "imageAlt": "极简白色建筑的 AI 图像示例。"
+      },
+      {
+        "title": "生成",
+        "description": "AI 模型处理你的提示词，实时生成第一张图像，并分步显示进度。",
+        "imageAlt": "有湖泊的山景 AI 图像示例。"
+      },
+      {
+        "title": "完善",
+        "description": "调整提示词或上传图像，迭代式地编辑细节，直到结果符合你的意图。",
+        "imageAlt": "阳光穿过森林的 AI 图像示例。"
+      }
+    ],
+    "examplesTitle": "画廊示例",
+    "examples": [
+      {
+        "prompt": "从上空俯瞰漂浮在清澈碧绿水面上的渔船",
+        "imageAlt": "AI 图像：从上空俯瞰碧绿水面上的渔船。"
+      },
+      {
+        "prompt": "城市街道上一只猫的超微距特写肖像",
+        "imageAlt": "AI 图像：城市街道上一只猫的特写肖像。"
+      },
+      {
+        "prompt": "银河星空下的雪山",
+        "imageAlt": "AI 图像：星空下的雪山。"
+      },
+      {
+        "prompt": "柔和霓虹灯照射下的人物艺术肖像",
+        "imageAlt": "AI 图像：柔和霓虹灯下的艺术肖像。"
+      },
+      {
+        "prompt": "黎明时分五彩缤纷的花田，温暖的阳光",
+        "imageAlt": "AI 图像：黎明时分的五彩花田。"
+      }
+    ],
+    "previewDialogTitle": "使用的提示词",
+    "closePreview": "关闭",
+    "faqTitle": "常见问题",
+    "faq": [
+      {
+        "question": "什么是 AImaginator？",
+        "answer": "AImaginator 是一个 Web 应用和 API，可根据自然语言提示词用 AI 生成和编辑图像。你描述图像，模型就会实时生成。"
+      },
+      {
+        "question": "我需要创建账户吗？",
+        "answer": "是的。使用 Google 账户登录即可生成图像。公开画廊无需登录即可访问。"
+      },
+      {
+        "question": "我可以编辑现有图像吗？",
+        "answer": "可以。在工作室中，你可以上传图像并描述想要的编辑内容，在结果上迭代调整。"
+      },
+      {
+        "question": "实时进度是如何运作的？",
+        "answer": "生成状态通过 server-sent events (SSE) 从 API 流式传输，显示百分比进度，直到图像完成或返回错误。"
+      }
+    ]
+  },
+  "studio": {
+    "title": "工作室",
+    "loginRequired": "请登录/注册以访问生成工作室。",
+    "loginButton": "登录/注册",
+    "promptLabel": "提示词",
+    "promptPlaceholder": "描述图像...",
+    "uploadLabel": "可选的要编辑的图像",
+    "uploadHint": "PNG 或 JPEG — 可选，随提示词一起发送以进行编辑。",
+    "generateButton": "生成",
+    "generatingButton": "生成中...",
+    "progressLabel": "生成进度",
+    "status": {
+      "idle": "空闲。描述图像以开始。",
+      "queued": "排队中。等待可用的工作节点。",
+      "processing": "正在处理生成。",
+      "done": "完成。图像已成功生成。",
+      "failed": "生成失败。"
+    },
+    "resultAlt": "根据你的提示词生成的结果。",
+    "historyTitle": "最近的生成",
+    "historyEmpty": "还没有生成记录。",
+    "errorLabel": "错误"
+  },
+  "gallery": {
+    "title": "公共画廊",
+    "description": "AImaginator 社区生成的图像。每张卡片都显示创建该图像所用的提示词。",
+    "loadMore": "加载更多",
+    "empty": "还没有公开图像。",
+    "by": "来自"
+  },
+  "errors": {
+    "generic": "出了点问题。请重试。",
+    "generationHttp": "错误 {status}：无法开始生成。请重试。",
+    "generationFailed": "生成失败。请重试。",
+    "generationNetwork": "连接 API 时发生网络错误。请检查连接后重试。"
+  },
+  "language": {
+    "selectorLabel": "选择语言"
+  },
+  "footer": {
+    "tagline": "把文字变成图像！",
+    "productTitle": "产品",
+    "gallery": "画廊",
+    "howItWorks": "使用方法",
+    "pricing": "定价",
+    "apiDocs": "API/文档",
+    "newsletterTitle": "简报",
+    "newsletterDescription": "获取关于 AI 图像生成的新闻、教程和更新。",
+    "newsletterLabel": "邮箱地址",
+    "newsletterPlaceholder": "你的常用邮箱",
+    "newsletterButton": "订阅",
+    "newsletterSuccess": "订阅已确认。欢迎！",
+    "socialAria": {
+      "instagram": "AImaginator 的 Instagram",
+      "x": "AImaginator 的 X（Twitter）",
+      "linkedin": "AImaginator 的 LinkedIn",
+      "github": "AImaginator 的 GitHub"
+    },
+    "copyright": "© {year} AImaginator。保留所有权利。"
+  },
+  "legal": {
+    "tabsLabel": "法律页面",
+    "tabs": {
+      "terms": "使用条款",
+      "privacy": "隐私政策",
+      "cookies": "Cookie"
+    },
+    "privacy": {
+      "kicker": "我们对你的数据的承诺",
+      "title": "隐私政策",
+      "description": "了解 AImaginator 如何根据 LGPD 收集、使用、共享和保护你的个人数据。",
+      "updated": "最后更新：2026 年 9 月",
+      "sections": [
+        {
+          "title": "个人声明",
+          "body": "在 AImaginator，我们认真对待你的隐私。本政策遵照巴西《通用数据保护法》（LGPD，第 13.709/2018 号法律），以透明的方式说明我们收集哪些数据、为什么收集、与谁共享，以及你对这些数据拥有哪些权利。使用我们的服务即表示你同意此处所述的做法。"
+        },
+        {
+          "title": "什么是 Cookie？",
+          "body": "Cookie 是你访问网站时浏览器中存储的小型文本文件。它们帮助我们记住你的偏好、保持登录会话，并了解你如何使用 AImaginator，以便我们持续改进体验。"
+        },
+        {
+          "title": "我们为什么使用 Cookie",
+          "body": "我们使用为认证（保持登录状态）所必需的严格必要 Cookie、偏好 Cookie（如你选择的语言，pt-BR 或 en），以及在可能的情况下匿名化的性能/分析 Cookie，以衡量平台使用情况并检测故障。你可以在浏览器设置中禁用 Cookie，但登录等部分功能可能会失效。"
+        },
+        {
+          "title": "我们具体收集哪些信息",
+          "body": "我们收集（i）登录时使用的 Google 账户数据，如姓名和邮箱，通过 OAuth 2.0；（ii）使用数据，如提交的提示词、访问的页面和交互；以及（iii）技术数据，如用于安全和防止滥用的 IP 地址、浏览器类型和访问日志。我们不直接收集财务或支付数据。"
+        },
+        {
+          "title": "我们与哪些第三方共享你的信息",
+          "body": "我们仅与对服务至关重要的提供商共享数据：Google（用于 OAuth 认证）、基础设施和托管提供商（如数据库、队列和存储），以及运行生成流水线（例如使用 CrewAI 和 LangChain 编排的流水线）以处理你的提示词的 AI 提供商。这些第三方作为处理者，仅在保密和数据保护义务下接收最低限度的必要数据。"
+        },
+        {
+          "title": "你上传和生成的媒体",
+          "body": "你上传用于编辑的图像以及根据你的提示词生成的图像将被处理以提供服务。它们可能会被临时存储，以支持生成历史和迭代编辑。当你将图像发布到公共画廊时，它将连同关联的提示词一起对其他用户可见。"
+        },
+        {
+          "title": "信息披露",
+          "body": "我们不出售你的个人数据。只有在以下情况下我们才会披露信息：（i）法律、法院命令或主管机关要求；（ii）为保护 AImaginator、我们的用户或公众的权利、财产或安全所必需；或（iii）为调查和防止欺诈、滥用或违反我们使用条款所必需。"
+        },
+        {
+          "title": "你作为数据主体的权利（LGPD）",
+          "body": "根据 LGPD，你可以要求：确认处理活动的存在、访问你的数据、更正不完整或过时的数据、匿名化、屏蔽或删除不必要的数据、向其他提供商移植数据，以及撤销同意。要行使任何这些权利，请使用联系/DPO 部分的邮箱与我们联系。"
+        },
+        {
+          "title": "本政策的更新",
+          "body": "我们可能会定期更新本隐私政策，以反映服务、法律或数据处理实践的变化。我们将在本页面发布带有更新日期的修订版本。重大变更将酌情通过邮件或产品内通知的方式告知。"
+        },
+        {
+          "title": "联系 / DPO",
+          "body": "关于隐私的问题、请求或投诉可以发送给我们的数据保护官（DPO），邮箱为 privacy@aimaginator.app。我们将尽快回复，并在任何情况下遵守 LGPD 规定的期限。"
+        }
+      ]
+    },
+    "terms": {
+      "kicker": "请仔细阅读",
+      "title": "使用条款",
+      "description": "规范你使用 AImaginator 及其服务的规则。",
+      "updated": "最后更新：2026 年 9 月",
+      "sections": [
+        {
+          "title": "接受这些条款",
+          "body": "访问或使用 AImaginator 即表示你确认已阅读、理解并同意受这些使用条款的约束。如果你不同意这些条款的任何部分，则不得使用该平台。"
+        },
+        {
+          "title": "服务说明",
+          "body": "AImaginator 是一个 Web 应用和 API，使用人工智能根据自然语言提示词生成和编辑图像。功能、模型和可用性可能会随时间变化，恕不另行通知。"
+        },
+        {
+          "title": "账户和资格",
+          "body": "要生成图像，你必须通过 OAuth 2.0 使用 Google 账户登录。你负责维护账户的机密性以及在其下进行的所有活动。使用该服务必须年满 13 岁或达到你所在司法管辖区规定的最低年龄。"
+        },
+        {
+          "title": "可接受的使用",
+          "body": "你同意不使用 AImaginator 创建非法、有害、诽谤、歧视、仇恨、涉及未成年人的色情内容，或侵犯第三方权利的内容。你还同意不试图对平台、其 API 或基础设施进行逆向工程、干扰、过载或未经授权的访问。"
+        },
+        {
+          "title": "用户内容和许可",
+          "body": "你保留对所提交提示词和所生成图像的所有权。使用该服务即表示你授予 AImaginator 一项全球性、非独占、免版税的许可，仅用于提供服务而处理、存储和显示你的内容。当你将图像发布到公共画廊时，你授予 AImaginator 及其用户在与平台相关的范围内查看和分享该图像的许可。"
+        },
+        {
+          "title": "知识产权",
+          "body": "AImaginator 的品牌、软件、设计和文档是 AImaginator 或其许可方的财产，受适用的知识产权法保护。除非明确允许，这些条款不授予你使用我们商标或代码的任何权利。"
+        },
+        {
+          "title": "免责声明和责任限制",
+          "body": "本服务按“现状”和“可用”提供，不附带任何形式的保证。AI 生成的内容可能不准确、有偏见或不完善，你有责任在使用前对其进行审查。在法律允许的最大范围内，AImaginator 不对因你使用平台而产生的任何间接、附带或后果性损害承担责任。"
+        },
+        {
+          "title": "终止",
+          "body": "如果你违反这些条款，或者我们认定你的使用对平台或其他用户构成风险，我们可以在通知或不通知的情况下暂停或终止你对 AImaginator 的访问。"
+        },
+        {
+          "title": "这些条款的变更",
+          "body": "我们可能会定期更新这些使用条款。我们将在本页面发布带有更新日期的修订版本。变更生效后继续使用平台即表示接受新条款。"
+        },
+        {
+          "title": "适用法律和联系",
+          "body": "这些条款受巴西法律管辖，不考虑法律冲突原则。有关这些条款的问题可以发送至 privacy@aimaginator.app。"
+        }
+      ]
+    },
+    "cookies": {
+      "kicker": "我们如何使用 COOKIE",
+      "title": "Cookie",
+      "description": "了解 AImaginator 如何使用 Cookie 及类似技术，以及你可以如何控制它们。",
+      "updated": "最后更新：2026 年 9 月",
+      "sections": [
+        {
+          "title": "什么是 Cookie？",
+          "body": "Cookie 是网站访问时存储在你设备上的小型文本文件。它们使网站能够随着时间的推移记住你的操作和偏好，并被广泛用于让网站更高效地运行。"
+        },
+        {
+          "title": "我们如何使用 Cookie",
+          "body": "我们使用 Cookie 来保持你的登录状态、记住你的语言偏好、了解平台的使用方式，并检测和防止错误或滥用。一些 Cookie 对服务的运行至关重要。"
+        },
+        {
+          "title": "我们使用的 Cookie 类型",
+          "body": "严格必要的 Cookie 支持认证和安全。偏好 Cookie 会记住诸如你的语言（pt-BR、en 或其他受支持的语言）之类的选择。分析和性能 Cookie 帮助我们尽可能以匿名形式衡量使用情况，从而改进体验。"
+        },
+        {
+          "title": "第三方 Cookie",
+          "body": "一些第三方（如用于 OAuth 认证的 Google）可能会在你登录时设置自己的 Cookie。这些 Cookie 受相应第三方的隐私政策约束。"
+        },
+        {
+          "title": "管理你的 Cookie",
+          "body": "你可以通过浏览器设置控制或删除 Cookie，并随时撤回你的同意。禁用某些 Cookie 可能会影响诸如保持登录状态等功能。"
+        },
+        {
+          "title": "本 Cookie 政策的变更",
+          "body": "我们可能会更新本政策，以反映技术、法律或我们实践的变化。修订版本将连同更新日期一起发布在本页面。"
+        },
+        {
+          "title": "联系我们",
+          "body": "关于我们使用 Cookie 的问题可以发送给我们的数据保护官，邮箱为 privacy@aimaginator.app。"
+        }
+      ]
+    }
+  }
+}

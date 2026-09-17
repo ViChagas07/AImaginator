@@ -9,6 +9,7 @@ import {useGenerationStore} from "@/stores/generation";
 export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const t = useTranslations("studio");
   const tCommon = useTranslations("common");
+  const tErrors = useTranslations("errors");
   const auth = useAuthStore();
   const gen = useGenerationStore();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -41,7 +42,11 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!gen.prompt.trim()) return;
-    void gen.startGeneration(gen.prompt.trim(), imageBase64);
+    void gen.startGeneration(gen.prompt.trim(), imageBase64, {
+      http: (status) => tErrors("generationHttp", {status}),
+      failed: tErrors("generationFailed"),
+      network: tErrors("generationNetwork"),
+    });
   }
 
   if (auth.status === "unauthenticated") {

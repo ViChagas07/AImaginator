@@ -139,7 +139,13 @@
     "by": "par"
   },
   "errors": {
-    "generic": "Une erreur est survenue. Veuillez réessayer."
+    "generic": "Une erreur est survenue. Veuillez réessayer.",
+    "generationHttp": "Erreur {status} : impossible de démarrer la génération. Réessayez.",
+    "generationFailed": "La génération a échoué. Réessayez.",
+    "generationNetwork": "Erreur réseau lors de la connexion à l'API. Vérifiez votre connexion et réessayez."
+  },
+  "language": {
+    "selectorLabel": "Sélectionner la langue"
   },
   "footer": {
     "tagline": "Transformez les mots en images!",

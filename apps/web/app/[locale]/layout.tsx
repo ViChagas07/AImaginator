@@ -52,10 +52,12 @@ export default async function RootLayout({
   }
 
   const t = await getTranslations("common");
+  const isRtl = locale === "ar";
 
   return (
     <html
       lang={locale}
+      dir={isRtl ? "rtl" : "ltr"}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-canvas text-foreground">

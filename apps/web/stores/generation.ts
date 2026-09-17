@@ -15,6 +15,12 @@ export type HistoryItem = {
   createdAt: string;
 };
 
+export type GenerationErrorMessages = {
+  http: (status: number) => string;
+  failed: string;
+  network: string;
+};
+
 type GenerationState = {
   prompt: string;
   imageBase64: string | undefined;
@@ -24,7 +30,11 @@ type GenerationState = {
   error: string | null;
   history: HistoryItem[];
   historyCursor: string | null;
-  startGeneration: (prompt: string, imageBase64?: string) => Promise<void>;
+  startGeneration: (
+    prompt: string,
+    imageBase64: string | undefined,
+    errors: GenerationErrorMessages,
+  ) => Promise<void>;
   loadHistory: () => Promise<void>;
   reset: () => void;
   setPrompt: (p: string) => void;
@@ -53,7 +63,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     set({prompt: "", imageBase64: undefined, status: "idle", progress: 0, resultUrl: null, error: null});
   },
 
-  async startGeneration(prompt, imageBase64) {
+  async startGeneration(prompt, imageBase64, errors) {
     source?.close();
     set({prompt, status: "queued", progress: 0, resultUrl: null, error: null});
     try {
@@ -63,8 +73,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         body: JSON.stringify({prompt, image: imageBase64 ?? null}),
       });
       if (!res.ok) {
-        const message = `Erro ${res.status}: não foi possível iniciar a geração. Tente novamente.`;
-        set({status: "failed", error: message});
+        set({status: "failed", error: errors.http(res.status)});
         return;
       }
       const data = (await res.json()) as {id: string; stream_url: string};
@@ -89,7 +98,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       source.addEventListener("error", (event) => {
         source?.close();
         source = null;
-        let message = "A geração falhou. Tente novamente.";
+        let message = errors.failed;
         try {
           const payload = JSON.parse((event as MessageEvent).data) as {message?: string};
           if (payload.message) message = payload.message;
@@ -99,7 +108,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         set({status: "failed", error: message});
       });
     } catch {
-      set({status: "failed", error: "Falha de rede ao contatar a API. Verifique sua conexão e tente novamente."});
+      set({status: "failed", error: errors.network});
     }
   },
 

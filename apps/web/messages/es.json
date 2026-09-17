@@ -139,7 +139,13 @@
     "by": "por"
   },
   "errors": {
-    "generic": "Algo salió mal. Inténtalo de nuevo."
+    "generic": "Algo salió mal. Inténtalo de nuevo.",
+    "generationHttp": "Error {status}: no se pudo iniciar la generación. Inténtalo de nuevo.",
+    "generationFailed": "La generación falló. Inténtalo de nuevo.",
+    "generationNetwork": "Error de red al contactar la API. Revisa tu conexión e inténtalo de nuevo."
+  },
+  "language": {
+    "selectorLabel": "Seleccionar idioma"
   },
   "footer": {
     "tagline": "Convierte palabras en imágenes!",

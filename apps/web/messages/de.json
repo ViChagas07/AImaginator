@@ -139,7 +139,13 @@
     "by": "von"
   },
   "errors": {
-    "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+    "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+    "generationHttp": "Fehler {status}: Die Generierung konnte nicht gestartet werden. Bitte erneut versuchen.",
+    "generationFailed": "Die Generierung ist fehlgeschlagen. Bitte erneut versuchen.",
+    "generationNetwork": "Netzwerkfehler bei der Verbindung zur API. Bitte Verbindung prüfen und erneut versuchen."
+  },
+  "language": {
+    "selectorLabel": "Sprache auswählen"
   },
   "footer": {
     "tagline": "Verwandle Wörter in Bilder!",

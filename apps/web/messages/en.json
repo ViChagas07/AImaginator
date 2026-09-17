@@ -139,7 +139,13 @@
     "by": "by"
   },
   "errors": {
-    "generic": "Something went wrong. Try again."
+    "generic": "Something went wrong. Try again.",
+    "generationHttp": "Error {status}: could not start the generation. Try again.",
+    "generationFailed": "Generation failed. Try again.",
+    "generationNetwork": "Network error while contacting the API. Check your connection and try again."
+  },
+  "language": {
+    "selectorLabel": "Select language"
   },
   "footer": {
     "tagline": "Turn words into images!",
