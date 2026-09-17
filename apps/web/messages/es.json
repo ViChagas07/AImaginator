@@ -110,8 +110,8 @@
   },
   "studio": {
     "title": "Estudio",
-    "loginRequired": "Inicia sesión con Google para acceder al estudio de generación.",
-    "loginButton": "Iniciar sesión con Google",
+    "loginRequired": "Inicia sesión / Regístrate para acceder al estudio de generación.",
+    "loginButton": "Iniciar sesión / Registrarse",
     "promptLabel": "Prompt",
     "promptPlaceholder": "Describe la imagen...",
     "uploadLabel": "Imagen opcional para editar",

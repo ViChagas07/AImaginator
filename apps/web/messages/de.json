@@ -110,8 +110,8 @@
   },
   "studio": {
     "title": "Studio",
-    "loginRequired": "Melde dich mit Google an, um auf das Generierungsstudio zuzugreifen.",
-    "loginButton": "Mit Google anmelden",
+    "loginRequired": "Melde dich an / Registriere dich, um auf das Generierungsstudio zuzugreifen.",
+    "loginButton": "Anmelden / Registrieren",
     "promptLabel": "Prompt",
     "promptPlaceholder": "Beschreibe das Bild...",
     "uploadLabel": "Optionales Bild zum Bearbeiten",

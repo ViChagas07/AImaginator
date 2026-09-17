@@ -110,8 +110,8 @@
   },
   "studio": {
     "title": "Studio",
-    "loginRequired": "Log in with Google to access the generation studio.",
-    "loginButton": "Log in with Google",
+    "loginRequired": "Log in / Sign up to access the generation studio.",
+    "loginButton": "Log in / Sign up",
     "promptLabel": "Prompt",
     "promptPlaceholder": "Describe the image...",
     "uploadLabel": "Optional image to edit",

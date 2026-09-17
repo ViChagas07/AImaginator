@@ -110,8 +110,8 @@
   },
   "studio": {
     "title": "Studio",
-    "loginRequired": "Connectez-vous avec Google pour accéder au studio de génération.",
-    "loginButton": "Se connecter avec Google",
+    "loginRequired": "Connectez-vous / Inscrivez-vous pour accéder au studio de génération.",
+    "loginButton": "Se connecter / S'inscrire",
     "promptLabel": "Prompt",
     "promptPlaceholder": "Décrivez l'image...",
     "uploadLabel": "Image facultative à éditer",
