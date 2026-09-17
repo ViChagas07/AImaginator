@@ -10,6 +10,8 @@ const EXAMPLE_IMAGES = [
   "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=60",
   "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=60",
   "https://images.unsplash.com/photo-1490730141103-6cac27aaab94?auto=format&fit=crop&w=800&q=60",
+  "/uma-borboleta-colorida-voando-pelo-ar-com-fundo-azul-vibrante-corpo-negro-e-asas-laranja-pretas-contra-um-pano-de-ia-rosa-387353274.webp",
+  "/imagine.art-ai-2.jpg",
 ];
 
 const SPANS = [
@@ -18,6 +20,8 @@ const SPANS = [
   "",
   "sm:col-span-2",
   "",
+  "",
+  "col-span-2",
 ];
 
 type ExampleItem = {

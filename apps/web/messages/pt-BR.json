@@ -84,6 +84,14 @@
       {
         "prompt": "Um campo de flores coloridas ao amanhecer, luz quente",
         "imageAlt": "Imagem de IA: um campo de flores coloridas ao amanhecer."
+      },
+      {
+        "prompt": "Uma borboleta colorida voando com asas laranja e pretas sobre um fundo azul vibrante",
+        "imageAlt": "Borboleta colorida com asas laranja e pretas sobre fundo azul vibrante gerada por IA."
+      },
+      {
+        "prompt": "Imagem de exemplo gerada por IA na plataforma imagine.art",
+        "imageAlt": "Exemplo de imagem gerada por IA — imagine.art"
       }
     ],
     "previewDialogTitle": "Prompt usado",
