@@ -33,7 +33,6 @@ export async function SiteFooter() {
   const productLinks = [
     {label: t("gallery"), href: "/gallery"},
     {label: t("howItWorks"), href: "/"},
-    {label: t("apiDocs"), href: "/"},
   ];
 
   const legalLinks = [
@@ -77,7 +76,7 @@ export async function SiteFooter() {
           </div>
         </div>
 
-        <nav aria-label={t("productTitle")} className="space-y-4">
+        <nav aria-label={t("productTitle")} className="space-y-4 md:pt-1">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
             {t("productTitle")}
           </h3>
