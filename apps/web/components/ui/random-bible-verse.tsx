@@ -53,7 +53,6 @@ const FALLBACK_VERSES: Record<string, Verse> = {
 
 const DEFAULT_TRANSLATION = "almeida";
 const REQUEST_TIMEOUT_MS = 3000;
-const CACHE_PREFIX = "aimaginator.bibleVerse.";
 
 function translationForLocale(locale: string): string {
   return locale === "pt-BR" ? "almeida" : "kjv";
@@ -66,34 +65,6 @@ function fallbackFor(translation: string): Verse {
 function pickRandomReference(): string {
   const index = Math.floor(Math.random() * FAMOUS_REFERENCES.length);
   return FAMOUS_REFERENCES[index];
-}
-
-function readCache(cacheKey: string): Verse | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.sessionStorage.getItem(cacheKey);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Verse;
-    if (
-      parsed &&
-      typeof parsed.text === "string" &&
-      typeof parsed.reference === "string"
-    ) {
-      return parsed;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCache(cacheKey: string, verse: Verse): void {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.setItem(cacheKey, JSON.stringify(verse));
-  } catch {
-    // Ignore privacy/quota errors; the verse is still shown in-memory.
-  }
 }
 
 async function fetchVerse(
@@ -126,30 +97,17 @@ export function RandomBibleVerse({ className }: { className?: string }) {
 
   useEffect(() => {
     let active = true;
-    const cacheKey = `${CACHE_PREFIX}${translation}`;
+    const reference = pickRandomReference();
 
     const resolve = (value: Verse) => {
       if (active) setVerse(value);
     };
 
-    const cached = readCache(cacheKey);
-    if (cached) {
-      const id = setTimeout(() => resolve(cached), 0);
-      return () => {
-        active = false;
-        clearTimeout(id);
-      };
-    }
-
-    const reference = pickRandomReference();
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     fetchVerse(reference, translation, controller.signal)
-      .then((result) => {
-        writeCache(cacheKey, result);
-        resolve(result);
-      })
+      .then(resolve)
       .catch(() => resolve(fallbackFor(translation)))
       .finally(() => clearTimeout(timeoutId));
 
