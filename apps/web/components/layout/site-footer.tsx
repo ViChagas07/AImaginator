@@ -45,7 +45,7 @@ export async function SiteFooter() {
   return (
     <footer className="border-t border-white/[0.08] bg-canvas-raised">
       <div aria-hidden className="h-px w-full bg-accent-gradient opacity-40" />
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-3 md:gap-8">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:px-6 md:grid-cols-3 md:gap-8">
         <div className="space-y-4">
           <Link
             href="/"
@@ -95,7 +95,7 @@ export async function SiteFooter() {
           </ul>
         </nav>
 
-        <div className="space-y-4">
+        <div className="col-span-2 space-y-4 md:col-span-1">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-foreground">
             {t("newsletterTitle")}
           </h3>
