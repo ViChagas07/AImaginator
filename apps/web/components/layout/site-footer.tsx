@@ -33,7 +33,6 @@ export async function SiteFooter() {
   const productLinks = [
     {label: t("gallery"), href: "/gallery"},
     {label: t("howItWorks"), href: "/"},
-    {label: t("pricing"), href: "/"},
     {label: t("apiDocs"), href: "/"},
   ];
 
