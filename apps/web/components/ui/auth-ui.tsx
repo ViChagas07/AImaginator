@@ -247,7 +247,7 @@ function AuthFormContainer({ isSignIn, onToggle }: { isSignIn: boolean; onToggle
                 <img src="https://cdn.21st.dev/assets/mirror/38/38146bfd9eff6dbf0d74771f2e625c70d87d3770e0d080dbb6e50db1d5403f46.svg" alt={t("googleIconAlt")} className="mr-2 h-4 w-4" />
                 {t("googleButton")}
             </Button>
-            <LoginBibleVerse className="md:hidden" />
+            <LoginBibleVerse className="mt-2 md:hidden" />
         </div>
     )
 }
