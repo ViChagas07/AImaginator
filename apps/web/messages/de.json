@@ -39,7 +39,7 @@
     "googleIconAlt": "Google-Symbol"
   },
   "landing": {
-    "headline": "Verwandle Wörter in Bilder.",
+    "headline": "Verwandle Wörter in Bilder!",
     "logoAlt": "AImaginator-Logo",
     "subheadline": "AImaginator ist ein KI-Bildgenerator, der Bilder aus natürlichen Sprach-Prompts erstellt und bearbeitet. Beschreibe, was du möchtest, generiere es in Sekunden und verfeinere das Ergebnis iterativ.",
     "promptPlaceholder": "Beschreibe das Bild, das du erstellen möchtest...",
@@ -142,7 +142,7 @@
     "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
   },
   "footer": {
-    "tagline": "Verwandle Wörter in Bilder.",
+    "tagline": "Verwandle Wörter in Bilder!",
     "productTitle": "Produkt",
     "gallery": "Galerie",
     "howItWorks": "So funktioniert es",

@@ -39,7 +39,7 @@
     "googleIconAlt": "Icône Google"
   },
   "landing": {
-    "headline": "Transformez les mots en images.",
+    "headline": "Transformez les mots en images!",
     "logoAlt": "Logo d'AImaginator",
     "subheadline": "AImaginator est un générateur d'images par IA qui crée et édite des images à partir de prompts en langage naturel. Décrivez ce que vous voulez, générez-le en quelques secondes et affinez le résultat de manière itérative.",
     "promptPlaceholder": "Décrivez l'image que vous souhaitez créer...",
@@ -142,7 +142,7 @@
     "generic": "Une erreur est survenue. Veuillez réessayer."
   },
   "footer": {
-    "tagline": "Transformez les mots en images.",
+    "tagline": "Transformez les mots en images!",
     "productTitle": "Produit",
     "gallery": "Galerie",
     "howItWorks": "Comment ça marche",
