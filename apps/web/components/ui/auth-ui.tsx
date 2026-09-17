@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useState, useId, useEffect } from "react";
+import Image from "next/image";
 import { Slot } from "@radix-ui/react-slot";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -10,6 +11,7 @@ import { useTranslations } from "next-intl";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { RandomBibleVerse } from "./random-bible-verse";
+import { LoginBibleVerse } from "./login-bible-verse";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -223,7 +225,14 @@ function SignUpForm() {
 function AuthFormContainer({ isSignIn, onToggle }: { isSignIn: boolean; onToggle: () => void; }) {
     const t = useTranslations("auth");
     return (
-        <div className="mx-auto grid w-[350px] gap-2">
+        <div className="mx-auto grid w-full max-w-[350px] gap-2">
+            <Image
+                src="/AImaginator_pic_transparent.png"
+                alt="AImaginator"
+                width={1412}
+                height={1114}
+                className="mx-auto mb-2 h-14 w-auto max-w-full md:hidden"
+            />
             {isSignIn ? <SignInForm /> : <SignUpForm />}
             <div className="text-center text-sm">
                 {isSignIn ? t("signIn.footerText") : t("signUp.footerText")}{" "}
@@ -238,6 +247,7 @@ function AuthFormContainer({ isSignIn, onToggle }: { isSignIn: boolean; onToggle
                 <img src="https://cdn.21st.dev/assets/mirror/38/38146bfd9eff6dbf0d74771f2e625c70d87d3770e0d080dbb6e50db1d5403f46.svg" alt={t("googleIconAlt")} className="mr-2 h-4 w-4" />
                 {t("googleButton")}
             </Button>
+            <LoginBibleVerse className="md:hidden" />
         </div>
     )
 }
@@ -296,14 +306,28 @@ export function AuthUI({ signInContent = {}, signUpContent = {} }: AuthUIProps) 
   const currentContent = isSignIn ? finalSignInContent : finalSignUpContent;
 
   return (
-    <div className="w-full min-h-screen md:grid md:grid-cols-2">
+    <div className="relative w-full min-h-screen md:grid md:grid-cols-2">
       <style>{`
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear {
           display: none;
         }
       `}</style>
-      <div className="flex h-screen items-center justify-center p-6 md:h-auto md:p-0 md:py-12">
+      <div className="absolute inset-0 overflow-hidden md:hidden" aria-hidden="true">
+        <div
+          className="aura-blob aura-blob--violet"
+          style={{ width: "60vmax", height: "60vmax", top: "-18vmax", left: "-15vmax" }}
+        />
+        <div
+          className="aura-blob aura-blob--blue"
+          style={{ width: "55vmax", height: "55vmax", right: "-18vmax", bottom: "-20vmax" }}
+        />
+        <div
+          className="aura-blob aura-blob--pink"
+          style={{ width: "45vmax", height: "45vmax", top: "30%", left: "35%" }}
+        />
+      </div>
+      <div className="relative z-10 flex min-h-svh items-center justify-center p-6 md:min-h-0 md:h-auto md:p-0 md:py-12">
         <AuthFormContainer isSignIn={isSignIn} onToggle={toggleForm} />
       </div>
 

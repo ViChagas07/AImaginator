@@ -122,6 +122,82 @@ html {
   }
 }
 
+/*
+ * Mobile login aura: soft, heavily-blurred brand-colored blobs drifting
+ * slowly behind the form. Rendered only below the `md` breakpoint (the
+ * wrapper is `md:hidden`). Opacity is kept low so the dark canvas and the
+ * form text retain AA contrast.
+ */
+.aura-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.2;
+  will-change: transform;
+}
+
+.aura-blob--violet {
+  background: radial-gradient(
+    circle at center,
+    var(--color-cta-violet) 0%,
+    transparent 70%
+  );
+  animation: aura-drift-violet 22s ease-in-out infinite alternate;
+}
+
+.aura-blob--blue {
+  background: radial-gradient(
+    circle at center,
+    var(--color-accent-to) 0%,
+    transparent 70%
+  );
+  animation: aura-drift-blue 24s ease-in-out infinite alternate;
+}
+
+.aura-blob--pink {
+  background: radial-gradient(
+    circle at center,
+    var(--color-accent-from) 0%,
+    transparent 70%
+  );
+  animation: aura-drift-pink 18s ease-in-out infinite alternate;
+}
+
+@keyframes aura-drift-violet {
+  from {
+    transform: translate3d(-6%, -4%, 0) scale(1) rotate(0deg);
+  }
+  to {
+    transform: translate3d(8%, 10%, 0) scale(1.12) rotate(22deg);
+  }
+}
+
+@keyframes aura-drift-blue {
+  from {
+    transform: translate3d(6%, 8%, 0) scale(1.05) rotate(0deg);
+  }
+  to {
+    transform: translate3d(-8%, -6%, 0) scale(0.94) rotate(-18deg);
+  }
+}
+
+@keyframes aura-drift-pink {
+  from {
+    transform: translate3d(0%, 6%, 0) scale(0.95) rotate(-10deg);
+  }
+  to {
+    transform: translate3d(-5%, -8%, 0) scale(1.1) rotate(14deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aura-blob--violet,
+  .aura-blob--blue,
+  .aura-blob--pink {
+    animation: none;
+  }
+}
+
 body {
   background-color: var(--color-canvas);
   color: var(--color-foreground);
