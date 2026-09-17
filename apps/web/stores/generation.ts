@@ -1,5 +1,7 @@
 import {create} from "zustand";
 import {API_BASE_URL} from "@/lib/constants";
+import {authedFetch} from "@/lib/api";
+import {getAccessToken} from "@/lib/auth-token";
 
 export type GenerationStatus =
   | "idle"
@@ -71,7 +73,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     source?.close();
     set({prompt, status: "queued", progress: 0, resultUrl: null, error: null});
     try {
-      const res = await fetch("/api/generations", {
+      const res = await authedFetch(`${API_BASE_URL}/api/v1/generations`, {
         method: "POST",
         headers: {"content-type": "application/json"},
         body: JSON.stringify({prompt, image: imageBase64 ?? null}),
@@ -81,10 +83,12 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         return;
       }
       const data = (await res.json()) as {id: string; stream_url: string};
-      const url = data.stream_url.startsWith("http")
+      const base = data.stream_url.startsWith("http")
         ? data.stream_url
         : `${API_BASE_URL}${data.stream_url}`;
-      source = new EventSource(url, {withCredentials: true});
+      const token = getAccessToken();
+      const url = token ? `${base}?token=${encodeURIComponent(token)}` : base;
+      source = new EventSource(url);
       source.addEventListener("status_update", (event) => {
         const payload = JSON.parse((event as MessageEvent).data) as {status: GenerationStatus};
         set({status: payload.status});
@@ -119,7 +123,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   async loadHistory() {
     const cursor = get().historyCursor;
     const params = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    const res = await fetch(`/api/generations${params}`);
+    const res = await authedFetch(`${API_BASE_URL}/api/v1/generations${params}`);
     if (!res.ok) return;
     const data = (await res.json()) as {items: HistoryItem[]; cursor: string | null};
     set({

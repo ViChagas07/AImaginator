@@ -1,5 +1,7 @@
 import {create} from "zustand";
 import {API_BASE_URL} from "@/lib/constants";
+import {authedFetch} from "@/lib/api";
+import {clearSession, getAccessToken} from "@/lib/auth-token";
 
 export type AuthUser = {
   id: string;
@@ -14,6 +16,7 @@ type AuthState = {
   user: AuthUser | null;
   status: AuthStatus;
   fetchMe: () => Promise<void>;
+  logout: () => void;
   loginUrl: string;
 };
 
@@ -24,8 +27,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   async fetchMe() {
     set({status: "loading"});
+    if (!getAccessToken()) {
+      set({user: null, status: "unauthenticated"});
+      return;
+    }
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await authedFetch(`${API_BASE_URL}/api/v1/auth/me`, {
+        cache: "no-store",
+      });
       if (res.ok) {
         const user = (await res.json()) as AuthUser;
         set({user, status: "authenticated"});
@@ -35,5 +44,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       set({user: null, status: "unauthenticated"});
     }
+  },
+
+  logout() {
+    clearSession();
+    set({user: null, status: "unauthenticated"});
   },
 }));

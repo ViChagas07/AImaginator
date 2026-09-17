@@ -110,11 +110,22 @@ def get_oidc_service(
 OIDCDep = Annotated[GoogleOIDCService, Depends(get_oidc_service)]
 
 
-async def get_current_user(
-    request: Request, jwt: JWTDep, users: UserRepoDep
+async def authenticate_user(
+    request: Request,
+    jwt: JWTDep,
+    users: UserRepoDep,
+    *,
+    query_token: str | None = None,
 ) -> User:
-    """Resolve o usuario autenticado: Authorization Bearer OU cookie httpOnly."""
-    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    """Resolve o usuario autenticado.
+
+    Precedencia: token de query (SSE, que nao suporta headers customizados),
+    depois `Authorization: Bearer`, depois cookie httpOnly (retrocompatibilidade
+    com o fluxo antigo em ambiente same-origin).
+    """
+    token = query_token
+    if not token:
+        token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
     if not token:
         token = request.cookies.get(ACCESS_COOKIE, "")
     if not token:
@@ -124,6 +135,12 @@ async def get_current_user(
     if user is None:
         raise UnauthorizedError("Usuario da sessao nao existe mais.")
     return user
+
+
+async def get_current_user(
+    request: Request, jwt: JWTDep, users: UserRepoDep
+) -> User:
+    return await authenticate_user(request, jwt, users)
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]

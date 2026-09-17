@@ -4,8 +4,10 @@ O worker Celery publica progresso no Redis Pub/Sub; este endpoint
 apenas repassa (bridge) o canal para text/event-stream — qualquer
 replica da API serve o stream, nao importa qual worker processou.
 
-Encerra o stream quando chega evento terminal (done/failed) ou apos
-o timeout maximo (evita conexoes eternas segurando recursos).
+Autenticacao: EventSource nao suporta headers customizados, entao o
+access token vem via query param `token` (com fallback para
+Authorization/cookie). Encerra o stream quando chega evento terminal
+(done/failed) ou apos o timeout maximo (evita conexoes eternas).
 """
 
 from __future__ import annotations
@@ -15,10 +17,16 @@ import json
 from collections.abc import AsyncIterator
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Request
 from sse_starlette.sse import EventSourceResponse
 
-from apps.api.dependencies import CurrentUserDep, GenerationRepoDep, RedisDep
+from apps.api.dependencies import (
+    GenerationRepoDep,
+    JWTDep,
+    RedisDep,
+    UserRepoDep,
+    authenticate_user,
+)
 from modules.image_generation.application.ports import stream_channel
 from modules.image_generation.contracts import GetGeneration
 
@@ -31,12 +39,16 @@ router = APIRouter(prefix="/api/v1", tags=["streaming"])
 @router.get("/generations/{generation_id}/stream", include_in_schema=False)
 async def stream_generation(
     generation_id: UUID,
-    current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     redis: RedisDep,
+    jwt: JWTDep,
+    users: UserRepoDep,
+    request: Request,
+    token: str | None = Query(default=None),
 ) -> EventSourceResponse:
     # Valida ownership antes de abrir o stream (nao vaza canal a terceiros).
-    await GetGeneration(generations).execute(user_id=current_user.id, generation_id=generation_id)
+    user = await authenticate_user(request, jwt, users, query_token=token)
+    await GetGeneration(generations).execute(user_id=user.id, generation_id=generation_id)
 
     async def event_generator() -> AsyncIterator[dict]:
         pubsub = redis.pubsub()

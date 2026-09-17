@@ -1,20 +1,24 @@
 """Rotas de autenticacao SSO (Google OIDC) — spec secao 15.
 
 - /auth/google/login: redireciona para o Google (Authorization Code + PKCE).
-- /auth/google/callback: troca o code, provisiona o usuario, grava os
-  tokens da SESSAO PROPRIA em cookies httpOnly/Secure/SameSite=Lax e
-  redireciona para o frontend. Nenhum token do Google sai do backend.
+- /auth/google/callback: troca o code, provisiona o usuario, emite os tokens
+  da SESSAO PROPRIA e os devolve ao frontend no fragmento da URL (hash).
+  Nenhum token do Google sai do backend.
 - /auth/refresh, /auth/logout, /auth/me.
+
+Sessao por token: o frontend guarda access/refresh em localStorage e envia
+o access em `Authorization: Bearer` (sem cookies httpOnly cross-domain).
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, Request, Response
+from urllib.parse import urlencode
+
+from fastapi import APIRouter, Depends, Query, Response
 from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 
 from apps.api.dependencies import (
-    ACCESS_COOKIE,
-    REFRESH_COOKIE,
     CurrentUserDep,
     JWTDep,
     OIDCDep,
@@ -24,23 +28,16 @@ from apps.api.dependencies import (
 )
 from modules.auth.application.use_cases import (
     CompleteGoogleLogin,
-    GetAuthenticatedUser,
     RefreshSession,
     StartGoogleLogin,
 )
 from modules.rate_limiting.token_bucket import TokenBucket
-from modules.users.contracts import User
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-def _cookie_params(settings) -> dict:
-    return {
-        "httponly": True,
-        "secure": settings.is_production,
-        "samesite": "lax",
-        "path": "/",
-    }
+class RefreshInput(BaseModel):
+    refresh_token: str
 
 
 @router.get("/google/login", include_in_schema=False)
@@ -55,7 +52,6 @@ async def google_login(
 
 @router.get("/google/callback", include_in_schema=False)
 async def google_callback(
-    response: Response,
     oidc: OIDCDep,
     jwt: JWTDep,
     users: UserRepoDep,
@@ -69,44 +65,34 @@ async def google_callback(
         oidc=oidc, jwt_service=jwt, user_repository=users
     ).execute(code=code, state=state)
 
-    redirect = RedirectResponse(f"{settings.frontend_base_url}/pt-BR/studio", status_code=302)
-    redirect.set_cookie(
-        ACCESS_COOKIE,
-        tokens.access_token,
-        max_age=settings.jwt_access_token_ttl_seconds,
-        **_cookie_params(settings),
+    # Sessao por token: devolve access/refresh no fragmento da URL (o hash
+    # nao vai ao servidor nem a logs). O frontend os persiste em localStorage
+    # e os envia em `Authorization: Bearer`.
+    fragment = urlencode(
+        {
+            "access_token": tokens.access_token,
+            "refresh_token": tokens.refresh_token,
+            "access_expires_at": int(tokens.access_expires_at.timestamp()),
+            "refresh_expires_at": int(tokens.refresh_expires_at.timestamp()),
+        }
     )
-    redirect.set_cookie(
-        REFRESH_COOKIE,
-        tokens.refresh_token,
-        max_age=settings.jwt_refresh_token_ttl_seconds,
-        **_cookie_params(settings),
+    return RedirectResponse(
+        f"{settings.frontend_base_url}/pt-BR/auth/callback#{fragment}",
+        status_code=302,
     )
-    return redirect
 
 
 @router.post("/refresh", include_in_schema=False)
-async def refresh_session(
-    request: Request, response: Response, jwt: JWTDep, settings: SettingsDep
-) -> Response:
-    refresh_token = request.cookies.get(REFRESH_COOKIE, "")
-    access, _exp = await RefreshSession(jwt).execute(refresh_token)
-    response.set_cookie(
-        ACCESS_COOKIE,
-        access,
-        max_age=settings.jwt_access_token_ttl_seconds,
-        **_cookie_params(settings),
-    )
-    response.status_code = 204
-    return response
+async def refresh_session(payload: RefreshInput, jwt: JWTDep) -> dict:
+    access, access_exp = await RefreshSession(jwt).execute(payload.refresh_token)
+    return {"access_token": access, "access_expires_at": access_exp}
 
 
 @router.post("/logout", include_in_schema=False)
-async def logout(settings: SettingsDep) -> Response:
-    response = Response(status_code=204)
-    response.delete_cookie(ACCESS_COOKIE, path="/")
-    response.delete_cookie(REFRESH_COOKIE, path="/")
-    return response
+async def logout() -> Response:
+    # Sessao stateless por token: logout e apenas descartar os tokens no
+    # cliente (o backend nao mantem estado de sessao).
+    return Response(status_code=204)
 
 
 @router.get("/me")
