@@ -17,6 +17,7 @@ export type HistoryItem = {
 
 type GenerationState = {
   prompt: string;
+  imageBase64: string | undefined;
   status: GenerationStatus;
   progress: number;
   resultUrl: string | null;
@@ -27,12 +28,14 @@ type GenerationState = {
   loadHistory: () => Promise<void>;
   reset: () => void;
   setPrompt: (p: string) => void;
+  setImage: (image: string | undefined) => void;
 };
 
 let source: EventSource | null = null;
 
 export const useGenerationStore = create<GenerationState>((set, get) => ({
   prompt: "",
+  imageBase64: undefined,
   status: "idle",
   progress: 0,
   resultUrl: null,
@@ -42,10 +45,12 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
   setPrompt: (prompt) => set({prompt}),
 
+  setImage: (imageBase64) => set({imageBase64}),
+
   reset: () => {
     source?.close();
     source = null;
-    set({prompt: "", status: "idle", progress: 0, resultUrl: null, error: null});
+    set({prompt: "", imageBase64: undefined, status: "idle", progress: 0, resultUrl: null, error: null});
   },
 
   async startGeneration(prompt, imageBase64) {

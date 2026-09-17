@@ -7,6 +7,7 @@ import {StepsSection} from "@/components/home/steps-section";
 import {ExamplesGrid} from "@/components/home/examples-grid";
 import {FaqSection} from "@/components/home/faq-section";
 import {SITE_URL} from "@/lib/constants";
+import {languageAlternates, openGraphLocale} from "@/lib/i18n";
 
 const HERO_IMAGES = [
   {src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=400&q=60", alt: ""},
@@ -28,10 +29,7 @@ export async function generateMetadata({
     description: t("subheadline"),
     alternates: {
       canonical,
-      languages: {
-        en: `${SITE_URL}/en`,
-        "pt-BR": `${SITE_URL}/pt-BR`,
-      },
+      languages: languageAlternates("/"),
     },
     openGraph: {
       type: "website",
@@ -39,7 +37,7 @@ export async function generateMetadata({
       title: t("headline"),
       description: t("subheadline"),
       siteName: "AImaginator",
-      locale: locale === "pt-BR" ? "pt_BR" : "en_US",
+      locale: openGraphLocale(locale),
     },
     twitter: {
       card: "summary_large_image",

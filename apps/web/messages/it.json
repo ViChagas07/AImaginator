@@ -1,0 +1,221 @@
+{
+  "common": {
+    "brand": "AImaginator",
+    "skipLink": "Vai al contenuto principale",
+    "footerNote": "AImaginator — generazione e modifica di immagini con IA.",
+    "attachImage": "Allega immagine",
+    "removeImage": "Rimuovi immagine",
+    "attachedImageAlt": "Immagine allegata"
+  },
+  "nav": {
+    "gallery": "Galleria",
+    "studio": "Studio",
+    "login": "Immaginiamo! ✨"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Accedi al tuo account",
+      "subtitle": "Inserisci la tua email qui sotto per accedere",
+      "footerText": "Non hai un account?",
+      "linkText": "Registrati"
+    },
+    "signUp": {
+      "title": "Crea un account",
+      "subtitle": "Inserisci i tuoi dati qui sotto per registrarti",
+      "footerText": "Hai già un account?",
+      "linkText": "Accedi"
+    },
+    "email": "Email",
+    "emailPlaceholder": "tu@esempio.com",
+    "password": "Password",
+    "fullName": "Nome completo",
+    "fullNamePlaceholder": "Mario Rossi",
+    "signInButton": "Accedi",
+    "signUpButton": "Registrati",
+    "showPassword": "Mostra password",
+    "hidePassword": "Nascondi password",
+    "orContinue": "Oppure continua con",
+    "googleButton": "Continua con Google",
+    "googleIconAlt": "Icona Google"
+  },
+  "landing": {
+    "headline": "Trasforma le parole in immagini.",
+    "logoAlt": "Logo di AImaginator",
+    "subheadline": "AImaginator è un generatore di immagini IA che crea e modifica immagini a partire da prompt in linguaggio naturale. Descrivi ciò che vuoi, genera in pochi secondi e perfeziona il risultato in modo iterativo.",
+    "promptPlaceholder": "Descrivi l'immagine che vuoi creare...",
+    "promptButton": "Crea immagine",
+    "promptStatusLoading": "Apertura dello studio...",
+    "stepsTitle": "Come funziona",
+    "steps": [
+      {
+        "title": "Descrivere",
+        "description": "Scrivi un prompt in linguaggio naturale che descriva l'immagine desiderata. Più i dettagli sono specifici, migliore sarà il risultato.",
+        "imageAlt": "Esempio di immagine IA di architettura bianca minimalista."
+      },
+      {
+        "title": "Generare",
+        "description": "Il modello IA elabora il prompt e produce una prima immagine in tempo reale, con l'avanzamento mostrato passo dopo passo.",
+        "imageAlt": "Esempio di immagine IA di un paesaggio montano con un lago."
+      },
+      {
+        "title": "Perfezionare",
+        "description": "Regola il prompt o carica un'immagine per modificare i dettagli in modo iterativo finché il risultato non corrisponde alla tua intenzione.",
+        "imageAlt": "Esempio di immagine IA della luce del sole che attraversa una foresta."
+      }
+    ],
+    "examplesTitle": "Esempi dalla galleria",
+    "examples": [
+      {
+        "prompt": "Barche da pesca che galleggiano su acqua turchese cristallina, viste dall'alto",
+        "imageAlt": "Immagine IA: barche da pesca su acqua turchese viste dall'alto."
+      },
+      {
+        "prompt": "Ritratto macro in primo piano di un gatto in una strada di città",
+        "imageAlt": "Immagine IA: ritratto in primo piano di un gatto in una strada di città."
+      },
+      {
+        "prompt": "Montagne innevate sotto un cielo stellato con la Via Lattea",
+        "imageAlt": "Immagine IA: montagne innevate sotto un cielo stellato."
+      },
+      {
+        "prompt": "Ritratto artistico di una persona illuminata da una morbida luce al neon",
+        "imageAlt": "Immagine IA: ritratto artistico con morbida luce al neon."
+      },
+      {
+        "prompt": "Un campo di fiori colorati all'alba, luce calda",
+        "imageAlt": "Immagine IA: un campo di fiori colorati all'alba."
+      }
+    ],
+    "previewDialogTitle": "Prompt utilizzato",
+    "closePreview": "Chiudi",
+    "faqTitle": "Domande frequenti",
+    "faq": [
+      {
+        "question": "Cos'è AImaginator?",
+        "answer": "AImaginator è un'app web e un'API che genera e modifica immagini con l'IA a partire da prompt in linguaggio naturale. Descrivi l'immagine e il modello la produce in tempo reale."
+      },
+      {
+        "question": "Devo creare un account?",
+        "answer": "Sì. Accedi con il tuo account Google per generare immagini. La galleria pubblica è accessibile senza accesso."
+      },
+      {
+        "question": "Posso modificare immagini esistenti?",
+        "answer": "Sì. Nello studio puoi caricare un'immagine e descrivere le modifiche desiderate, iterando sul risultato."
+      },
+      {
+        "question": "Come funziona l'avanzamento in tempo reale?",
+        "answer": "Lo stato della generazione viene trasmesso dall'API tramite server-sent events (SSE), mostrando la percentuale di avanzamento finché l'immagine non è pronta o si verifica un errore."
+      }
+    ]
+  },
+  "studio": {
+    "title": "Studio",
+    "loginRequired": "Accedi con Google per usare lo studio di generazione.",
+    "loginButton": "Accedi con Google",
+    "promptLabel": "Prompt",
+    "promptPlaceholder": "Descrivi l'immagine...",
+    "uploadLabel": "Immagine opzionale da modificare",
+    "uploadHint": "PNG o JPEG — opzionale, inviata insieme al prompt per modificarla.",
+    "generateButton": "Genera",
+    "generatingButton": "Generazione...",
+    "progressLabel": "Avanzamento della generazione",
+    "status": {
+      "idle": "Inattivo. Descrivi un'immagine per iniziare.",
+      "queued": "In coda. In attesa di un worker disponibile.",
+      "processing": "Elaborazione della generazione.",
+      "done": "Completato. L'immagine è stata generata correttamente.",
+      "failed": "La generazione non è riuscita."
+    },
+    "resultAlt": "Risultato generato dal tuo prompt.",
+    "historyTitle": "Generazioni recenti",
+    "historyEmpty": "Nessuna generazione finora.",
+    "errorLabel": "Errore"
+  },
+  "gallery": {
+    "title": "Galleria pubblica",
+    "description": "Immagini generate dalla community di AImaginator. Ogni scheda mostra il prompt usato per creare l'immagine.",
+    "loadMore": "Carica altro",
+    "empty": "Nessuna immagine pubblica ancora.",
+    "by": "di"
+  },
+  "errors": {
+    "generic": "Qualcosa è andato storto. Riprova."
+  },
+  "footer": {
+    "tagline": "Trasforma le parole in immagini.",
+    "productTitle": "Prodotto",
+    "gallery": "Galleria",
+    "howItWorks": "Come funziona",
+    "pricing": "Prezzi",
+    "apiDocs": "API/Docs",
+    "newsletterTitle": "Newsletter",
+    "newsletterDescription": "Ricevi novità, tutorial e aggiornamenti sulla generazione di immagini con IA.",
+    "newsletterLabel": "Indirizzo email",
+    "newsletterPlaceholder": "La tua migliore email",
+    "newsletterButton": "Iscriviti",
+    "newsletterSuccess": "Iscrizione confermata. Benvenuto!",
+    "socialAria": {
+      "instagram": "AImaginator su Instagram",
+      "x": "AImaginator su X (Twitter)",
+      "linkedin": "AImaginator su LinkedIn",
+      "github": "AImaginator su GitHub"
+    },
+    "copyright": "© {year} AImaginator. Tutti i diritti riservati."
+  },
+  "legal": {
+    "tabsLabel": "Pagine legali",
+    "tabs": {
+      "terms": "Termini di utilizzo",
+      "privacy": "Informativa sulla privacy",
+      "cookies": "Cookie"
+    },
+    "privacy": {
+      "kicker": "IL NOSTRO IMPEGNO PER I TUOI DATI",
+      "title": "Informativa sulla privacy",
+      "description": "Scopri come AImaginator raccoglie, usa, condivide e protegge i tuoi dati personali, in conformità con la LGPD.",
+      "updated": "Ultimo aggiornamento: settembre 2026",
+      "sections": [
+        {
+          "title": "Dichiarazione personale",
+          "body": "In AImaginator prendiamo sul serio la tua privacy. Questa informativa spiega, in modo trasparente, quali dati raccogliamo, perché li raccogliamo, con chi li condividiamo e quali diritti hai su di essi, in linea con la Legge Generale sulla Protezione dei Dati del Brasile (LGPD, Legge n. 13.709/2018). Utilizzando i nostri servizi, accetti le pratiche qui descritte."
+        },
+        {
+          "title": "Cosa sono i cookie?",
+          "body": "I cookie sono piccoli file di testo memorizzati nel tuo browser quando visiti un sito web. Ci aiutano a ricordare le tue preferenze, a mantenere attiva la sessione di accesso e a capire come usi AImaginator per migliorare continuamente l'esperienza."
+        },
+        {
+          "title": "Perché usiamo i cookie",
+          "body": "Utilizziamo cookie strettamente necessari per l'autenticazione (per mantenerti connesso), cookie di preferenza (come la lingua scelta, pt-BR o en) e cookie di prestazioni/analisi, ove possibile anonimizzati, per misurare l'utilizzo della piattaforma e rilevare malfunzionamenti. Puoi disattivare i cookie nelle impostazioni del browser, ma alcune funzionalità, come l'accesso, potrebbero smettere di funzionare."
+        },
+        {
+          "title": "Quali informazioni raccogliamo nello specifico",
+          "body": "Raccogliamo (i) dati del tuo account Google usati al momento dell'accesso, come nome ed email, tramite OAuth 2.0; (ii) dati di utilizzo, come i prompt inviati, le pagine visitate e le interazioni; e (iii) dati tecnici, come indirizzo IP, tipo di browser e log di accesso, usati per la sicurezza e la prevenzione degli abusi. Non raccogliamo direttamente dati finanziari o di pagamento."
+        },
+        {
+          "title": "Con chi condividiamo le tue informazioni",
+          "body": "Condividiamo i dati solo con fornitori essenziali per il servizio: Google (per l'autenticazione OAuth), fornitori di infrastruttura e hosting (come database, code e archiviazione) e fornitori di IA che eseguono le pipeline di generazione (ad esempio, pipeline orchestrate con CrewAI e LangChain) per elaborare i tuoi prompt. Queste terze parti agiscono come responsabili del trattamento e ricevono solo il minimo necessario, sotto obblighi di riservatezza e protezione dei dati."
+        },
+        {
+          "title": "Media che carichi e generi",
+          "body": "Le immagini che carichi per la modifica e quelle generate dai tuoi prompt vengono elaborate per fornire il servizio. Possono essere archiviate temporaneamente per consentire la cronologia delle generazioni e la modifica iterativa. Quando pubblichi un'immagine nella galleria pubblica, diventa visibile ad altri utenti, insieme al prompt associato."
+        },
+        {
+          "title": "Divulgazione delle informazioni",
+          "body": "Non vendiamo i tuoi dati personali. Possiamo divulgare informazioni solo quando: (i) richiesto dalla legge, da un ordine del tribunale o da un'autorità competente; (ii) necessario per proteggere diritti, proprietà o sicurezza di AImaginator, dei nostri utenti o del pubblico; oppure (iii) necessario per indagare e prevenire frodi, abusi o violazioni dei nostri Termini di utilizzo."
+        },
+        {
+          "title": "I tuoi diritti come interessato (LGPD)",
+          "body": "Ai sensi della LGPD, puoi richiedere: conferma dell'esistenza del trattamento, accesso ai tuoi dati, correzione di dati incompleti o non aggiornati, anonimizzazione, blocco o cancellazione di dati non necessari, portabilità verso un altro fornitore e revoca del consenso. Per esercitare uno qualsiasi di questi diritti, contattaci tramite l'email nella sezione Contatti/DPO."
+        },
+        {
+          "title": "Aggiornamenti di questa informativa",
+          "body": "Possiamo aggiornare periodicamente questa Informativa sulla privacy per riflettere modifiche ai nostri servizi, alla normativa o alle pratiche di trattamento dei dati. Pubblicheremo la versione aggiornata su questa pagina con la data di aggiornamento. Le modifiche sostanziali saranno comunicate via email o tramite un avviso nel prodotto, ove applicabile."
+        },
+        {
+          "title": "Contatti / DPO",
+          "body": "Domande, richieste o reclami sulla privacy possono essere inviati al nostro Responsabile della Protezione dei Dati (DPO) all'indirizzo privacy@aimaginator.app. Risponderemo il prima possibile e, in ogni caso, entro i termini previsti dalla LGPD."
+        }
+      ]
+    }
+  }
+}

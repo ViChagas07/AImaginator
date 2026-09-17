@@ -2,12 +2,41 @@
   "common": {
     "brand": "AImaginator",
     "skipLink": "Skip to main content",
-    "footerNote": "AImaginator — AI image generation and editing."
+    "footerNote": "AImaginator — AI image generation and editing.",
+    "attachImage": "Attach image",
+    "removeImage": "Remove image",
+    "attachedImageAlt": "Attached image"
   },
   "nav": {
     "gallery": "Gallery",
     "studio": "Studio",
     "login": "Let's Imagine! ✨"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Sign in to your account",
+      "subtitle": "Enter your email below to sign in",
+      "footerText": "Don't have an account?",
+      "linkText": "Sign up"
+    },
+    "signUp": {
+      "title": "Create an account",
+      "subtitle": "Enter your details below to sign up",
+      "footerText": "Already have an account?",
+      "linkText": "Sign in"
+    },
+    "email": "Email",
+    "emailPlaceholder": "m@example.com",
+    "password": "Password",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "John Doe",
+    "signInButton": "Sign In",
+    "signUpButton": "Sign Up",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "orContinue": "Or continue with",
+    "googleButton": "Continue with Google",
+    "googleIconAlt": "Google icon"
   },
   "landing": {
     "headline": "Turn words into images.",
@@ -111,5 +140,82 @@
   },
   "errors": {
     "generic": "Something went wrong. Try again."
+  },
+  "footer": {
+    "tagline": "Turn words into images.",
+    "productTitle": "Product",
+    "gallery": "Gallery",
+    "howItWorks": "How it works",
+    "pricing": "Pricing",
+    "apiDocs": "API/Docs",
+    "newsletterTitle": "Newsletter",
+    "newsletterDescription": "Get news, tutorials, and updates about AI image generation.",
+    "newsletterLabel": "Email address",
+    "newsletterPlaceholder": "Your best email",
+    "newsletterButton": "Subscribe",
+    "newsletterSuccess": "Subscription confirmed. Welcome!",
+    "socialAria": {
+      "instagram": "AImaginator on Instagram",
+      "x": "AImaginator on X (Twitter)",
+      "linkedin": "AImaginator on LinkedIn",
+      "github": "AImaginator on GitHub"
+    },
+    "copyright": "© {year} AImaginator. All rights reserved."
+  },
+  "legal": {
+    "tabsLabel": "Legal pages",
+    "tabs": {
+      "terms": "Terms of Use",
+      "privacy": "Privacy Policy",
+      "cookies": "Cookies"
+    },
+    "privacy": {
+      "kicker": "OUR COMMITMENT TO YOUR DATA",
+      "title": "Privacy Policy",
+      "description": "Learn how AImaginator collects, uses, shares, and protects your personal data, in compliance with the LGPD.",
+      "updated": "Last updated: September 2026",
+      "sections": [
+        {
+          "title": "Personal Statement",
+          "body": "At AImaginator, we take your privacy seriously. This policy explains, transparently, what data we collect, why we collect it, with whom we share it, and what rights you have over it, in line with Brazil's General Data Protection Law (LGPD, Law No. 13,709/2018). By using our services, you agree to the practices described here."
+        },
+        {
+          "title": "What are cookies?",
+          "body": "Cookies are small text files stored in your browser when you visit a website. They help us remember your preferences, keep your login session active, and understand how you use AImaginator so we can continually improve the experience."
+        },
+        {
+          "title": "Why we use cookies",
+          "body": "We use strictly necessary cookies for authentication (keeping you signed in), preference cookies (such as your chosen language, pt-BR or en), and, where possible anonymized, performance/analytics cookies to measure platform usage and detect failures. You can disable cookies in your browser settings, but some features, such as login, may stop working."
+        },
+        {
+          "title": "What information we specifically collect",
+          "body": "We collect (i) data from your Google account used at login, such as name and email, via OAuth 2.0; (ii) usage data, such as submitted prompts, pages visited, and interactions; and (iii) technical data, such as IP address, browser type, and access logs, used for security and abuse prevention. We do not collect financial or payment data directly."
+        },
+        {
+          "title": "With whom we share your information",
+          "body": "We share data only with providers essential to the service: Google (for OAuth authentication), infrastructure and hosting providers (such as databases, queues, and storage), and AI providers that run the generation pipelines (for example, pipelines orchestrated with CrewAI and LangChain) to process your prompts. These third parties act as processors and receive only the minimum necessary, under confidentiality and data-protection obligations."
+        },
+        {
+          "title": "Media you upload and generate",
+          "body": "The images you upload for editing and the images generated from your prompts are processed to provide the service. They may be stored temporarily to enable generation history and iterative editing. When you publish an image to the public gallery, it becomes visible to other users, together with its associated prompt."
+        },
+        {
+          "title": "Disclosure of information",
+          "body": "We do not sell your personal data. We may disclose information only when: (i) required by law, court order, or a competent authority; (ii) necessary to protect the rights, property, or safety of AImaginator, our users, or the public; or (iii) necessary to investigate and prevent fraud, abuse, or violations of our Terms of Use."
+        },
+        {
+          "title": "Your rights as a data subject (LGPD)",
+          "body": "Under the LGPD, you may request: confirmation of the existence of processing, access to your data, correction of incomplete or outdated data, anonymization, blocking, or deletion of unnecessary data, portability to another provider, and revocation of consent. To exercise any of these rights, contact us using the email in the Contact/DPO section."
+        },
+        {
+          "title": "Updates to this policy",
+          "body": "We may update this Privacy Policy periodically to reflect changes to our services, legislation, or data-processing practices. We will publish the revised version on this page with the update date. Material changes will be communicated by email or via an in-product notice, where applicable."
+        },
+        {
+          "title": "Contact / DPO",
+          "body": "Questions, requests, or complaints about privacy can be sent to our Data Protection Officer (DPO) at privacy@aimaginator.app. We will respond as soon as possible and, in any case, within the deadlines set by the LGPD."
+        }
+      ]
+    }
   }
 }

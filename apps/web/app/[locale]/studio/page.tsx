@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import {getTranslations} from "next-intl/server";
 import {StudioApp} from "@/components/studio/studio-app";
 import {SITE_URL} from "@/lib/constants";
+import {languageAlternates} from "@/lib/i18n";
 
 export async function generateMetadata({
   params,
@@ -15,10 +16,7 @@ export async function generateMetadata({
     robots: {index: false},
     alternates: {
       canonical,
-      languages: {
-        en: `${SITE_URL}/en/studio`,
-        "pt-BR": `${SITE_URL}/pt-BR/studio`,
-      },
+      languages: languageAlternates("/studio"),
     },
     openGraph: {
       title: t("title"),

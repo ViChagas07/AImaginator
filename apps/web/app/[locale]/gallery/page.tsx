@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import {getTranslations} from "next-intl/server";
 import {GalleryList} from "@/components/gallery/gallery-list";
 import {API_BASE_URL, SITE_URL} from "@/lib/constants";
+import {languageAlternates} from "@/lib/i18n";
 import type {GalleryItem} from "@/stores/gallery";
 
 export async function generateMetadata({
@@ -34,10 +35,7 @@ export async function generateMetadata({
     description: t("description"),
     alternates: {
       canonical,
-      languages: {
-        en: `${SITE_URL}/en/gallery`,
-        "pt-BR": `${SITE_URL}/pt-BR/gallery`,
-      },
+      languages: languageAlternates("/gallery"),
     },
     openGraph: {
       title: t("title"),

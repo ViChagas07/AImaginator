@@ -2,10 +2,12 @@
 
 @theme {
   --color-canvas: #0B0B12;
+  --color-canvas-raised: #0D0D14;
   --color-surface: #16161F;
   --color-surface-raised: #1E1E29;
   --color-foreground: #F2F2F7;
   --color-muted: #8E8E9C;
+  --color-lilac: #A78BFA;
   --color-accent-from: #FF3D8A;
   --color-accent-to: #4C6FFF;
 
@@ -83,6 +85,31 @@
 
 .bg-cta-gradient {
   background-image: var(--gradient-cta);
+}
+
+/*
+ * Footer social icon: reveals the primary accent gradient on hover/focus.
+ * Kept as a plain class because the gradient utilities are defined above and
+ * are not Tailwind variants, so `hover:bg-accent-gradient` would not compile.
+ */
+.social-icon-link {
+  transition:
+    background-image 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.social-icon-link:hover,
+.social-icon-link:focus-visible {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-accent-from),
+    var(--color-accent-to)
+  );
+  border-color: transparent;
+  color: var(--color-foreground);
+  transform: translateY(-1px);
 }
 
 html {

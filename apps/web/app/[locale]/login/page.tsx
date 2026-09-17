@@ -1,20 +1,21 @@
 import type {Metadata} from "next";
+import {getTranslations} from "next-intl/server";
 import {AuthUI} from "@/components/ui/auth-ui";
 import {SITE_URL} from "@/lib/constants";
+import {languageAlternates} from "@/lib/i18n";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/login">): Promise<Metadata> {
   const {locale} = await params;
+  const t = await getTranslations("auth");
+  const canonical = `${SITE_URL}/${locale}/login`;
   return {
-    title: "Login",
+    title: t("signIn.title"),
     robots: {index: false},
     alternates: {
-      canonical: `${SITE_URL}/${locale}/login`,
-      languages: {
-        en: `${SITE_URL}/en/login`,
-        "pt-BR": `${SITE_URL}/pt-BR/login`,
-      },
+      canonical,
+      languages: languageAlternates("/login"),
     },
   };
 }

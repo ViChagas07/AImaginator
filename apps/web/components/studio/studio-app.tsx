@@ -1,17 +1,18 @@
 "use client";
 
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useRef} from "react";
 import {useTranslations} from "next-intl";
-import {Loader2, Send, TriangleAlert} from "lucide-react";
+import {Loader2, Send, TriangleAlert, X} from "lucide-react";
 import {useAuthStore} from "@/stores/auth";
 import {useGenerationStore} from "@/stores/generation";
 
 export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const t = useTranslations("studio");
+  const tCommon = useTranslations("common");
   const auth = useAuthStore();
   const gen = useGenerationStore();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [imageBase64, setImageBase64] = useState<string | undefined>(undefined);
+  const imageBase64 = gen.imageBase64;
 
   useEffect(() => {
     void auth.fetchMe();
@@ -32,8 +33,9 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
     const file = event.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setImageBase64(reader.result as string);
+    reader.onload = () => gen.setImage(reader.result as string);
     reader.readAsDataURL(file);
+    event.target.value = "";
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -96,6 +98,25 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
           <p id="upload-hint" className="mt-1 text-xs text-muted">
             {t("uploadHint")}
           </p>
+          {imageBase64 && (
+            <div className="relative mt-3 inline-block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageBase64}
+                alt={tCommon("attachedImageAlt")}
+                className="max-h-40 rounded-lg border border-foreground/10"
+              />
+              <button
+                type="button"
+                onClick={() => gen.setImage(undefined)}
+                aria-label={tCommon("removeImage")}
+                title={tCommon("removeImage")}
+                className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full border border-foreground/10 bg-surface text-muted hover:text-foreground focus-visible:outline-none"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
+          )}
         </div>
         <button
           type="submit"

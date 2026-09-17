@@ -7,6 +7,7 @@ import {routing} from "@/i18n/routing";
 import {SiteHeader} from "@/components/layout/site-header";
 import {SiteFooter} from "@/components/layout/site-footer";
 import {SITE_URL} from "@/lib/constants";
+import {languageAlternates} from "@/lib/i18n";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -22,23 +23,18 @@ const geistMono = Geist_Mono({
 export async function generateMetadata({
   params,
 }: LayoutProps<"/[locale]">): Promise<Metadata> {
-  const {locale} = await params;
+  await params;
+  const t = await getTranslations("common");
   return {
     metadataBase: new URL(SITE_URL),
     alternates: {
-      languages: {
-        en: `${SITE_URL}/en`,
-        "pt-BR": `${SITE_URL}/pt-BR`,
-      },
+      languages: languageAlternates("/"),
     },
     title: {
       default: "AImaginator",
       template: "%s — AImaginator",
     },
-    description:
-      locale === "pt-BR"
-        ? "AImaginator gera e edita imagens com IA a partir de prompts em linguagem natural."
-        : "AImaginator generates and edits images with AI from natural-language prompts.",
+    description: t("footerNote"),
   };
 }
 

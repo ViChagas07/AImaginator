@@ -2,12 +2,41 @@
   "common": {
     "brand": "AImaginator",
     "skipLink": "Pular para o conteúdo principal",
-    "footerNote": "AImaginator — geração e edição de imagens com IA."
+    "footerNote": "AImaginator — geração e edição de imagens com IA.",
+    "attachImage": "Anexar imagem",
+    "removeImage": "Remover imagem",
+    "attachedImageAlt": "Imagem anexada"
   },
   "nav": {
     "gallery": "Galeria",
     "studio": "Estúdio",
     "login": "Vamos Imaginar! ✨"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Entre na sua conta",
+      "subtitle": "Informe seu e-mail abaixo para entrar",
+      "footerText": "Não tem uma conta?",
+      "linkText": "Cadastre-se"
+    },
+    "signUp": {
+      "title": "Crie uma conta",
+      "subtitle": "Informe seus dados abaixo para se cadastrar",
+      "footerText": "Já tem uma conta?",
+      "linkText": "Entrar"
+    },
+    "email": "E-mail",
+    "emailPlaceholder": "voce@exemplo.com",
+    "password": "Senha",
+    "fullName": "Nome completo",
+    "fullNamePlaceholder": "João da Silva",
+    "signInButton": "Entrar",
+    "signUpButton": "Cadastrar",
+    "showPassword": "Mostrar senha",
+    "hidePassword": "Ocultar senha",
+    "orContinue": "Ou continue com",
+    "googleButton": "Continuar com o Google",
+    "googleIconAlt": "Ícone do Google"
   },
   "landing": {
     "headline": "Transforme palavras em imagens.",
@@ -111,5 +140,82 @@
   },
   "errors": {
     "generic": "Algo deu errado. Tente novamente."
+  },
+  "footer": {
+    "tagline": "Transforme palavras em imagens.",
+    "productTitle": "Produto",
+    "gallery": "Galeria",
+    "howItWorks": "Como funciona",
+    "pricing": "Preços",
+    "apiDocs": "API/Docs",
+    "newsletterTitle": "Newsletter",
+    "newsletterDescription": "Receba novidades, tutoriais e atualizações sobre geração de imagens com IA.",
+    "newsletterLabel": "Endereço de e-mail",
+    "newsletterPlaceholder": "Seu melhor e-mail",
+    "newsletterButton": "Inscrever",
+    "newsletterSuccess": "Inscrição confirmada. Bem-vindo(a)!",
+    "socialAria": {
+      "instagram": "Instagram do AImaginator",
+      "x": "X (Twitter) do AImaginator",
+      "linkedin": "LinkedIn do AImaginator",
+      "github": "GitHub do AImaginator"
+    },
+    "copyright": "© {year} AImaginator. Todos os direitos reservados."
+  },
+  "legal": {
+    "tabsLabel": "Páginas legais",
+    "tabs": {
+      "terms": "Termos de Uso",
+      "privacy": "Política de Privacidade",
+      "cookies": "Cookies"
+    },
+    "privacy": {
+      "kicker": "SEU COMPROMISSO COM SEUS DADOS",
+      "title": "Política de Privacidade",
+      "description": "Saiba como o AImaginator coleta, usa, compartilha e protege seus dados pessoais, em conformidade com a LGPD.",
+      "updated": "Última atualização: setembro de 2026",
+      "sections": [
+        {
+          "title": "Declaração Pessoal",
+          "body": "No AImaginator, levamos a sua privacidade a sério. Esta política explica, de forma transparente, quais dados coletamos, por que os coletamos, com quem os compartilhamos e quais direitos você tem sobre eles, em conformidade com a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018). Ao usar nossos serviços, você concorda com as práticas descritas aqui."
+        },
+        {
+          "title": "O que são cookies?",
+          "body": "Cookies são pequenos arquivos de texto armazenados no seu navegador quando você visita um site. Eles nos ajudam a lembrar suas preferências, manter sua sessão de login ativa e entender como você usa o AImaginator para melhorarmos continuamente a experiência."
+        },
+        {
+          "title": "Por que usamos cookies",
+          "body": "Usamos cookies estritamente necessários para autenticação (manter você conectado), cookies de preferências (como o idioma escolhido, pt-BR ou en) e cookies de desempenho/análise, sempre que possível anonimizados, para medir o uso da plataforma e identificar falhas. Você pode desativar cookies nas configurações do navegador, mas algumas funcionalidades, como o login, podem deixar de funcionar."
+        },
+        {
+          "title": "Quais informações coletamos especificamente",
+          "body": "Coletamos (i) dados da sua conta Google usados no login, como nome e e-mail, por meio de OAuth 2.0; (ii) dados de uso, como prompts enviados, páginas acessadas e interações; e (iii) dados técnicos, como endereço IP, tipo de navegador e registros (logs) de acesso, usados para segurança e prevenção de abusos. Não coletamos dados financeiros ou de pagamento diretamente."
+        },
+        {
+          "title": "Com quais terceiros compartilhamos suas informações",
+          "body": "Compartilhamos dados apenas com provedores essenciais ao funcionamento do serviço: o Google (para autenticação OAuth), provedores de infraestrutura e hospedagem (como banco de dados, filas e armazenamento) e provedores de IA que executam os pipelines de geração (por exemplo, pipelines orquestrados com CrewAI e LangChain) para processar seus prompts. Esses terceiros atuam como operadores e recebem apenas o mínimo necessário, mediante obrigações de confidencialidade e proteção de dados."
+        },
+        {
+          "title": "Mídia enviada e gerada por você",
+          "body": "As imagens que você envia para edição e as imagens geradas a partir dos seus prompts são processadas para fornecer o serviço. Elas podem ser armazenadas temporariamente para permitir o histórico de gerações e a edição iterativa. Quando você publica uma imagem na galeria pública, ela se torna visível para outros usuários, junto com o prompt associado."
+        },
+        {
+          "title": "Divulgação de informações",
+          "body": "Não vendemos seus dados pessoais. Podemos divulgar informações apenas quando: (i) exigido por lei, ordem judicial ou autoridade competente; (ii) necessário para proteger direitos, propriedade ou segurança do AImaginator, de nossos usuários ou do público; ou (iii) necessário para investigar e prevenir fraudes, abusos ou violações dos nossos Termos de Uso."
+        },
+        {
+          "title": "Seus direitos como titular de dados (LGPD)",
+          "body": "Nos termos da LGPD, você pode solicitar: confirmação da existência de tratamento, acesso aos seus dados, correção de dados incompletos ou desatualizados, anonimização, bloqueio ou eliminação de dados desnecessários, portabilidade para outro fornecedor e revogação do consentimento. Para exercer qualquer um desses direitos, entre em contato pelo e-mail da seção Contato/DPO."
+        },
+        {
+          "title": "Atualizações desta política",
+          "body": "Podemos atualizar esta Política de Privacidade periodicamente para refletir mudanças nos nossos serviços, na legislação ou nas práticas de tratamento de dados. Publicaremos a versão revisada nesta página com a data de atualização. Alterações relevantes serão comunicadas por e-mail ou por aviso no produto, quando aplicável."
+        },
+        {
+          "title": "Contato / DPO",
+          "body": "Dúvidas, solicitações ou reclamações sobre privacidade podem ser enviadas ao nosso Encarregado de Proteção de Dados (DPO) pelo e-mail privacy@aimaginator.app. Responderemos o mais rápido possível e, em qualquer caso, dentro dos prazos previstos na LGPD."
+        }
+      ]
+    }
   }
 }
