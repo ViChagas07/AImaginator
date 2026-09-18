@@ -115,7 +115,8 @@
         "answer": "Le statut de la génération est diffusé depuis l'API via des server-sent events (SSE), affichant le pourcentage de progression jusqu'à ce que l'image soit prête ou qu'une erreur survienne."
       }
     ],
-    "quotaExhausted": "Vos chances de prompt sont épuisées. Prochaine dans"
+    "quotaAvailable": "Chances de prompt : {remaining} sur {total}",
+    "quotaReloadsIn": "Se recharge dans"
   },
   "studio": {
     "title": "Studio",

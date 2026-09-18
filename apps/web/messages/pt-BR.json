@@ -53,7 +53,8 @@
     "promptPlaceholder": "Descreva a imagem que você quer criar...",
     "promptButton": "Criar imagem",
     "promptStatusLoading": "Abrindo o estúdio...",
-    "quotaExhausted": "Suas chances de prompt acabaram. Próxima em",
+    "quotaAvailable": "Chances de prompt: {remaining} de {total}",
+    "quotaReloadsIn": "Recarrega em",
     "stepsTitle": "Como funciona",
     "steps": [
       {

@@ -115,7 +115,8 @@
         "answer": "Der Generierungsstatus wird von der API über server-sent events (SSE) übertragen und zeigt den prozentualen Fortschritt an, bis das Bild fertig ist oder ein Fehler auftritt."
       }
     ],
-    "quotaExhausted": "Deine Prompt-Chancen sind aufgebraucht. Nächste in"
+    "quotaAvailable": "Prompt-Chancen: {remaining} von {total}",
+    "quotaReloadsIn": "Lädt neu in"
   },
   "studio": {
     "title": "Studio",

@@ -115,7 +115,8 @@
         "answer": "تُبث حالة التوليد من واجهة برمجة التطبيقات عبر server-sent events (SSE)، مع عرض نسبة التقدّم حتى تكتمل الصورة أو يُعاد خطأ."
       }
     ],
-    "quotaExhausted": "نفدت فرصك في المطالبة. التالية خلال"
+    "quotaAvailable": "فرص المطالبة: {remaining} من {total}",
+    "quotaReloadsIn": "يُعاد التحميل خلال"
   },
   "studio": {
     "title": "الاستوديو",

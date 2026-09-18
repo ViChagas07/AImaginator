@@ -115,7 +115,8 @@
         "answer": "生成状态通过 server-sent events (SSE) 从 API 流式传输，显示百分比进度，直到图像完成或返回错误。"
       }
     ],
-    "quotaExhausted": "提示次数已用完。下次可用时间"
+    "quotaAvailable": "提示次数：{remaining}/{total}",
+    "quotaReloadsIn": "重新加载于"
   },
   "studio": {
     "title": "工作室",

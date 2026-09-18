@@ -115,7 +115,8 @@
         "answer": "生成ステータスはAPIからserver-sent events (SSE)でストリーミングされ、画像が完成するかエラーが返るまで進行率が表示されます。"
       }
     ],
-    "quotaExhausted": "プロンプトの利用回数が上限に達しました。次回は"
+    "quotaAvailable": "プロンプト回数: {remaining}/{total}",
+    "quotaReloadsIn": "再読み込みまで"
   },
   "studio": {
     "title": "スタジオ",

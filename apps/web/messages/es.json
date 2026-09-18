@@ -115,7 +115,8 @@
         "answer": "El estado de la generación se transmite desde la API mediante server-sent events (SSE), mostrando el porcentaje de progreso hasta que la imagen esté lista o ocurra un error."
       }
     ],
-    "quotaExhausted": "Se agotaron tus oportunidades de prompt. La próxima en"
+    "quotaAvailable": "Oportunidades de prompt: {remaining} de {total}",
+    "quotaReloadsIn": "Se recarga en"
   },
   "studio": {
     "title": "Estudio",
