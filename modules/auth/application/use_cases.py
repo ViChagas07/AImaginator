@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import UUID
 
 from modules.auth.application.jwt_service import JWTService
 from modules.auth.application.oidc_service import GoogleOIDCService
@@ -40,15 +39,15 @@ class CompleteGoogleLogin:
 
         user = await self._users.get_by_google_sub(profile.sub)
         if user is None:
-            user = User(
-                email=profile.email,
-                name=profile.name,
-                google_sub=profile.sub,
-                avatar_url=profile.picture,
-            )
-        else:
-            user.name = profile.name
-            user.avatar_url = profile.picture
+            # Mesmo e-mail ja pode existir como conta de email/senha: vincula o
+            # Google a essa conta em vez de criar uma duplicada (uq_users_email).
+            user = await self._users.get_by_email(profile.email)
+            if user is None:
+                user = User(email=profile.email, name=profile.name, google_sub=profile.sub)
+            else:
+                user.google_sub = profile.sub
+        user.name = profile.name
+        user.avatar_url = profile.picture
         await self._users.save(user)
 
         access, access_exp = self._jwt.issue_access_token(user.id)

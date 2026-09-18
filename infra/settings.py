@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     secret_key: str = Field(min_length=32)
     api_base_url: str = "http://localhost:8000"
     frontend_base_url: str = "http://localhost:3000"
+    # Aplica migrations pendentes (alembic upgrade head) no boot da API.
+    # Desative em ambientes de teste/CI (AUTO_MIGRATE=false).
+    auto_migrate: bool = True
 
     # ---- PostgreSQL ----
     postgres_user: str = "aimaginator"

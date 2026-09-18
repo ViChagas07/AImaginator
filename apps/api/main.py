@@ -7,8 +7,12 @@ sem vazar stack traces ao cliente (detalhes so no Sentry).
 
 from __future__ import annotations
 
+import asyncio
+import subprocess
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request
@@ -29,6 +33,38 @@ from shared_kernel.errors import AImaginatorError
 
 logger = get_logger(__name__)
 
+# Raiz do repositorio (onde ficam alembic.ini e alembic/), resolvida a partir
+# deste arquivo: apps/api/main.py -> apps -> raiz.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _run_pending_migrations() -> None:
+    """Aplica migrations pendentes (alembic upgrade head) antes de servir.
+
+    Roda em subprocesso para isolar o event loop: o alembic/env.py chama
+    asyncio.run(), que nao pode rodar dentro do loop do FastAPI. Falhas sao
+    logadas (nao derrubam o boot) para nao criar crash loop no provedor.
+    """
+    try:
+        result = subprocess.run(  # noqa: S603 - comando fixo (alembic), sem input externo
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except Exception as exc:
+        logger.error("migrations_failed", error=type(exc).__name__, message=str(exc))
+        return
+    if result.returncode != 0:
+        logger.error(
+            "migrations_failed",
+            returncode=result.returncode,
+            stderr=result.stderr[-2000:],
+        )
+        return
+    logger.info("migrations_ok", output=(result.stdout.strip() or "")[-500:])
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -36,6 +72,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     configure_logging(app_env=settings.app_env)
     init_sentry(dsn=settings.sentry_dsn_backend, environment=settings.sentry_environment)
+    if settings.auto_migrate:
+        await asyncio.to_thread(_run_pending_migrations)
     app.state.http_client = httpx.AsyncClient(
         timeout=httpx.Timeout(30.0, connect=5.0),
         limits=httpx.Limits(max_connections=50, max_keepalive_connections=10),
@@ -96,7 +134,12 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
         # Nunca vazar stack trace ao cliente — so ao Sentry/logs (spec secao 7).
-        logger.exception("unhandled_error", path=request.url.path)
+        logger.exception(
+            "unhandled_error",
+            path=request.url.path,
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
         return JSONResponse(
             status_code=500,
             content={"error": {"code": "internal_error", "message": "Erro interno."}},

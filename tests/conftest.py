@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import os
 from uuid import uuid4
 
 import fakeredis.aioredis
 import pytest
 
 from modules.users.contracts import User
+
+# Testes nunca devem disparar `alembic upgrade head` no boot da app
+# (o lifespan da API roda as migrations quando auto_migrate=True).
+os.environ.setdefault("AUTO_MIGRATE", "false")
 
 
 @pytest.fixture
