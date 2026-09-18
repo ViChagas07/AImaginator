@@ -125,6 +125,23 @@ class TestGenerationsAPI:
         )
         assert response.status_code == 413
 
+    def test_cors_preflight_permite_header_anonimo_e_patch(self, api_client) -> None:
+        client, _ = api_client
+        origin = get_settings().frontend_base_url
+        response = client.options(
+            "/api/v1/prompt-quota",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "PATCH",
+                "Access-Control-Request-Headers": "X-Anonymous-Session",
+            },
+        )
+        assert response.status_code == 200
+        allowed_headers = response.headers.get("access-control-allow-headers", "").lower()
+        allowed_methods = response.headers.get("access-control-allow-methods", "").lower()
+        assert "x-anonymous-session" in allowed_headers
+        assert "patch" in allowed_methods
+
 
 @pytest.mark.integration
 class TestPromptQuotaAPI:

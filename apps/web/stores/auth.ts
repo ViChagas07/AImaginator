@@ -7,7 +7,7 @@ import {
   saveSession,
   type SessionTokens,
 } from "@/lib/auth-token";
-import {getAnonymousToken} from "@/lib/anonymous-session";
+import {clearAnonymousToken, getAnonymousToken} from "@/lib/anonymous-session";
 
 export type AuthUser = {
   id: string;
@@ -52,6 +52,7 @@ async function claimAnonymousArts(): Promise<void> {
       headers,
       cache: "no-store",
     });
+    clearAnonymousToken();
   } catch {
     // falha na migração não deve bloquear o login
   }

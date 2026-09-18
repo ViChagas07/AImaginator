@@ -68,8 +68,8 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=[settings.frontend_base_url],
         allow_credentials=True,
-        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Anonymous-Session"],
     )
 
     # Routers.

@@ -74,9 +74,12 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     source?.close();
     set({prompt, status: "queued", progress: 0, resultUrl: null, error: null});
     try {
+      const headers = new Headers({"content-type": "application/json"});
+      const anonToken = getAnonymousToken();
+      if (anonToken) headers.set("X-Anonymous-Session", anonToken);
       const res = await authedFetch(`${API_BASE_URL}/api/v1/generations`, {
         method: "POST",
-        headers: {"content-type": "application/json"},
+        headers,
         body: JSON.stringify({prompt, image: imageBase64 ?? null}),
       });
       if (!res.ok) {
