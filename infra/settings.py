@@ -49,7 +49,9 @@ class Settings(BaseSettings):
     # ---- Google OAuth 2.0 / OIDC ----
     google_client_id: str = ""
     google_client_secret: str = ""
-    google_oauth_redirect_uri: str = "http://localhost:8000/api/v1/auth/google/callback"
+    # Se vazio, a redirect_uri e derivada de api_base_url
+    # (f"{api_base_url}/api/v1/auth/google/callback").
+    google_oauth_redirect_uri: str = ""
 
     # ---- JWT ----
     jwt_algorithm: str = "HS256"

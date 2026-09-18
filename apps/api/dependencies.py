@@ -106,7 +106,8 @@ def get_oidc_service(
     return GoogleOIDCService(
         client_id=settings.google_client_id,
         client_secret=settings.google_client_secret,
-        redirect_uri=settings.google_oauth_redirect_uri,
+        redirect_uri=settings.google_oauth_redirect_uri
+        or f"{settings.api_base_url.rstrip('/')}/api/v1/auth/google/callback",
         redis_client=redis,
         http_client=http,
         circuit_breaker=circuit,
