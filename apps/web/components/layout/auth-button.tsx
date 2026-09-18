@@ -4,10 +4,12 @@ import {useEffect} from "react";
 import {useTranslations} from "next-intl";
 import {Link} from "@/i18n/navigation";
 import {useAuthStore} from "@/stores/auth";
+import {UserMenu} from "@/components/layout/user-menu";
 
 export function AuthButton() {
   const t = useTranslations("nav");
   const status = useAuthStore((s) => s.status);
+  const user = useAuthStore((s) => s.user);
   const fetchMe = useAuthStore((s) => s.fetchMe);
 
   useEffect(() => {
@@ -15,7 +17,7 @@ export function AuthButton() {
     void fetchMe();
   }, [status, fetchMe]);
 
-  if (status === "authenticated") return null;
+  if (status === "authenticated" && user) return <UserMenu />;
 
   return (
     <Link

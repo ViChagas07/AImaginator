@@ -10,7 +10,8 @@
   "nav": {
     "gallery": "Galería",
     "studio": "Estudio",
-    "login": "¡Vamos a imaginar! ✨"
+    "login": "¡Vamos a imaginar! ✨",
+    "logout": "Cerrar sesión"
   },
   "auth": {
     "signIn": {

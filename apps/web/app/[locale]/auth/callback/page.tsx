@@ -14,7 +14,7 @@ export default function AuthCallbackPage() {
       void useAuthStore
         .getState()
         .completeAuth(session)
-        .finally(() => router.replace("/studio"));
+        .finally(() => router.replace("/"));
     } else {
       router.replace("/login");
     }

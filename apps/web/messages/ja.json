@@ -10,7 +10,8 @@
   "nav": {
     "gallery": "ギャラリー",
     "studio": "スタジオ",
-    "login": "想像してみよう！ ✨"
+    "login": "想像してみよう！ ✨",
+    "logout": "ログアウト"
   },
   "auth": {
     "signIn": {

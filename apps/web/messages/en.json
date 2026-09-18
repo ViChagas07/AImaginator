@@ -10,7 +10,8 @@
   "nav": {
     "gallery": "Gallery",
     "studio": "Studio",
-    "login": "Let's Imagine! ✨"
+    "login": "Let's Imagine! ✨",
+    "logout": "Sign out"
   },
   "auth": {
     "signIn": {

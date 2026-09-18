@@ -10,7 +10,8 @@
   "nav": {
     "gallery": "画廊",
     "studio": "工作室",
-    "login": "让我们想象吧！✨"
+    "login": "让我们想象吧！✨",
+    "logout": "退出登录"
   },
   "auth": {
     "signIn": {

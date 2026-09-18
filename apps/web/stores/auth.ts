@@ -74,7 +74,18 @@ export const useAuthStore = create<AuthState>((set) => ({
         cache: "no-store",
       });
       if (res.ok) {
-        const user = (await res.json()) as AuthUser;
+        const data = (await res.json()) as {
+          id: string;
+          name: string;
+          email: string;
+          avatar_url: string | null;
+        };
+        const user: AuthUser = {
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          avatarUrl: data.avatar_url ?? null,
+        };
         set({user, status: "authenticated"});
         return;
       }

@@ -10,7 +10,8 @@
   "nav": {
     "gallery": "Galerie",
     "studio": "Studio",
-    "login": "Lass uns loslegen! ✨"
+    "login": "Lass uns loslegen! ✨",
+    "logout": "Abmelden"
   },
   "auth": {
     "signIn": {

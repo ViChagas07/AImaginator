@@ -10,7 +10,7 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https://images.unsplash.com https://cdn.21st.dev",
+  "img-src 'self' data: https://images.unsplash.com https://cdn.21st.dev https://lh3.googleusercontent.com",
   "font-src 'self'",
   `connect-src 'self' ${API_BASE_URL} https://bible-api.com`,
   "base-uri 'self'",
