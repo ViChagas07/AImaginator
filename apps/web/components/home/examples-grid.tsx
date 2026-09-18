@@ -84,7 +84,7 @@ export function ExamplesGrid() {
               type="button"
               onClick={() => setOpenIndex(i)}
               aria-haspopup="dialog"
-              className="group relative block h-full w-full overflow-hidden rounded-lg bg-surface"
+              className="group relative block h-full w-full cursor-pointer overflow-hidden rounded-lg bg-surface"
             >
               <Image
                 src={item.src}
