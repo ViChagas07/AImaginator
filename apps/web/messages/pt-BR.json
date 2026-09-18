@@ -7,11 +7,17 @@
     "removeImage": "Remover imagem",
     "attachedImageAlt": "Imagem anexada"
   },
-  "nav": {
+"nav": {
     "gallery": "Galeria",
     "studio": "Estúdio",
     "login": "Vamos Imaginar! ✨",
-    "logout": "Sair"
+    "logout": "Sair",
+    "account": {
+      "myAccount": "Minha Conta",
+      "myAccountSubtitle": "Perfil, segurança, preferências",
+      "settings": "Configurações",
+      "tierFree": "Plano Gratuito"
+    }
   },
   "auth": {
     "signIn": {
@@ -345,5 +351,231 @@
   "loader": {
     "generating": "Gerando",
     "ariaLabel": "Gerando imagem, aguarde"
+  },
+  "account": {
+    "title": "Minha Conta",
+    "subtitle": "Gerencie seu perfil, segurança e preferências",
+    "sections": {
+      "profilePhoto": "Foto de Perfil",
+      "personalInfo": "Informações Pessoais",
+      "accountStats": "Estatísticas da Conta",
+      "connectedProviders": "Provedores Conectados"
+    },
+    "profilePhoto": {
+      "changePhoto": "Alterar Foto",
+      "removePhoto": "Remover Foto",
+      "uploading": "Enviando...",
+      "cropHint": "Recorte a imagem (proporção 1:1)",
+      "apply": "Aplicar",
+      "cancel": "Cancelar",
+      "fileTypes": "JPG, PNG ou WebP — máx. 5MB"
+    },
+    "personalInfo": {
+      "fullName": "Nome Completo",
+      "fullNamePlaceholder": "João da Silva",
+      "email": "E-mail",
+      "emailGoogleBadge": "Vinculado ao Google",
+      "bio": "Bio/Sobre",
+      "bioPlaceholder": "Conte um pouco sobre você (máx. 160 caracteres)",
+      "bioCharCount": "{count}/160",
+      "handle": "Nome de Usuário",
+      "handlePlaceholder": "usuario",
+      "handleHint": "Apenas letras, números, _ e -",
+      "handleTaken": "Este nome de usuário já está em uso",
+      "save": "Salvar Alterações",
+      "cancel": "Cancelar",
+      "saving": "Salvando...",
+      "saved": "Alterações salvas com sucesso",
+      "error": "Erro ao salvar. Tente novamente."
+    },
+    "accountStats": {
+      "accountCreated": "Conta criada em",
+      "totalGenerations": "Total de artes geradas",
+      "totalSavedArts": "Total de artes salvas na Galeria",
+      "currentPlan": "Plano atual",
+      "creditsUsed": "Créditos usados neste período",
+      "creditsLimit": "de {limit}"
+    },
+    "connectedProviders": {
+      "google": "Google",
+      "connected": "Conectado",
+      "none": "Nenhum provedor conectado.",
+      "disconnect": "Desconectar",
+      "disconnectConfirm": "Tem certeza? Você precisará de outro método para entrar.",
+      "cannotDisconnectOnly": "Não é possível desconectar o único método de login. Defina uma senha primeiro."
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "subtitle": "Configure suas preferências de plataforma, aparência e opções de acessibilidade",
+    "tabs": {
+      "appearance": "Aparência",
+      "languageRegion": "Idioma e Região",
+      "accessibility": "Acessibilidade",
+      "notifications": "Notificações",
+      "privacyData": "Privacidade e Dados",
+      "advanced": "Avançado"
+    },
+    "save": "Salvar Configurações",
+    "reset": "Restaurar Padrões",
+    "saving": "Salvando...",
+    "saved": "Configurações salvas",
+    "resetConfirm": "Tem certeza? Todas as preferências voltarão aos valores padrão.",
+    "appearance": {
+      "title": "Aparência",
+      "description": "Personalize como o AImaginator aparece para você",
+      "theme": {
+        "label": "Tema",
+        "dark": "Escuro",
+        "light": "Claro",
+        "system": "Sistema"
+      },
+      "boldText": {
+        "label": "Texto em Negrito",
+        "description": "Aumenta o peso da fonte globalmente para melhor legibilidade"
+      },
+      "fontSize": {
+        "label": "Tamanho da Fonte",
+        "small": "Pequeno",
+        "medium": "Médio",
+        "large": "Grande",
+        "xl": "Extra Grande"
+      },
+      "elementSpacing": {
+        "label": "Tamanho dos Elementos",
+        "compact": "Compacto",
+        "comfortable": "Confortável",
+        "spacious": "Espaçoso"
+      }
+    },
+    "languageRegion": {
+      "title": "Idioma e Região",
+      "description": "Escolha seu idioma e fuso horário",
+      "language": {
+        "label": "Idioma"
+      },
+      "timezone": {
+        "label": "Fuso Horário",
+        "placeholder": "Selecione seu fuso horário",
+        "description": "Usado para formatar datas e horas em toda a plataforma"
+      }
+    },
+    "accessibility": {
+      "title": "Acessibilidade",
+      "description": "Ajuste opções para melhorar a usabilidade",
+      "highContrast": {
+        "label": "Alto Contraste",
+        "description": "Aumenta o contraste entre texto e fundo"
+      },
+      "screenReaderOptimized": {
+        "label": "Otimizações para Leitor de Tela",
+        "description": "Ativa atributos ARIA adicionais e melhorias semânticas"
+      },
+      "keyboardNavigation": {
+        "label": "Navegação por Teclado",
+        "description": "Ativa atalhos de navegação por teclado otimizados"
+      },
+      "focusIndicator": {
+        "label": "Indicador de Foco",
+        "description": "Torna o contorno de foco mais visível"
+      },
+      "dyslexiaFont": {
+        "label": "Fonte para Dislexia",
+        "description": "Troca a fonte para melhor legibilidade"
+      },
+      "reducedMotion": {
+        "label": "Movimento Reduzido",
+        "description": "Minimiza ou desativa animações e transições"
+      }
+    },
+    "notifications": {
+      "title": "Notificações",
+      "description": "Configure como e quando você recebe avisos",
+      "email": {
+        "label": "Alertas por E-mail",
+        "description": "Receber notificações por e-mail (geração concluída, créditos acabando, novidades)"
+      },
+      "push": {
+        "label": "Notificações Push",
+        "description": "Notificações do navegador em tempo real (imagem pronta)"
+      },
+      "desktop": {
+        "label": "Alertas na Área de Trabalho",
+        "description": "Popup de notificação no desktop"
+      },
+      "sound": {
+        "label": "Alertas Sonoros",
+        "description": "Tocar som quando uma geração é concluída"
+      },
+      "summaryFrequency": {
+        "label": "Frequência de Resumo",
+        "daily": "Diário",
+        "weekly": "Semanal",
+        "never": "Nunca",
+        "description": "Resumo por e-mail de atividade da conta"
+      },
+      "notificationEmail": {
+        "label": "E-mail para Notificações",
+        "placeholder": "notificacoes@exemplo.com",
+        "description": "Pode ser diferente do e-mail de login (para contas de equipe)"
+      }
+    },
+    "privacyData": {
+      "title": "Privacidade e Dados",
+      "description": "Gerencie seus dados e preferências de privacidade",
+      "documents": {
+        "title": "Documentos de Política",
+        "privacyPolicy": "Ver Política de Privacidade",
+        "termsOfUse": "Ver Termos de Uso"
+      },
+      "consentHistory": {
+        "title": "Histórico de Consentimento",
+        "description": "Você aceitou a versão {version} dos Termos e da Política de Privacidade em {date}"
+      },
+      "exportData": {
+        "title": "Exportação de Dados (Portabilidade)",
+        "description": "Baixe todos os seus dados pessoais (perfil, histórico de gerações, artes salvas, configurações) em conformidade com a LGPD Art. 18, V",
+        "button": "Exportar Meus Dados",
+        "exporting": "Preparando exportação...",
+        "success": "Exportação solicitada. Você receberá um e-mail com o link para download quando estiver pronto."
+      },
+      "deleteAccount": {
+        "title": "Exclusão de Conta",
+        "description": "Exclua permanentemente sua conta e todos os dados associados. Esta ação não pode ser desfeita após o período de carência de 30 dias (LGPD Art. 18, VI)",
+        "button": "Solicitar Exclusão de Conta",
+        "confirmTitle": "Confirmar Exclusão de Conta",
+        "confirmDescription": "Tem certeza? Sua conta será desativada e agendada para exclusão definitiva em 30 dias. Você pode cancelar fazendo login novamente nesse período.",
+        "cancel": "Cancelar",
+        "confirm": "Sim, Solicitar Exclusão"
+      }
+    },
+    "advanced": {
+      "title": "Avançado",
+      "description": "Opções para desenvolvedores e manutenção",
+      "developerMode": {
+        "label": "Modo Desenvolvedor",
+        "description": "Expõe ferramentas de debug/inspeção no client (IDs internos, logs de requisição, payloads de API)"
+      },
+      "clearCache": {
+        "label": "Limpar Cache Local",
+        "description": "Limpa cache local (localStorage/IndexedDB) sem afetar dados do servidor",
+        "button": "Limpar Cache",
+        "success": "Cache local limpo"
+      },
+      "exportData": {
+        "title": "Exportar Meus Dados",
+        "description": "Atalho para exportação de dados (mesma função da aba Privacidade)",
+        "button": "Exportar Meus Dados"
+      },
+      "resetAllSettings": {
+        "title": "Redefinir Todas as Configurações",
+        "description": "Reseta todas as preferências de todas as abas para os valores padrão",
+        "button": "Redefinir Tudo",
+        "confirmTitle": "Confirmar Redefinição",
+        "confirmDescription": "Tem certeza? Todas as configurações voltarão aos valores padrão. Esta ação não pode ser desfeita.",
+        "cancel": "Cancelar",
+        "confirm": "Sim, Redefinir Tudo"
+      }
+    }
   }
 }

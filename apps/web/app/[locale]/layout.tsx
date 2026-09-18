@@ -6,6 +6,7 @@ import {notFound} from "next/navigation";
 import {routing} from "@/i18n/routing";
 import {SiteHeader} from "@/components/layout/site-header";
 import {SiteFooter} from "@/components/layout/site-footer";
+import {ToastProvider} from "@/components/ui/toast";
 import {SITE_URL} from "@/lib/constants";
 import {languageAlternates} from "@/lib/i18n";
 import "../globals.css";
@@ -73,6 +74,7 @@ export default async function RootLayout({
             {children}
           </main>
           <SiteFooter />
+          <ToastProvider />
         </NextIntlClientProvider>
       </body>
     </html>

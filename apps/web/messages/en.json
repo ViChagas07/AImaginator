@@ -7,11 +7,17 @@
     "removeImage": "Remove image",
     "attachedImageAlt": "Attached image"
   },
-  "nav": {
+"nav": {
     "gallery": "Gallery",
     "studio": "Studio",
     "login": "Let's Imagine! ✨",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "account": {
+      "myAccount": "My Account",
+      "myAccountSubtitle": "Profile, security, preferences",
+      "settings": "Settings",
+      "tierFree": "Free Plan"
+    }
   },
   "auth": {
     "signIn": {
@@ -345,5 +351,231 @@
   "loader": {
     "generating": "Generating",
     "ariaLabel": "Generating image, please wait"
+  },
+  "account": {
+    "title": "My Account",
+    "subtitle": "Manage your profile, security and preferences",
+    "sections": {
+      "profilePhoto": "Profile Photo",
+      "personalInfo": "Personal Information",
+      "accountStats": "Account Statistics",
+      "connectedProviders": "Connected Providers"
+    },
+    "profilePhoto": {
+      "changePhoto": "Change Photo",
+      "removePhoto": "Remove Photo",
+      "uploading": "Uploading...",
+      "cropHint": "Crop the image (1:1 ratio)",
+      "apply": "Apply",
+      "cancel": "Cancel",
+      "fileTypes": "JPG, PNG or WebP — max 5MB"
+    },
+    "personalInfo": {
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "email": "Email",
+      "emailGoogleBadge": "Linked to Google",
+      "bio": "Bio/About",
+      "bioPlaceholder": "Tell us a bit about yourself (max 160 characters)",
+      "bioCharCount": "{count}/160",
+      "handle": "Username",
+      "handlePlaceholder": "username",
+      "handleHint": "Only letters, numbers, _ and -",
+      "handleTaken": "This username is already taken",
+      "save": "Save Changes",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "saved": "Changes saved successfully",
+      "error": "Error saving. Please try again."
+    },
+    "accountStats": {
+      "accountCreated": "Account created on",
+      "totalGenerations": "Total arts generated",
+      "totalSavedArts": "Total arts saved in Gallery",
+      "currentPlan": "Current plan",
+      "creditsUsed": "Credits used this period",
+      "creditsLimit": "of {limit}"
+    },
+    "connectedProviders": {
+      "google": "Google",
+      "connected": "Connected",
+      "none": "No connected providers.",
+      "disconnect": "Disconnect",
+      "disconnectConfirm": "Are you sure? You'll need another method to sign in.",
+      "cannotDisconnectOnly": "Cannot disconnect the only login method. Set a password first."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure your platform preferences, appearance and accessibility options",
+    "tabs": {
+      "appearance": "Appearance",
+      "languageRegion": "Language & Region",
+      "accessibility": "Accessibility",
+      "notifications": "Notifications",
+      "privacyData": "Privacy & Data",
+      "advanced": "Advanced"
+    },
+    "save": "Save Settings",
+    "reset": "Restore Defaults",
+    "saving": "Saving...",
+    "saved": "Settings saved",
+    "resetConfirm": "Are you sure? All preferences will return to default values.",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize how AImaginator looks for you",
+      "theme": {
+        "label": "Theme",
+        "dark": "Dark",
+        "light": "Light",
+        "system": "System"
+      },
+      "boldText": {
+        "label": "Bold Text",
+        "description": "Increases font weight globally for better readability"
+      },
+      "fontSize": {
+        "label": "Font Size",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "xl": "Extra Large"
+      },
+      "elementSpacing": {
+        "label": "Element Size",
+        "compact": "Compact",
+        "comfortable": "Comfortable",
+        "spacious": "Spacious"
+      }
+    },
+    "languageRegion": {
+      "title": "Language & Region",
+      "description": "Choose your language and timezone",
+      "language": {
+        "label": "Language"
+      },
+      "timezone": {
+        "label": "Timezone",
+        "placeholder": "Select your timezone",
+        "description": "Used to format dates and times across the platform"
+      }
+    },
+    "accessibility": {
+      "title": "Accessibility",
+      "description": "Adjust options to improve usability",
+      "highContrast": {
+        "label": "High Contrast",
+        "description": "Increases contrast between text and background"
+      },
+      "screenReaderOptimized": {
+        "label": "Screen Reader Optimizations",
+        "description": "Enables additional ARIA attributes and semantic improvements"
+      },
+      "keyboardNavigation": {
+        "label": "Keyboard Navigation",
+        "description": "Enables optimized keyboard navigation shortcuts"
+      },
+      "focusIndicator": {
+        "label": "Focus Indicator",
+        "description": "Makes focus outline more visible"
+      },
+      "dyslexiaFont": {
+        "label": "Dyslexia Font",
+        "description": "Switches to a font for better readability"
+      },
+      "reducedMotion": {
+        "label": "Reduced Motion",
+        "description": "Minimizes or disables animations and transitions"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Configure how and when you receive alerts",
+      "email": {
+        "label": "Email Alerts",
+        "description": "Receive email notifications (generation complete, credits running low, news)"
+      },
+      "push": {
+        "label": "Push Notifications",
+        "description": "Browser push notifications in real time (image ready)"
+      },
+      "desktop": {
+        "label": "Desktop Alerts",
+        "description": "Desktop notification popups"
+      },
+      "sound": {
+        "label": "Sound Alerts",
+        "description": "Play sound when a generation completes"
+      },
+      "summaryFrequency": {
+        "label": "Summary Frequency",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "never": "Never",
+        "description": "Email summary of account activity"
+      },
+      "notificationEmail": {
+        "label": "Notification Email",
+        "placeholder": "notifications@example.com",
+        "description": "Can differ from login email (for team accounts)"
+      }
+    },
+    "privacyData": {
+      "title": "Privacy & Data",
+      "description": "Manage your data and privacy preferences",
+      "documents": {
+        "title": "Policy Documents",
+        "privacyPolicy": "View Privacy Policy",
+        "termsOfUse": "View Terms of Use"
+      },
+      "consentHistory": {
+        "title": "Consent History",
+        "description": "You accepted version {version} of the Terms and Privacy Policy on {date}"
+      },
+      "exportData": {
+        "title": "Data Export (Portability)",
+        "description": "Download all your personal data (profile, generation history, saved arts, settings) in compliance with LGPD Art. 18, V",
+        "button": "Export My Data",
+        "exporting": "Preparing export...",
+        "success": "Export requested. You'll receive an email with the download link when ready."
+      },
+      "deleteAccount": {
+        "title": "Account Deletion",
+        "description": "Permanently delete your account and all associated data. This action cannot be undone after the 30-day grace period (LGPD Art. 18, VI)",
+        "button": "Request Account Deletion",
+        "confirmTitle": "Confirm Account Deletion",
+        "confirmDescription": "Are you sure? Your account will be deactivated and scheduled for permanent deletion in 30 days. You can cancel by signing in again during this period.",
+        "cancel": "Cancel",
+        "confirm": "Yes, Request Deletion"
+      }
+    },
+    "advanced": {
+      "title": "Advanced",
+      "description": "Options for developers and maintenance",
+      "developerMode": {
+        "label": "Developer Mode",
+        "description": "Exposes debug/inspection tools in the client (internal IDs, request logs, API payloads)"
+      },
+      "clearCache": {
+        "label": "Clear Local Cache",
+        "description": "Clears local cache (localStorage/IndexedDB) without affecting server data",
+        "button": "Clear Cache",
+        "success": "Local cache cleared"
+      },
+      "exportData": {
+        "title": "Export My Data",
+        "description": "Shortcut to data export (same function as Privacy tab)",
+        "button": "Export My Data"
+      },
+      "resetAllSettings": {
+        "title": "Reset All Settings",
+        "description": "Resets all preferences across all tabs to default values",
+        "button": "Reset Everything",
+        "confirmTitle": "Confirm Reset",
+        "confirmDescription": "Are you sure? All settings will return to default values. This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Yes, Reset Everything"
+      }
+    }
   }
 }

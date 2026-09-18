@@ -157,5 +157,8 @@ async def me(current_user: CurrentUserDep) -> dict:
         "email": current_user.email,
         "name": current_user.name,
         "avatar_url": current_user.avatar_url,
+        "google_sub": current_user.google_sub,
+        "bio": current_user.bio,
+        "handle": current_user.handle,
         "generation_credits": current_user.generation_credits,
     }

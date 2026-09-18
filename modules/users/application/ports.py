@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Protocol
 from uuid import UUID
 
-from modules.users.domain.entities import User
+from modules.users.domain.entities import User, UserSettings
 
 
 class UserRepositoryPort(Protocol):
@@ -17,6 +17,14 @@ class UserRepositoryPort(Protocol):
 
     async def get_by_email(self, email: str) -> User | None: ...
 
+    async def get_by_handle(self, handle: str) -> User | None: ...
+
     async def save(self, user: User) -> User:
         """Upsert: cria ou atualiza pelo id."""
+        ...
+
+    async def get_settings(self, user_id: UUID) -> UserSettings | None: ...
+
+    async def save_settings(self, settings: UserSettings) -> UserSettings:
+        """Upsert: cria ou atualiza as configuracoes do usuario."""
         ...

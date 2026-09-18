@@ -14,6 +14,9 @@ export type AuthUser = {
   name: string;
   email: string;
   avatarUrl: string | null;
+  googleSub: string | null;
+  bio: string | null;
+  handle: string | null;
 };
 
 type AuthStatus = "unknown" | "loading" | "authenticated" | "unauthenticated";
@@ -79,12 +82,18 @@ export const useAuthStore = create<AuthState>((set) => ({
           name: string;
           email: string;
           avatar_url: string | null;
+          google_sub: string | null;
+          bio: string | null;
+          handle: string | null;
         };
         const user: AuthUser = {
           id: data.id,
           name: data.name,
           email: data.email,
           avatarUrl: data.avatar_url ?? null,
+          googleSub: data.google_sub ?? null,
+          bio: data.bio ?? null,
+          handle: data.handle ?? null,
         };
         set({user, status: "authenticated"});
         return;
