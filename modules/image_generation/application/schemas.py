@@ -28,10 +28,17 @@ class GenerateImageInput(BaseModel):
     negative_prompt: str | None = Field(default=None, max_length=MAX_PROMPT_LENGTH)
     style_preset: StylePreset = StylePreset.NONE
     aspect_ratio: AspectRatio = AspectRatio.SQUARE
+    title: str | None = Field(default=None, max_length=200)
 
 
 class EditImageInput(GenerateImageInput):
     source_image_url: HttpUrl  # validada pela guarda anti-SSRF no use case
+
+
+class RenameGenerationInput(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    title: str = Field(min_length=1, max_length=200)
 
 
 class GenerationOutput(BaseModel):
@@ -43,6 +50,7 @@ class GenerationOutput(BaseModel):
     prompt: str
     style_preset: StylePreset
     aspect_ratio: AspectRatio
+    title: str | None = None
     result_image_url: str | None
     error_message: str | None
     created_at: datetime
@@ -55,6 +63,22 @@ class GenerationPage(BaseModel):
 
     items: list[GenerationOutput]
     next_cursor: str | None
+
+
+class GalleryArtOutput(BaseModel):
+    """Arte exposta na galeria (pessoal/publica) — contrato do frontend."""
+
+    id: UUID
+    image_url: str | None = Field(default=None, serialization_alias="imageUrl")
+    prompt: str
+    title: str | None = None
+    status: GenerationStatus
+    created_at: datetime = Field(serialization_alias="createdAt")
+
+
+class GalleryPage(BaseModel):
+    items: list[GalleryArtOutput]
+    cursor: str | None
 
 
 class GenerationProgressEvent(BaseModel):

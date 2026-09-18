@@ -1,11 +1,12 @@
 "use client";
 
-import {useEffect, useRef} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useTranslations} from "next-intl";
 import {Loader2, Send, TriangleAlert, X} from "lucide-react";
 import {useAuthStore} from "@/stores/auth";
 import {isGeneratingStatus, useGenerationStore} from "@/stores/generation";
 import {AIGeneratingLoader} from "@/components/ui/ai-generating-loader";
+import {LoginGateModal} from "@/components/studio/login-gate-modal";
 
 export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const t = useTranslations("studio");
@@ -15,6 +16,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const gen = useGenerationStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const imageBase64 = gen.imageBase64;
+  const [dismissedResultUrl, setDismissedResultUrl] = useState<string | null>(null);
 
   useEffect(() => {
     void auth.fetchMe();
@@ -30,6 +32,13 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
     if (auth.status === "authenticated") void gen.loadHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth.status]);
+
+  // Login-gate pós-geração para anônimos (Bloco 3-A): a arte já está
+  // associada à sessão anônima e será migrada ao efetuar login/cadastro.
+  const showLoginGate =
+    gen.status === "done" &&
+    auth.status === "unauthenticated" &&
+    gen.resultUrl !== dismissedResultUrl;
 
   function handleFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -50,16 +59,10 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
     });
   }
 
-  if (auth.status === "unauthenticated") {
+  if (auth.status === "unknown") {
     return (
       <div className="rounded-xl border border-foreground/10 bg-surface p-8">
-        <p className="text-muted">{t("loginRequired")}</p>
-        <a
-          href={auth.loginUrl}
-          className="bg-accent-gradient mt-4 inline-flex rounded-md px-5 py-3 text-base font-semibold text-foreground"
-        >
-          {t("loginButton")}
-        </a>
+        <p className="text-muted">{t("loadingAuth")}</p>
       </div>
     );
   }
@@ -201,6 +204,11 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
           </ul>
         )}
       </section>
+
+      <LoginGateModal
+        open={showLoginGate}
+        onDismiss={() => setDismissedResultUrl(gen.resultUrl)}
+      />
     </div>
   );
 }

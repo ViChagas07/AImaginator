@@ -31,6 +31,7 @@ from modules.auth.application.use_cases import (
     RefreshSession,
     StartGoogleLogin,
 )
+from modules.auth.contracts import LoginWithEmail, SignUpWithEmail
 from modules.rate_limiting.token_bucket import TokenBucket
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -38,6 +39,60 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 class RefreshInput(BaseModel):
     refresh_token: str
+
+
+class SignupInput(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class LoginInput(BaseModel):
+    email: str
+    password: str
+
+
+def _tokens_dict(tokens) -> dict:
+    return {
+        "access_token": tokens.access_token,
+        "refresh_token": tokens.refresh_token,
+        "access_expires_at": int(tokens.access_expires_at.timestamp()),
+        "refresh_expires_at": int(tokens.refresh_expires_at.timestamp()),
+    }
+
+
+@router.post("/signup")
+async def signup(
+    payload: SignupInput,
+    users: UserRepoDep,
+    jwt: JWTDep,
+    limiter: TokenBucket = Depends(get_auth_rate_limiter),
+) -> dict:
+    await limiter.consume("auth:signup")
+    tokens, user = await SignUpWithEmail(
+        user_repository=users, jwt_service=jwt
+    ).execute(name=payload.name, email=payload.email, password=payload.password)
+    return {
+        **_tokens_dict(tokens),
+        "user": {"id": str(user.id), "email": user.email, "name": user.name},
+    }
+
+
+@router.post("/login")
+async def login(
+    payload: LoginInput,
+    users: UserRepoDep,
+    jwt: JWTDep,
+    limiter: TokenBucket = Depends(get_auth_rate_limiter),
+) -> dict:
+    await limiter.consume("auth:login:password")
+    tokens, user = await LoginWithEmail(
+        user_repository=users, jwt_service=jwt
+    ).execute(email=payload.email, password=payload.password)
+    return {
+        **_tokens_dict(tokens),
+        "user": {"id": str(user.id), "email": user.email, "name": user.name},
+    }
 
 
 @router.get("/google/login", include_in_schema=False)

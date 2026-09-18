@@ -12,12 +12,17 @@ from typing import Annotated
 from uuid import UUID
 
 import httpx
-from fastapi import Depends, Request
+from fastapi import Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infra.database import get_session_factory
 from infra.redis_client import get_redis
 from infra.settings import Settings, get_settings
+from modules.auth.application.anonymous_identity import (
+    generate_anonymous_id,
+    sign_anonymous_id,
+    unsign_anonymous_id,
+)
 from modules.auth.contracts import GoogleOIDCService, JWTService
 from modules.image_generation.adapters.cache.swr import SWRCache
 from modules.image_generation.adapters.celery_task_queue import CeleryTaskQueue
@@ -29,6 +34,7 @@ from modules.image_generation.application.ports.task_queue import TaskQueuePort
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
 from modules.image_generation.domain.url_policy import UrlPolicy
 from modules.image_generation.infra import wiring as gen_wiring
+from modules.prompt_quota.adapters.redis_quota_store import RedisPromptQuotaStore
 from modules.rate_limiting.circuit_breaker import CircuitBreaker
 from modules.rate_limiting.token_bucket import TokenBucket
 from modules.users.adapters.repository import SQLAlchemyUserRepository
@@ -146,6 +152,56 @@ async def get_current_user(
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 
+async def get_optional_current_user(
+    request: Request, jwt: JWTDep, users: UserRepoDep
+) -> User | None:
+    """Resolve o usuario se autenticado; devolve None para anonimos."""
+    try:
+        return await authenticate_user(request, jwt, users)
+    except UnauthorizedError:
+        return None
+
+
+OptionalCurrentUserDep = Annotated[User | None, Depends(get_optional_current_user)]
+
+
+def resolve_anonymous_session(request: Request, settings: Settings) -> tuple[str, str | None]:
+    """Resolve (ou cria) a sessao anonima assinada.
+
+    Devolve (anonymous_id, token_a_definir). Se o token existir e for
+    valido, token_a_definir e None; caso contrario um novo id e criado e
+    o token deve ser gravado no cliente (cookie + corpo da resposta).
+    """
+    token = request.headers.get("X-Anonymous-Session") or request.cookies.get(
+        settings.anonymous_session_cookie_name
+    )
+    if token:
+        max_age = settings.anonymous_session_max_age_days * 86400
+        existing = unsign_anonymous_id(token, secret_key=settings.secret_key, max_age=max_age)
+        if existing is not None:
+            return existing, None
+
+    anonymous_id = generate_anonymous_id()
+    new_token = sign_anonymous_id(anonymous_id, secret_key=settings.secret_key)
+    return anonymous_id, new_token
+
+
+def set_anonymous_session_cookie(
+    response: Response, settings: Settings, token: str | None
+) -> None:
+    """Grava a sessao anonima assinada no cliente (cookie httpOnly)."""
+    if token is None:
+        return
+    response.set_cookie(
+        key=settings.anonymous_session_cookie_name,
+        value=token,
+        max_age=settings.anonymous_session_max_age_days * 86400,
+        httponly=True,
+        samesite="lax",
+        secure=settings.is_production,
+    )
+
+
 # ---- image_generation ----
 
 
@@ -202,3 +258,19 @@ def get_generation_rate_limiter(settings: SettingsDep, redis: RedisDep) -> Token
 
 def get_auth_rate_limiter(settings: SettingsDep, redis: RedisDep) -> TokenBucket:
     return TokenBucket(redis, capacity=settings.rate_limit_auth_per_minute, window_seconds=60)
+
+
+# ---- prompt quota (Bloco 1) ----
+
+
+def get_prompt_quota_store(redis: RedisDep) -> RedisPromptQuotaStore:
+    return RedisPromptQuotaStore(redis)
+
+
+PromptQuotaStoreDep = Annotated[RedisPromptQuotaStore, Depends(get_prompt_quota_store)]
+
+
+def get_prompt_quota_rate_limiter(settings: SettingsDep, redis: RedisDep) -> TokenBucket:
+    return TokenBucket(
+        redis, capacity=settings.rate_limit_prompt_quota_per_minute, window_seconds=60
+    )

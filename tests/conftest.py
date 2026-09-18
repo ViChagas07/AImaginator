@@ -55,14 +55,27 @@ class InMemoryGenerationRepository:
         self._items: dict = {}
 
     async def get_by_id(self, generation_id):
-        return self._items.get(generation_id)
+        item = self._items.get(generation_id)
+        if item is not None and item.deleted_at is not None:
+            return None
+        return item
 
     async def save(self, generation):
         self._items[generation.id] = generation
         return generation
 
+    async def delete(self, generation):
+        from datetime import UTC, datetime
+
+        generation.deleted_at = datetime.now(UTC)
+        self._items[generation.id] = generation
+
     async def list_by_user(self, user_id, *, cursor, limit):
-        items = [g for g in self._items.values() if g.user_id == user_id]
+        items = [
+            g
+            for g in self._items.values()
+            if g.user_id == user_id and g.deleted_at is None
+        ]
         items.sort(key=lambda g: (g.created_at, g.id), reverse=True)
         if cursor is not None:
             cursor_item = self._items.get(cursor)
@@ -74,13 +87,34 @@ class InMemoryGenerationRepository:
                 ]
         return items[:limit]
 
+    async def list_by_anonymous_session(self, anonymous_session_id, *, limit):
+        items = [
+            g
+            for g in self._items.values()
+            if g.anonymous_session_id == anonymous_session_id and g.deleted_at is None
+        ]
+        items.sort(key=lambda g: g.created_at, reverse=True)
+        return items[:limit]
+
+    async def reassign_anonymous_to_user(self, anonymous_session_id, user_id):
+        migrated = 0
+        for g in self._items.values():
+            if g.anonymous_session_id == anonymous_session_id and g.user_id is None:
+                g.user_id = user_id
+                g.anonymous_session_id = None
+                migrated += 1
+        return migrated
+
     async def list_public_showcase(self, *, limit):
         from modules.image_generation.domain.entities import GenerationStatus
 
         items = [
             g
             for g in self._items.values()
-            if g.status == GenerationStatus.DONE and g.result_image_url
+            if g.status == GenerationStatus.DONE
+            and g.result_image_url
+            and g.user_id is not None
+            and g.deleted_at is None
         ]
         items.sort(key=lambda g: g.created_at, reverse=True)
         return items[:limit]

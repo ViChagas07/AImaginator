@@ -19,7 +19,7 @@ from apps.api.middlewares.metrics import MetricsMiddleware
 from apps.api.middlewares.payload_limit import PayloadLimitMiddleware
 from apps.api.middlewares.rate_limit import RateLimitMiddleware
 from apps.api.middlewares.security_headers import SecurityHeadersMiddleware
-from apps.api.routers import auth, generations, health, metrics, stream
+from apps.api.routers import auth, gallery, generations, health, metrics, prompt_quota, stream
 from infra.database import dispose_engine
 from infra.redis_client import close_redis
 from infra.settings import get_settings
@@ -78,12 +78,15 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(generations.router)
     app.include_router(stream.router)
+    app.include_router(gallery.router)
+    app.include_router(prompt_quota.router)
 
     @app.exception_handler(AImaginatorError)
     async def domain_error_handler(request: Request, exc: AImaginatorError) -> JSONResponse:
         headers = {}
-        if exc.http_status == 429 and hasattr(exc, "retry_after_seconds"):
-            headers["Retry-After"] = str(exc.retry_after_seconds)
+        retry_after = getattr(exc, "retry_after_seconds", None)
+        if exc.http_status == 429 and retry_after is not None:
+            headers["Retry-After"] = str(retry_after)
         return JSONResponse(
             status_code=exc.http_status,
             headers=headers,

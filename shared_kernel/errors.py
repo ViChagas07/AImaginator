@@ -37,6 +37,11 @@ class ForbiddenError(AImaginatorError):
     http_status = 403
 
 
+class ConflictError(AImaginatorError):
+    code = "conflict"
+    http_status = 409
+
+
 class PayloadTooLargeError(AImaginatorError):
     code = "payload_too_large"
     http_status = 413
@@ -60,6 +65,16 @@ class RateLimitExceededError(AImaginatorError):
 class QuotaExceededError(AImaginatorError):
     code = "quota_exceeded"
     http_status = 429
+
+    def __init__(
+        self,
+        message: str = "Cota de prompts esgotada.",
+        *,
+        retry_after_seconds: int | None = None,
+        details: dict | None = None,
+    ) -> None:
+        super().__init__(message, details=details)
+        self.retry_after_seconds = retry_after_seconds
 
 
 class CircuitOpenError(AImaginatorError):

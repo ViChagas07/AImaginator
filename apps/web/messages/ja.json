@@ -36,7 +36,15 @@
     "hidePassword": "パスワードを非表示",
     "orContinue": "または次で続ける",
     "googleButton": "Googleで続ける",
-    "googleIconAlt": "Googleのアイコン"
+    "googleIconAlt": "Googleのアイコン",
+    "signingIn": "サインイン中...",
+    "signingUp": "登録中...",
+    "errors": {
+      "invalidCredentials": "メールアドレスまたはパスワードが無効です。",
+      "emailInUse": "このメールアドレスのアカウントは既に存在します。",
+      "signupFailed": "アカウントを作成できませんでした。もう一度お試しください。",
+      "generic": "問題が発生しました。もう一度お試しください。"
+    }
   },
   "landing": {
     "headline": "言葉を画像に変えよう！",
@@ -106,7 +114,8 @@
         "question": "リアルタイムの進捗はどのように機能しますか？",
         "answer": "生成ステータスはAPIからserver-sent events (SSE)でストリーミングされ、画像が完成するかエラーが返るまで進行率が表示されます。"
       }
-    ]
+    ],
+    "quotaExhausted": "プロンプトの利用回数が上限に達しました。次回は"
   },
   "studio": {
     "title": "スタジオ",
@@ -129,14 +138,28 @@
     "resultAlt": "プロンプトから生成された結果。",
     "historyTitle": "最近の生成",
     "historyEmpty": "まだ生成はありません。",
-    "errorLabel": "エラー"
+    "errorLabel": "エラー",
+    "loadingAuth": "セッションを確認しています...",
+    "saveArtTitle": "作品を保存",
+    "saveArtBody": "ログインまたは登録して、この作品をギャラリーに保存します。アカウントに紐付けられます。",
+    "saveArtCta": "ログイン / 登録",
+    "saveArtLater": "後で"
   },
   "gallery": {
     "title": "公開ギャラリー",
     "description": "AImaginatorコミュニティが生成した画像。各カードには画像の作成に使用されたプロンプトが表示されます。",
     "loadMore": "さらに読み込む",
     "empty": "公開画像はまだありません。",
-    "by": "by"
+    "by": "by",
+    "myArtsTitle": "マイ作品",
+    "myArtsEmpty": "まだ作品がありません。生成するとここに表示されます。",
+    "loadingMyArts": "作品を読み込み中...",
+    "rename": "名前を変更",
+    "renameLabel": "新しい名前",
+    "saveRename": "名前を保存",
+    "cancelRename": "キャンセル",
+    "delete": "削除",
+    "deleteConfirm": "この作品を削除しますか？この操作は元に戻せません。"
   },
   "errors": {
     "generic": "何か問題が発生しました。もう一度お試しください。",

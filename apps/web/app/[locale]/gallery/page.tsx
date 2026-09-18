@@ -1,6 +1,7 @@
 import type {Metadata} from "next";
 import {getTranslations} from "next-intl/server";
 import {GalleryList} from "@/components/gallery/gallery-list";
+import {MyGallery} from "@/components/gallery/my-gallery";
 import {API_BASE_URL, SITE_URL} from "@/lib/constants";
 import {languageAlternates} from "@/lib/i18n";
 import type {GalleryItem} from "@/stores/gallery";
@@ -80,6 +81,7 @@ export default async function GalleryPage() {
         {t("title")}
       </h1>
       <p className="mb-10 mt-2 max-w-2xl text-muted">{t("description")}</p>
+      <MyGallery />
       <GalleryList initialItems={items} initialCursor={cursor} />
     </div>
   );

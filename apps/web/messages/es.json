@@ -36,7 +36,15 @@
     "hidePassword": "Ocultar contraseña",
     "orContinue": "O continúa con",
     "googleButton": "Continuar con Google",
-    "googleIconAlt": "Icono de Google"
+    "googleIconAlt": "Icono de Google",
+    "signingIn": "Iniciando sesión...",
+    "signingUp": "Registrando...",
+    "errors": {
+      "invalidCredentials": "Correo o contraseña no válidos.",
+      "emailInUse": "Ya existe una cuenta con este correo.",
+      "signupFailed": "No se pudo crear tu cuenta. Inténtalo de nuevo.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    }
   },
   "landing": {
     "headline": "Convierte palabras en imágenes!",
@@ -106,7 +114,8 @@
         "question": "¿Cómo funciona el progreso en tiempo real?",
         "answer": "El estado de la generación se transmite desde la API mediante server-sent events (SSE), mostrando el porcentaje de progreso hasta que la imagen esté lista o ocurra un error."
       }
-    ]
+    ],
+    "quotaExhausted": "Se agotaron tus oportunidades de prompt. La próxima en"
   },
   "studio": {
     "title": "Estudio",
@@ -129,14 +138,28 @@
     "resultAlt": "Resultado generado a partir de tu prompt.",
     "historyTitle": "Generaciones recientes",
     "historyEmpty": "Aún no hay generaciones.",
-    "errorLabel": "Error"
+    "errorLabel": "Error",
+    "loadingAuth": "Verificando tu sesión...",
+    "saveArtTitle": "Guarda tu arte",
+    "saveArtBody": "Inicia sesión o regístrate para guardar esta arte en tu galería. Se vinculará a tu cuenta.",
+    "saveArtCta": "Iniciar sesión / Registrarse",
+    "saveArtLater": "Ahora no"
   },
   "gallery": {
     "title": "Galería pública",
     "description": "Imágenes generadas por la comunidad de AImaginator. Cada tarjeta muestra el prompt usado para crear la imagen.",
     "loadMore": "Cargar más",
     "empty": "Aún no hay imágenes públicas.",
-    "by": "por"
+    "by": "por",
+    "myArtsTitle": "Mis artes",
+    "myArtsEmpty": "Aún no tienes artes. Genera una para verla aquí.",
+    "loadingMyArts": "Cargando tus artes...",
+    "rename": "Renombrar",
+    "renameLabel": "Nuevo nombre",
+    "saveRename": "Guardar nombre",
+    "cancelRename": "Cancelar",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar esta arte? Esta acción no se puede deshacer."
   },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

@@ -23,6 +23,7 @@ def _to_output(generation: Generation) -> GenerationOutput:
         prompt=generation.prompt,
         style_preset=generation.style_preset,
         aspect_ratio=generation.aspect_ratio,
+        title=generation.title,
         result_image_url=generation.result_image_url,
         error_message=generation.error_message,
         created_at=generation.created_at,

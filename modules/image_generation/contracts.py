@@ -11,9 +11,18 @@ from modules.image_generation.application.schemas import (
     GenerationOutput,
     GenerationPage,
     GenerationProgressEvent,
+    RenameGenerationInput,
 )
 from modules.image_generation.application.use_cases.edit_image import EditImageFromPrompt
-from modules.image_generation.application.use_cases.generate_image import GenerateImageFromPrompt
+from modules.image_generation.application.use_cases.gallery_management import (
+    ClaimAnonymousArts,
+    DeleteGeneration,
+    RenameGeneration,
+)
+from modules.image_generation.application.use_cases.generate_image import (
+    GenerateImageAnonymous,
+    GenerateImageFromPrompt,
+)
 from modules.image_generation.application.use_cases.list_showcase import ListPublicShowcase
 from modules.image_generation.application.use_cases.process_generation import ProcessGeneration
 from modules.image_generation.application.use_cases.read_generations import (
@@ -23,8 +32,11 @@ from modules.image_generation.application.use_cases.read_generations import (
 from modules.image_generation.domain.entities import Generation, GenerationStatus
 
 __all__ = [
+    "ClaimAnonymousArts",
+    "DeleteGeneration",
     "EditImageFromPrompt",
     "EditImageInput",
+    "GenerateImageAnonymous",
     "GenerateImageFromPrompt",
     "GenerateImageInput",
     "Generation",
@@ -36,4 +48,6 @@ __all__ = [
     "ListPublicShowcase",
     "ListUserGenerations",
     "ProcessGeneration",
+    "RenameGeneration",
+    "RenameGenerationInput",
 ]

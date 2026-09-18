@@ -36,7 +36,15 @@
     "hidePassword": "Masquer le mot de passe",
     "orContinue": "Ou continuer avec",
     "googleButton": "Continuer avec Google",
-    "googleIconAlt": "Icône Google"
+    "googleIconAlt": "Icône Google",
+    "signingIn": "Connexion...",
+    "signingUp": "Inscription...",
+    "errors": {
+      "invalidCredentials": "E-mail ou mot de passe invalide.",
+      "emailInUse": "Un compte existe déjà avec cet e-mail.",
+      "signupFailed": "Impossible de créer votre compte. Réessayez.",
+      "generic": "Une erreur est survenue. Réessayez."
+    }
   },
   "landing": {
     "headline": "Transformez les mots en images!",
@@ -106,7 +114,8 @@
         "question": "Comment fonctionne la progression en temps réel ?",
         "answer": "Le statut de la génération est diffusé depuis l'API via des server-sent events (SSE), affichant le pourcentage de progression jusqu'à ce que l'image soit prête ou qu'une erreur survienne."
       }
-    ]
+    ],
+    "quotaExhausted": "Vos chances de prompt sont épuisées. Prochaine dans"
   },
   "studio": {
     "title": "Studio",
@@ -129,14 +138,28 @@
     "resultAlt": "Résultat généré à partir de votre prompt.",
     "historyTitle": "Générations récentes",
     "historyEmpty": "Aucune génération pour le moment.",
-    "errorLabel": "Erreur"
+    "errorLabel": "Erreur",
+    "loadingAuth": "Vérification de votre session...",
+    "saveArtTitle": "Enregistrez votre œuvre",
+    "saveArtBody": "Connectez-vous ou inscrivez-vous pour enregistrer cette œuvre dans votre galerie. Elle sera liée à votre compte.",
+    "saveArtCta": "Se connecter / S'inscrire",
+    "saveArtLater": "Plus tard"
   },
   "gallery": {
     "title": "Galerie publique",
     "description": "Images générées par la communauté AImaginator. Chaque carte montre le prompt utilisé pour créer l'image.",
     "loadMore": "Charger plus",
     "empty": "Aucune image publique pour le moment.",
-    "by": "par"
+    "by": "par",
+    "myArtsTitle": "Mes œuvres",
+    "myArtsEmpty": "Vous n'avez pas encore d'œuvres. Générez-en une pour la voir ici.",
+    "loadingMyArts": "Chargement de vos œuvres...",
+    "rename": "Renommer",
+    "renameLabel": "Nouveau nom",
+    "saveRename": "Enregistrer le nom",
+    "cancelRename": "Annuler",
+    "delete": "Supprimer",
+    "deleteConfirm": "Supprimer cette œuvre ? Cette action est irréversible."
   },
   "errors": {
     "generic": "Une erreur est survenue. Veuillez réessayer.",

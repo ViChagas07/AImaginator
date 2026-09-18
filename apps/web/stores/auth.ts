@@ -1,7 +1,13 @@
 import {create} from "zustand";
 import {API_BASE_URL} from "@/lib/constants";
 import {authedFetch} from "@/lib/api";
-import {clearSession, getAccessToken} from "@/lib/auth-token";
+import {
+  clearSession,
+  getAccessToken,
+  saveSession,
+  type SessionTokens,
+} from "@/lib/auth-token";
+import {getAnonymousToken} from "@/lib/anonymous-session";
 
 export type AuthUser = {
   id: string;
@@ -12,13 +18,44 @@ export type AuthUser = {
 
 type AuthStatus = "unknown" | "loading" | "authenticated" | "unauthenticated";
 
+export class AuthError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
 type AuthState = {
   user: AuthUser | null;
   status: AuthStatus;
   fetchMe: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
+  completeAuth: (tokens: SessionTokens) => Promise<void>;
   logout: () => void;
   loginUrl: string;
 };
+
+function setSession(tokens: SessionTokens) {
+  saveSession(tokens);
+}
+
+async function claimAnonymousArts(): Promise<void> {
+  const anon = getAnonymousToken();
+  if (!anon) return;
+  try {
+    const headers = new Headers();
+    headers.set("X-Anonymous-Session", anon);
+    await authedFetch(`${API_BASE_URL}/api/v1/gallery/me/claim`, {
+      method: "POST",
+      headers,
+      cache: "no-store",
+    });
+  } catch {
+    // falha na migração não deve bloquear o login
+  }
+}
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -44,6 +81,53 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch {
       set({user: null, status: "unauthenticated"});
     }
+  },
+
+  async signIn(email, password) {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({email, password}),
+      cache: "no-store",
+    });
+    if (!res.ok) throw new AuthError(res.status, "invalid-credentials");
+    const data = (await res.json()) as {
+      access_token: string;
+      refresh_token: string;
+      user: AuthUser;
+    };
+    setSession({access_token: data.access_token, refresh_token: data.refresh_token});
+    set({user: data.user, status: "authenticated"});
+    await claimAnonymousArts();
+  },
+
+  async signUp(name, email, password) {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/signup`, {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify({name, email, password}),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      const status = res.status;
+      if (status === 409) throw new AuthError(status, "email-in-use");
+      throw new AuthError(status, "signup-failed");
+    }
+    const data = (await res.json()) as {
+      access_token: string;
+      refresh_token: string;
+      user: AuthUser;
+    };
+    setSession({access_token: data.access_token, refresh_token: data.refresh_token});
+    set({user: data.user, status: "authenticated"});
+    await claimAnonymousArts();
+  },
+
+  async completeAuth(tokens) {
+    setSession(tokens);
+    set({status: "loading"});
+    await claimAnonymousArts();
+    await useAuthStore.getState().fetchMe();
   },
 
   logout() {

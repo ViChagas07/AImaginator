@@ -38,6 +38,7 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
         model.email = user.email.lower()
         model.name = user.name
         model.google_sub = user.google_sub
+        model.password_hash = user.password_hash
         model.avatar_url = user.avatar_url
         model.generation_credits = user.generation_credits
         model.updated_at = user.updated_at
@@ -51,6 +52,7 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
             email=model.email,
             name=model.name,
             google_sub=model.google_sub,
+            password_hash=model.password_hash,
             avatar_url=model.avatar_url,
             generation_credits=model.generation_credits,
             created_at=model.created_at,

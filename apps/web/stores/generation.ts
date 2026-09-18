@@ -2,6 +2,7 @@ import {create} from "zustand";
 import {API_BASE_URL} from "@/lib/constants";
 import {authedFetch} from "@/lib/api";
 import {getAccessToken} from "@/lib/auth-token";
+import {getAnonymousToken} from "@/lib/anonymous-session";
 
 export type GenerationStatus =
   | "idle"
@@ -87,7 +88,13 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         ? data.stream_url
         : `${API_BASE_URL}${data.stream_url}`;
       const token = getAccessToken();
-      const url = token ? `${base}?token=${encodeURIComponent(token)}` : base;
+      const anon = getAnonymousToken();
+      const authParam = token
+        ? `token=${encodeURIComponent(token)}`
+        : anon
+          ? `anon=${encodeURIComponent(anon)}`
+          : null;
+      const url = authParam ? `${base}?${authParam}` : base;
       source = new EventSource(url);
       source.addEventListener("status_update", (event) => {
         const payload = JSON.parse((event as MessageEvent).data) as {status: GenerationStatus};

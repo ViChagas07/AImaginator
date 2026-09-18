@@ -36,7 +36,15 @@
     "hidePassword": "Passwort ausblenden",
     "orContinue": "Oder weiter mit",
     "googleButton": "Mit Google fortfahren",
-    "googleIconAlt": "Google-Symbol"
+    "googleIconAlt": "Google-Symbol",
+    "signingIn": "Anmelden...",
+    "signingUp": "Registrieren...",
+    "errors": {
+      "invalidCredentials": "Ungültige E-Mail oder Passwort.",
+      "emailInUse": "Mit dieser E-Mail existiert bereits ein Konto.",
+      "signupFailed": "Konto konnte nicht erstellt werden. Erneut versuchen.",
+      "generic": "Etwas ist schiefgelaufen. Erneut versuchen."
+    }
   },
   "landing": {
     "headline": "Verwandle Wörter in Bilder!",
@@ -106,7 +114,8 @@
         "question": "Wie funktioniert der Echtzeit-Fortschritt?",
         "answer": "Der Generierungsstatus wird von der API über server-sent events (SSE) übertragen und zeigt den prozentualen Fortschritt an, bis das Bild fertig ist oder ein Fehler auftritt."
       }
-    ]
+    ],
+    "quotaExhausted": "Deine Prompt-Chancen sind aufgebraucht. Nächste in"
   },
   "studio": {
     "title": "Studio",
@@ -129,14 +138,28 @@
     "resultAlt": "Ergebnis, das aus deinem Prompt generiert wurde.",
     "historyTitle": "Letzte Generierungen",
     "historyEmpty": "Bisher keine Generierungen.",
-    "errorLabel": "Fehler"
+    "errorLabel": "Fehler",
+    "loadingAuth": "Sitzung wird geprüft...",
+    "saveArtTitle": "Kunstwerk speichern",
+    "saveArtBody": "Melde dich an oder registriere dich, um dieses Kunstwerk in deiner Galerie zu speichern. Es wird mit deinem Konto verknüpft.",
+    "saveArtCta": "Anmelden / Registrieren",
+    "saveArtLater": "Später"
   },
   "gallery": {
     "title": "Öffentliche Galerie",
     "description": "Von der AImaginator-Community generierte Bilder. Jede Karte zeigt den Prompt, der zum Erstellen des Bildes verwendet wurde.",
     "loadMore": "Mehr laden",
     "empty": "Noch keine öffentlichen Bilder.",
-    "by": "von"
+    "by": "von",
+    "myArtsTitle": "Meine Kunstwerke",
+    "myArtsEmpty": "Du hast noch keine Kunstwerke. Erstelle eines, um es hier zu sehen.",
+    "loadingMyArts": "Lade deine Kunstwerke...",
+    "rename": "Umbenennen",
+    "renameLabel": "Neuer Name",
+    "saveRename": "Namen speichern",
+    "cancelRename": "Abbrechen",
+    "delete": "Löschen",
+    "deleteConfirm": "Dieses Kunstwerk löschen? Diese Aktion kann nicht rückgängig gemacht werden."
   },
   "errors": {
     "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",

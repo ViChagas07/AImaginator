@@ -32,11 +32,19 @@
     "fullNamePlaceholder": "João da Silva",
     "signInButton": "Entrar",
     "signUpButton": "Cadastrar",
+    "signingIn": "Entrando...",
+    "signingUp": "Cadastrando...",
     "showPassword": "Mostrar senha",
     "hidePassword": "Ocultar senha",
     "orContinue": "Ou continue com",
     "googleButton": "Continuar com o Google",
-    "googleIconAlt": "Ícone do Google"
+    "googleIconAlt": "Ícone do Google",
+    "errors": {
+      "invalidCredentials": "E-mail ou senha inválidos.",
+      "emailInUse": "Já existe uma conta com este e-mail.",
+      "signupFailed": "Não foi possível criar sua conta. Tente novamente.",
+      "generic": "Algo deu errado. Tente novamente."
+    }
   },
   "landing": {
     "headline": "Transforme palavras em imagens!",
@@ -45,6 +53,7 @@
     "promptPlaceholder": "Descreva a imagem que você quer criar...",
     "promptButton": "Criar imagem",
     "promptStatusLoading": "Abrindo o estúdio...",
+    "quotaExhausted": "Suas chances de prompt acabaram. Próxima em",
     "stepsTitle": "Como funciona",
     "steps": [
       {
@@ -137,14 +146,28 @@
     "resultAlt": "Resultado gerado a partir do seu prompt.",
     "historyTitle": "Gerações recentes",
     "historyEmpty": "Nenhuma geração até agora.",
-    "errorLabel": "Erro"
+    "errorLabel": "Erro",
+    "loadingAuth": "Verificando sua sessão...",
+    "saveArtTitle": "Salve sua arte",
+    "saveArtBody": "Faça login ou cadastre-se para salvar esta arte na sua galeria. Sua arte será vinculada à sua conta.",
+    "saveArtCta": "Login / Cadastro",
+    "saveArtLater": "Agora não"
   },
   "gallery": {
     "title": "Galeria pública",
     "description": "Imagens geradas pela comunidade AImaginator. Cada cartão mostra o prompt usado para criar a imagem.",
     "loadMore": "Carregar mais",
     "empty": "Nenhuma imagem pública ainda.",
-    "by": "por"
+    "by": "por",
+    "myArtsTitle": "Minhas artes",
+    "myArtsEmpty": "Você ainda não tem artes. Gere uma para vê-la aqui.",
+    "loadingMyArts": "Carregando suas artes...",
+    "rename": "Renomear",
+    "renameLabel": "Novo nome",
+    "saveRename": "Salvar nome",
+    "cancelRename": "Cancelar",
+    "delete": "Excluir",
+    "deleteConfirm": "Excluir esta arte? Esta ação não pode ser desfeita."
   },
   "errors": {
     "generic": "Algo deu errado. Tente novamente.",

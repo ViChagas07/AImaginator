@@ -65,9 +65,16 @@ class Settings(BaseSettings):
     sentry_dsn_backend: str = ""
     sentry_environment: str = "development"
 
+    # ---- Cota de prompts (janela deslizante de 24h, spec Bloco 1) ----
+    anonymous_prompt_chances_per_day: int = 1
+    authenticated_prompt_chances_per_day: int = 3
+    anonymous_session_cookie_name: str = "aimaginator_anon"
+    anonymous_session_max_age_days: int = 7
+
     # ---- Rate limiting / resiliencia ----
     rate_limit_generation_per_minute: int = 10
     rate_limit_auth_per_minute: int = 5
+    rate_limit_prompt_quota_per_minute: int = 20
     circuit_breaker_failure_threshold: int = 5
     circuit_breaker_recovery_seconds: int = 30
 

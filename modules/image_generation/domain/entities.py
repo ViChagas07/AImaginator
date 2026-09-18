@@ -48,9 +48,9 @@ _ALLOWED_TRANSITIONS: dict[GenerationStatus, frozenset[GenerationStatus]] = {
 
 @dataclass(slots=True)
 class Generation:
-    """Uma geracao/edicao de imagem pedida por um usuario."""
+    """Uma geracao/edicao de imagem pedida por um usuario (ou anonimo)."""
 
-    user_id: UUID
+    user_id: UUID | None
     kind: GenerationKind
     prompt: str
     negative_prompt: str | None = None
@@ -59,12 +59,25 @@ class Generation:
     source_image_url: str | None = None
     result_image_url: str | None = None
     error_message: str | None = None
+    title: str | None = None
+    anonymous_session_id: str | None = None
+    deleted_at: datetime | None = None
     status: GenerationStatus = GenerationStatus.QUEUED
     credits_cost: int = 1
     id: UUID = field(default_factory=uuid4)
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     completed_at: datetime | None = None
+
+    def belongs_to(self, user_id: UUID | None, *, anonymous_session_id: str | None = None) -> bool:
+        """True se o owner declarado e dono desta geracao."""
+        if self.user_id is not None:
+            return self.user_id == user_id
+        return self.anonymous_session_id == anonymous_session_id
+
+    def rename(self, title: str) -> None:
+        self.title = title.strip()
+        self.updated_at = datetime.now(UTC)
 
     def transition_to(self, new_status: GenerationStatus, *, error: str | None = None) -> None:
         """Maquina de estados: transicoes invalidas sao erro de dominio."""

@@ -24,11 +24,15 @@ from apps.api.dependencies import (
     GenerationRepoDep,
     JWTDep,
     RedisDep,
+    SettingsDep,
     UserRepoDep,
     authenticate_user,
+    resolve_anonymous_session,
 )
+from modules.auth.application.anonymous_identity import unsign_anonymous_id
 from modules.image_generation.application.ports import stream_channel
 from modules.image_generation.contracts import GetGeneration
+from shared_kernel.errors import ForbiddenError, NotFoundError
 
 _MAX_STREAM_SECONDS = 600
 _KEEPALIVE_SECONDS = 15
@@ -43,12 +47,30 @@ async def stream_generation(
     redis: RedisDep,
     jwt: JWTDep,
     users: UserRepoDep,
+    settings: SettingsDep,
     request: Request,
     token: str | None = Query(default=None),
+    anon: str | None = Query(default=None),
 ) -> EventSourceResponse:
     # Valida ownership antes de abrir o stream (nao vaza canal a terceiros).
-    user = await authenticate_user(request, jwt, users, query_token=token)
-    await GetGeneration(generations).execute(user_id=user.id, generation_id=generation_id)
+    if token:
+        user = await authenticate_user(request, jwt, users, query_token=token)
+        await GetGeneration(generations).execute(user_id=user.id, generation_id=generation_id)
+    else:
+        anonymous_id = None
+        if anon:
+            anonymous_id = unsign_anonymous_id(
+                anon,
+                secret_key=settings.secret_key,
+                max_age=settings.anonymous_session_max_age_days * 86400,
+            )
+        if anonymous_id is None:
+            anonymous_id, _ = resolve_anonymous_session(request, settings)
+        generation = await generations.get_by_id(generation_id)
+        if generation is None:
+            raise NotFoundError("Geracao nao encontrada.")
+        if generation.anonymous_session_id != anonymous_id:
+            raise ForbiddenError("Acesso negado a esta geracao.")
 
     async def event_generator() -> AsyncIterator[dict]:
         pubsub = redis.pubsub()

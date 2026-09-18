@@ -15,8 +15,11 @@ class GenerationModel(Base):
     __tablename__ = "generations"
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    anonymous_session_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True
     )
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
@@ -27,6 +30,7 @@ class GenerationModel(Base):
     source_image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     result_image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    title: Mapped[str | None] = mapped_column(String(200), nullable=True)
     credits_cost: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
@@ -37,3 +41,6 @@ class GenerationModel(Base):
         onupdate=lambda: datetime.now(UTC),
     )
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )

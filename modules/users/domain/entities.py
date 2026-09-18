@@ -15,7 +15,8 @@ class User:
 
     email: str
     name: str
-    google_sub: str  # subject OIDC — identidade estavel no provedor
+    google_sub: str | None = None  # subject OIDC — identidade estavel no provedor
+    password_hash: str | None = None  # apenas para contas com email/senha
     avatar_url: str | None = None
     id: UUID = field(default_factory=uuid4)
     generation_credits: int = DEFAULT_MONTHLY_CREDITS

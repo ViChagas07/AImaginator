@@ -36,7 +36,15 @@
     "hidePassword": "隐藏密码",
     "orContinue": "或使用以下方式继续",
     "googleButton": "使用 Google 继续",
-    "googleIconAlt": "Google 图标"
+    "googleIconAlt": "Google 图标",
+    "signingIn": "登录中...",
+    "signingUp": "注册中...",
+    "errors": {
+      "invalidCredentials": "邮箱或密码无效。",
+      "emailInUse": "该邮箱已有账户。",
+      "signupFailed": "无法创建账户。请重试。",
+      "generic": "出错了。请重试。"
+    }
   },
   "landing": {
     "headline": "把文字变成图像！",
@@ -106,7 +114,8 @@
         "question": "实时进度是如何运作的？",
         "answer": "生成状态通过 server-sent events (SSE) 从 API 流式传输，显示百分比进度，直到图像完成或返回错误。"
       }
-    ]
+    ],
+    "quotaExhausted": "提示次数已用完。下次可用时间"
   },
   "studio": {
     "title": "工作室",
@@ -129,14 +138,28 @@
     "resultAlt": "根据你的提示词生成的结果。",
     "historyTitle": "最近的生成",
     "historyEmpty": "还没有生成记录。",
-    "errorLabel": "错误"
+    "errorLabel": "错误",
+    "loadingAuth": "正在检查会话...",
+    "saveArtTitle": "保存作品",
+    "saveArtBody": "登录或注册以将作品保存到画廊。作品将关联到你的账户。",
+    "saveArtCta": "登录 / 注册",
+    "saveArtLater": "稍后"
   },
   "gallery": {
     "title": "公共画廊",
     "description": "AImaginator 社区生成的图像。每张卡片都显示创建该图像所用的提示词。",
     "loadMore": "加载更多",
     "empty": "还没有公开图像。",
-    "by": "来自"
+    "by": "来自",
+    "myArtsTitle": "我的作品",
+    "myArtsEmpty": "你还没有作品。生成一个即可在此查看。",
+    "loadingMyArts": "加载作品中...",
+    "rename": "重命名",
+    "renameLabel": "新名称",
+    "saveRename": "保存名称",
+    "cancelRename": "取消",
+    "delete": "删除",
+    "deleteConfirm": "删除此作品？此操作无法撤销。"
   },
   "errors": {
     "generic": "出了点问题。请重试。",

@@ -10,6 +10,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useRouter } from "@/i18n/navigation";
+import { AuthError, useAuthStore } from "@/stores/auth";
 import { RandomBibleVerse } from "./random-bible-verse";
 import { LoginBibleVerse } from "./login-bible-verse";
 
@@ -185,9 +187,42 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
 );
 PasswordInput.displayName = "PasswordInput";
 
+function authErrorMessage(t: ReturnType<typeof useTranslations<"auth">>, error: AuthError): string {
+  switch (error.message) {
+    case "invalid-credentials":
+      return t("errors.invalidCredentials");
+    case "email-in-use":
+      return t("errors.emailInUse");
+    case "signup-failed":
+      return t("errors.signupFailed");
+    default:
+      return t("errors.generic");
+  }
+}
+
 function SignInForm() {
   const t = useTranslations("auth");
-  const handleSignIn = (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); console.log("UI: Sign In form submitted"); };
+  const router = useRouter();
+  const signIn = useAuthStore((s) => s.signIn);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSignIn(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await signIn(email, password);
+      router.replace("/studio");
+    } catch (err) {
+      setError(err instanceof AuthError ? authErrorMessage(t, err) : t("errors.generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <form onSubmit={handleSignIn} autoComplete="on" className="flex flex-col gap-8">
       <div className="flex flex-col items-center gap-2 text-center">
@@ -195,9 +230,19 @@ function SignInForm() {
         <p className="text-balance text-sm text-muted-foreground">{t("signIn.subtitle")}</p>
       </div>
       <div className="grid gap-4">
-        <div className="grid gap-2"><Label htmlFor="email">{t("email")}</Label><Input id="email" name="email" type="email" placeholder={t("emailPlaceholder")} required autoComplete="email" /></div>
-        <PasswordInput name="password" label={t("password")} required autoComplete="current-password" placeholder={t("password")} showLabel={t("showPassword")} hideLabel={t("hidePassword")} />
-        <Button type="submit" variant="outline" className="mt-2">{t("signInButton")}</Button>
+        <div className="grid gap-2">
+          <Label htmlFor="email">{t("email")}</Label>
+          <Input id="email" name="email" type="email" placeholder={t("emailPlaceholder")} required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <PasswordInput name="password" label={t("password")} required autoComplete="current-password" placeholder={t("password")} showLabel={t("showPassword")} hideLabel={t("hidePassword")} value={password} onChange={(e) => setPassword(e.target.value)} />
+        {error ? (
+          <p role="alert" className="text-sm text-red-500">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" variant="outline" className="mt-2" disabled={busy} aria-busy={busy}>
+          {busy ? t("signingIn") : t("signInButton")}
+        </Button>
       </div>
     </form>
   );
@@ -205,7 +250,28 @@ function SignInForm() {
 
 function SignUpForm() {
   const t = useTranslations("auth");
-  const handleSignUp = (event: React.FormEvent<HTMLFormElement>) => { event.preventDefault(); console.log("UI: Sign Up form submitted"); };
+  const router = useRouter();
+  const signUp = useAuthStore((s) => s.signUp);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSignUp(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await signUp(name, email, password);
+      router.replace("/studio");
+    } catch (err) {
+      setError(err instanceof AuthError ? authErrorMessage(t, err) : t("errors.generic"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <form onSubmit={handleSignUp} autoComplete="on" className="flex flex-col gap-8">
       <div className="flex flex-col items-center gap-2 text-center">
@@ -213,10 +279,23 @@ function SignUpForm() {
         <p className="text-balance text-sm text-muted-foreground">{t("signUp.subtitle")}</p>
       </div>
       <div className="grid gap-4">
-        <div className="grid gap-1"><Label htmlFor="name">{t("fullName")}</Label><Input id="name" name="name" type="text" placeholder={t("fullNamePlaceholder")} required autoComplete="name" /></div>
-        <div className="grid gap-2"><Label htmlFor="email">{t("email")}</Label><Input id="email" name="email" type="email" placeholder={t("emailPlaceholder")} required autoComplete="email" /></div>
-        <PasswordInput name="password" label={t("password")} required autoComplete="new-password" placeholder={t("password")} showLabel={t("showPassword")} hideLabel={t("hidePassword")} />
-        <Button type="submit" variant="outline" className="mt-2">{t("signUpButton")}</Button>
+        <div className="grid gap-1">
+          <Label htmlFor="name">{t("fullName")}</Label>
+          <Input id="name" name="name" type="text" placeholder={t("fullNamePlaceholder")} required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="email">{t("email")}</Label>
+          <Input id="email" name="email" type="email" placeholder={t("emailPlaceholder")} required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <PasswordInput name="password" label={t("password")} required autoComplete="new-password" placeholder={t("password")} showLabel={t("showPassword")} hideLabel={t("hidePassword")} value={password} onChange={(e) => setPassword(e.target.value)} />
+        {error ? (
+          <p role="alert" className="text-sm text-red-500">
+            {error}
+          </p>
+        ) : null}
+        <Button type="submit" variant="outline" className="mt-2" disabled={busy} aria-busy={busy}>
+          {busy ? t("signingUp") : t("signUpButton")}
+        </Button>
       </div>
     </form>
   );
@@ -224,6 +303,7 @@ function SignUpForm() {
 
 function AuthFormContainer({ isSignIn, onToggle }: { isSignIn: boolean; onToggle: () => void; }) {
     const t = useTranslations("auth");
+    const loginUrl = useAuthStore((s) => s.loginUrl);
     return (
         <div className="mx-auto grid w-full max-w-[350px] gap-2">
             <Image
@@ -243,7 +323,7 @@ function AuthFormContainer({ isSignIn, onToggle }: { isSignIn: boolean; onToggle
             <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
                 <span className="relative z-10 bg-background px-2 text-muted-foreground">{t("orContinue")}</span>
             </div>
-            <Button variant="outline" type="button" onClick={() => console.log("UI: Google button clicked")}>
+            <Button variant="outline" type="button" onClick={() => window.location.assign(loginUrl)}>
                 <img src="https://cdn.21st.dev/assets/mirror/38/38146bfd9eff6dbf0d74771f2e625c70d87d3770e0d080dbb6e50db1d5403f46.svg" alt={t("googleIconAlt")} className="mr-2 h-4 w-4" />
                 {t("googleButton")}
             </Button>
