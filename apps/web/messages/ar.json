@@ -116,7 +116,8 @@
       }
     ],
     "quotaAvailable": "فرص المطالبة: {remaining} من {total}",
-    "quotaReloadsIn": "يُعاد التحميل خلال"
+    "quotaReloadsIn": "يُعاد التحميل خلال",
+    "quotaLoading": "جارٍ تحميل فرص المطالبة..."
   },
   "studio": {
     "title": "الاستوديو",

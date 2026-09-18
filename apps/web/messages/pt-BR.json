@@ -55,6 +55,7 @@
     "promptStatusLoading": "Abrindo o estúdio...",
     "quotaAvailable": "Chances de prompt: {remaining} de {total}",
     "quotaReloadsIn": "Recarrega em",
+    "quotaLoading": "Carregando chances...",
     "stepsTitle": "Como funciona",
     "steps": [
       {

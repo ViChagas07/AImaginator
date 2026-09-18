@@ -116,7 +116,8 @@
       }
     ],
     "quotaAvailable": "Oportunidades de prompt: {remaining} de {total}",
-    "quotaReloadsIn": "Se recarga en"
+    "quotaReloadsIn": "Se recarga en",
+    "quotaLoading": "Cargando oportunidades de prompt..."
   },
   "studio": {
     "title": "Estudio",

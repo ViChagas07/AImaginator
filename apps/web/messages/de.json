@@ -116,7 +116,8 @@
       }
     ],
     "quotaAvailable": "Prompt-Chancen: {remaining} von {total}",
-    "quotaReloadsIn": "Lädt neu in"
+    "quotaReloadsIn": "Lädt neu in",
+    "quotaLoading": "Prompt-Chancen werden geladen..."
   },
   "studio": {
     "title": "Studio",

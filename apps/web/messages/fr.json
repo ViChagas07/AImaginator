@@ -116,7 +116,8 @@
       }
     ],
     "quotaAvailable": "Chances de prompt : {remaining} sur {total}",
-    "quotaReloadsIn": "Se recharge dans"
+    "quotaReloadsIn": "Se recharge dans",
+    "quotaLoading": "Chargement des chances de prompt..."
   },
   "studio": {
     "title": "Studio",

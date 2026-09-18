@@ -116,7 +116,8 @@
       }
     ],
     "quotaAvailable": "プロンプト回数: {remaining}/{total}",
-    "quotaReloadsIn": "再読み込みまで"
+    "quotaReloadsIn": "再読み込みまで",
+    "quotaLoading": "プロンプト回数を読み込み中..."
   },
   "studio": {
     "title": "スタジオ",

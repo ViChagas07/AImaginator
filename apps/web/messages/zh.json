@@ -116,7 +116,8 @@
       }
     ],
     "quotaAvailable": "提示次数：{remaining}/{total}",
-    "quotaReloadsIn": "重新加载于"
+    "quotaReloadsIn": "重新加载于",
+    "quotaLoading": "正在加载提示次数..."
   },
   "studio": {
     "title": "工作室",

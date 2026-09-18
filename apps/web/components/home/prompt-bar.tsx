@@ -151,28 +151,32 @@ export function PromptBar({className}: {className?: string}) {
         </div>
       </form>
 
-      {quota.loaded ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="mt-3 flex items-center justify-center gap-2 text-sm text-muted"
-        >
-          <span>
-            {t("quotaAvailable", {
-              remaining: quota.chancesRemaining,
-              total: quota.chancesTotal,
-            })}
-          </span>
-          {exhausted ? (
-            <>
-              <span aria-hidden="true">·</span>
-              <Timer className="h-4 w-4" aria-hidden />
-              <span>{t("quotaReloadsIn")}</span>
-              <span className="font-mono tabular-nums">{formatCountdown(countdown)}</span>
-            </>
-          ) : null}
-        </div>
-      ) : null}
+      <div
+        role="status"
+        aria-live="polite"
+        className="mt-3 flex items-center justify-center gap-2 text-sm text-muted"
+      >
+        {quota.loaded ? (
+          <>
+            <span>
+              {t("quotaAvailable", {
+                remaining: quota.chancesRemaining,
+                total: quota.chancesTotal,
+              })}
+            </span>
+            {exhausted ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <Timer className="h-4 w-4" aria-hidden />
+                <span>{t("quotaReloadsIn")}</span>
+                <span className="font-mono tabular-nums">{formatCountdown(countdown)}</span>
+              </>
+            ) : null}
+          </>
+        ) : (
+          <span>{t("quotaLoading")}</span>
+        )}
+      </div>
     </div>
   );
 }

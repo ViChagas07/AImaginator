@@ -116,7 +116,8 @@
       }
     ],
     "quotaAvailable": "Попытки промптов: {remaining} из {total}",
-    "quotaReloadsIn": "Обновится через"
+    "quotaReloadsIn": "Обновится через",
+    "quotaLoading": "Загрузка попыток промптов..."
   },
   "studio": {
     "title": "Студия",
