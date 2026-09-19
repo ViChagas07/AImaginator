@@ -289,6 +289,32 @@ input:focus-visible,
   border-radius: 4px;
 }
 
+/* ---- Logo theme switching ---- */
+.logo-dark {
+  display: block;
+}
+.logo-light {
+  display: none;
+}
+
+html[data-theme="light"] .logo-dark,
+html[data-theme="system"] .logo-dark {
+  display: none;
+}
+html[data-theme="light"] .logo-light,
+html[data-theme="system"] .logo-light {
+  display: block;
+}
+
+@media (prefers-color-scheme: light) {
+  html[data-theme="system"] .logo-dark {
+    display: none;
+  }
+  html[data-theme="system"] .logo-light {
+    display: block;
+  }
+}
+
 /* ---- User settings (applied via Zustand + CSS custom properties) ---- */
 
 :root {

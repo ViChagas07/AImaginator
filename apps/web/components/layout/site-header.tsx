@@ -17,12 +17,20 @@ export async function SiteHeader() {
             className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground"
           >
             <Image
-              src="/Aimaginator_Slogan_pic-removebg-preview.png"
+              src="/AImaginator_pic_transparent.png"
               alt={tCommon("brand")}
               width={476}
               height={317}
               priority
-              className="h-10 w-auto"
+              className="h-10 w-auto logo-dark"
+            />
+            <Image
+              src="/AImaginator_black-transparent.png"
+              alt={tCommon("brand")}
+              width={476}
+              height={317}
+              priority
+              className="h-10 w-auto logo-light"
             />
           </Link>
           <LanguageSwitcher />
