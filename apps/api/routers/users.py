@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
 from pydantic import BaseModel, Field, field_validator
 
 from apps.api.dependencies import CurrentUserDep, UserRepoDep
@@ -259,11 +259,12 @@ async def upload_avatar(
 async def remove_avatar(
     current_user: CurrentUserDep,
     users: UserRepoDep,
-) -> None:
+) -> Response:
     """Remove o avatar do usuario (volta para avatar padrão)."""
     current_user.avatar_url = None
     current_user.updated_at = datetime.now(UTC)
     await users.save(current_user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/me/stats", response_model=StatsResponse)
