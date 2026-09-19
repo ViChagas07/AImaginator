@@ -301,7 +301,7 @@ async def disconnect_provider(
     provider: str,
     current_user: CurrentUserDep,
     users: UserRepoDep,
-) -> None:
+) -> Response:
     """Desconecta um provedor OAuth (bloqueia se for o único método de login)."""
     if provider != "google":
         raise HTTPException(status_code=400, detail="Provedor invalido")
@@ -319,6 +319,7 @@ async def disconnect_provider(
     current_user.google_sub = None
     current_user.updated_at = datetime.now(UTC)
     await users.save(current_user)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/me/settings", response_model=UserSettingsResponse)
