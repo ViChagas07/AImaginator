@@ -132,7 +132,7 @@ export function ExamplesGrid() {
             <button
               type="button"
               onClick={() => setOpenIndex(null)}
-              className="mt-6 rounded-md bg-surface px-4 py-2 text-sm text-foreground"
+              className="mt-6 cursor-pointer rounded-md bg-surface px-4 py-2 text-sm text-foreground"
             >
               {t("closePreview")}
             </button>
