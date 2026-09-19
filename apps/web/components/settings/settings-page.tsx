@@ -124,7 +124,7 @@ function SegmentedControl<T extends string>({
   label: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg border border-foreground/10 bg-surface p-1">
+    <div role="radiogroup" aria-label={label} className="ml-4 inline-flex rounded-lg border border-foreground/10 bg-surface p-1">
       {options.map((option) => {
         const active = option.value === value;
         return (
