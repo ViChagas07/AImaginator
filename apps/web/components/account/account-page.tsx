@@ -303,11 +303,6 @@ function AccountStatsSection({stats}: {stats: {accountCreatedAt: string; totalGe
         <StatCard label={t("accountStats.accountCreated")} value={formatDate(stats.accountCreatedAt)} />
         <StatCard label={t("accountStats.totalGenerations")} value={stats.totalGenerations.toLocaleString()} />
         <StatCard label={t("accountStats.totalSavedArts")} value={stats.totalSavedArts.toLocaleString()} />
-        <StatCard label={t("accountStats.currentPlan")} value={t("nav.account.tierFree")} />
-        <StatCard
-          label={t("accountStats.creditsUsed")}
-          value={`${stats.creditsUsedThisPeriod} ${t("accountStats.creditsLimit", {limit: stats.creditsLimit})}`}
-        />
       </div>
     </section>
   );

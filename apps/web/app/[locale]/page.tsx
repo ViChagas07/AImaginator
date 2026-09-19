@@ -101,7 +101,15 @@ export default async function LandingPage({params}: PageProps<"/[locale]">) {
               width={1412}
               height={1114}
               priority
-              className="animate-hero-enter h-auto w-[150px] drop-shadow-[0_10px_32px_rgba(76,111,255,0.35)] motion-reduce:animate-none sm:w-[190px] lg:w-[220px]"
+              className="logo-dark animate-hero-enter h-auto w-[150px] drop-shadow-[0_10px_32px_rgba(76,111,255,0.35)] motion-reduce:animate-none sm:w-[190px] lg:w-[220px]"
+            />
+            <Image
+              src="/AImaginator_black-transparent.png"
+              alt={t("logoAlt")}
+              width={1412}
+              height={1114}
+              priority
+              className="logo-light animate-hero-enter h-auto w-[150px] drop-shadow-[0_10px_32px_rgba(76,111,255,0.35)] motion-reduce:animate-none sm:w-[190px] lg:w-[220px]"
             />
             <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
               {t("headline")}
