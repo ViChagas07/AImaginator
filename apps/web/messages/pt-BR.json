@@ -63,6 +63,7 @@
     "quotaAvailable": "Chances de prompt: {remaining} de {total}",
     "quotaReloadsIn": "Recarrega em",
     "quotaLoading": "Carregando chances...",
+    "comingSoon": "⚠️ A geração de imagens por IA ainda não está disponível. Em breve, um modelo será implementado e seus prompts funcionarão normalmente.",
     "stepsTitle": "Como funciona",
     "steps": [
       {
@@ -140,6 +141,7 @@
     "loginButton": "Login/Cadastro",
     "promptLabel": "Prompt",
     "promptPlaceholder": "Descreva a imagem...",
+    "comingSoon": "⚠️ A geração de imagens por IA ainda não está disponível. Em breve, um modelo será implementado e seus prompts funcionarão normalmente.",
     "uploadLabel": "Imagem opcional para editar",
     "uploadHint": "PNG ou JPEG — opcional, enviada junto ao prompt para edição.",
     "generateButton": "Gerar",

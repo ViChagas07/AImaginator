@@ -3,7 +3,7 @@
 import {useEffect, useRef, useState} from "react";
 import {useLocale, useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
-import {Loader2, Plus, Send, Timer, X} from "lucide-react";
+import {Loader2, Plus, Send, Timer, TriangleAlert, X} from "lucide-react";
 import {useGenerationStore} from "@/stores/generation";
 import {usePromptQuotaStore} from "@/stores/prompt-quota";
 import {useCountdown} from "@/lib/use-countdown";
@@ -69,6 +69,9 @@ export function PromptBar({className}: {className?: string}) {
   }
 
   const inputDisabled = exhausted || busy || (!value.trim() && !imageBase64);
+
+  // Aviso de "em breve" — sempre visível, pois a geração de IA ainda não está implementada
+  const comingSoon = t("comingSoon");
 
   return (
     <div className={cn("relative", className)}>
@@ -150,6 +153,14 @@ export function PromptBar({className}: {className?: string}) {
           </button>
         </div>
       </form>
+
+      {/* Overlay de aviso "em breve" — sempre ativo (blur + texto vermelho) */}
+      <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+        <div className="text-center px-4" role="alert" aria-live="polite">
+          <TriangleAlert className="h-5 w-5 text-destructive mx-auto mb-1.5" aria-hidden />
+          <p className="text-sm text-destructive font-medium">{comingSoon}</p>
+        </div>
+      </div>
 
       <div
         role="status"

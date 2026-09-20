@@ -63,6 +63,7 @@
     "quotaAvailable": "Prompt chances: {remaining} of {total}",
     "quotaReloadsIn": "Reloads in",
     "quotaLoading": "Loading prompt chances...",
+    "comingSoon": "⚠️ AI image generation is not yet available. A model will be implemented soon and your prompts will work normally.",
     "stepsTitle": "How it works",
     "steps": [
       {
@@ -140,6 +141,7 @@
     "loginButton": "Log in / Sign up",
     "promptLabel": "Prompt",
     "promptPlaceholder": "Describe the image...",
+    "comingSoon": "⚠️ AI image generation is not yet available. A model will be implemented soon and your prompts will work normally.",
     "uploadLabel": "Optional image to edit",
     "uploadHint": "PNG or JPEG — optional, sent together with the prompt to edit it.",
     "generateButton": "Generate",

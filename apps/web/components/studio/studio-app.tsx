@@ -69,9 +69,20 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
 
   const isGenerating = isGeneratingStatus(gen.status);
 
+  // Aviso de "em breve" — a geração de IA ainda não está implementada
+  const comingSoon = t("comingSoon");
+
   return (
     <div className="space-y-10">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 relative">
+        {/* Overlay de aviso "em breve" — sempre ativo (blur + texto vermelho) */}
+        <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="text-center px-4" role="alert" aria-live="polite">
+            <TriangleAlert className="h-5 w-5 text-destructive mx-auto mb-1.5" aria-hidden />
+            <p className="text-sm text-destructive font-medium">{comingSoon}</p>
+          </div>
+        </div>
+
         <div>
           <label
             htmlFor="studio-prompt"
