@@ -118,7 +118,9 @@
     ],
     "quotaAvailable": "Prompt-Chancen: {remaining} von {total}",
     "quotaReloadsIn": "Lädt neu in",
-    "quotaLoading": "Prompt-Chancen werden geladen..."
+    "quotaLoading": "Prompt-Chancen werden geladen...",
+    "comingSoon": "⚠️ Die KI-Bildgenerierung ist noch nicht verfügbar. Bald wird ein Modell implementiert und deine Prompts funktionieren dann normal.",
+    "loginToPrompt": "Melde dich an, um zu fantasieren! ✨"
   },
   "studio": {
     "title": "Studio",
@@ -146,7 +148,9 @@
     "saveArtTitle": "Kunstwerk speichern",
     "saveArtBody": "Melde dich an oder registriere dich, um dieses Kunstwerk in deiner Galerie zu speichern. Es wird mit deinem Konto verknüpft.",
     "saveArtCta": "Anmelden / Registrieren",
-    "saveArtLater": "Später"
+    "saveArtLater": "Später",
+    "comingSoon": "⚠️ Die KI-Bildgenerierung ist noch nicht verfügbar. Bald wird ein Modell implementiert und deine Prompts funktionieren dann normal.",
+    "loginToPrompt": "Melde dich an, um zu fantasieren! ✨"
   },
   "gallery": {
     "title": "Öffentliche Galerie",

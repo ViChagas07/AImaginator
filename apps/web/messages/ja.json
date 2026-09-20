@@ -47,7 +47,7 @@
       "generic": "問題が発生しました。もう一度お試しください。"
     }
   },
-  "landing": {
+"landing": {
     "headline": "言葉を画像に変えよう！",
     "logoAlt": "AImaginatorのロゴ",
     "subheadline": "AImaginatorは、自然言語のプロンプトから画像を生成・編集するAI画像ジェネレーターです。作りたいものを説明すれば数秒で生成し、結果を繰り返し調整できます。",
@@ -118,7 +118,9 @@
     ],
     "quotaAvailable": "プロンプト回数: {remaining}/{total}",
     "quotaReloadsIn": "再読み込みまで",
-    "quotaLoading": "プロンプト回数を読み込み中..."
+    "quotaLoading": "プロンプト回数を読み込み中...",
+    "comingSoon": "⚠️ AIによる画像生成はまだ利用できません。まもなくモデルが実装され、プロンプトが正常に機能するようになります。",
+    "loginToPrompt": "ログインして想像しよう！ ✨"
   },
   "studio": {
     "title": "スタジオ",
@@ -146,7 +148,9 @@
     "saveArtTitle": "作品を保存",
     "saveArtBody": "ログインまたは登録して、この作品をギャラリーに保存します。アカウントに紐付けられます。",
     "saveArtCta": "ログイン / 登録",
-    "saveArtLater": "後で"
+    "saveArtLater": "後で",
+    "comingSoon": "⚠️ AIによる画像生成はまだ利用できません。まもなくモデルが実装され、プロンプトが正常に機能するようになります。",
+    "loginToPrompt": "ログインして想像しよう！ ✨"
   },
   "gallery": {
     "title": "公開ギャラリー",

@@ -2,7 +2,7 @@
 
 import {useEffect, useRef, useState} from "react";
 import {useTranslations} from "next-intl";
-import {Loader2, Send, TriangleAlert, X} from "lucide-react";
+import {Loader2, Send, TriangleAlert, X, Lock} from "lucide-react";
 import {useAuthStore} from "@/stores/auth";
 import {isGeneratingStatus, useGenerationStore} from "@/stores/generation";
 import {AIGeneratingLoader} from "@/components/ui/ai-generating-loader";
@@ -69,19 +69,35 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
 
   const isGenerating = isGeneratingStatus(gen.status);
 
-  // Aviso de "em breve" — a geração de IA ainda não está implementada
+  // Avisos baseados no estado de autenticação
   const comingSoon = t("comingSoon");
+  const loginToPrompt = t("loginToPrompt");
+
+  const isAuthenticated = auth.status === "authenticated";
+  const isUnauthenticated = auth.status === "unauthenticated";
 
   return (
     <div className="space-y-10">
       <form onSubmit={handleSubmit} className="space-y-4 relative">
-        {/* Overlay de aviso "em breve" — sempre ativo (blur + texto vermelho) */}
-        <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-          <div className="text-center px-4" role="alert" aria-live="polite">
-            <TriangleAlert className="h-5 w-5 text-destructive mx-auto mb-1.5" aria-hidden />
-            <p className="text-sm text-destructive font-medium">{comingSoon}</p>
+        {/* Overlay para usuário NÃO autenticado: "Entre para imaginar! ✨" */}
+        {isUnauthenticated && (
+          <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+            <div className="text-center px-4" role="alert" aria-live="polite">
+              <Lock className="h-5 w-5 text-primary mx-auto mb-1.5" aria-hidden />
+              <p className="text-sm text-primary font-medium">{loginToPrompt}</p>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Overlay para usuário autenticado: "em breve" (IA ainda não implementada) */}
+        {isAuthenticated && (
+          <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+            <div className="text-center px-4" role="alert" aria-live="polite">
+              <TriangleAlert className="h-5 w-5 text-destructive mx-auto mb-1.5" aria-hidden />
+              <p className="text-sm text-destructive font-medium">{comingSoon}</p>
+            </div>
+          </div>
+        )}
 
         <div>
           <label

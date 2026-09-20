@@ -118,7 +118,9 @@
     ],
     "quotaAvailable": "提示次数：{remaining}/{total}",
     "quotaReloadsIn": "重新加载于",
-    "quotaLoading": "正在加载提示次数..."
+    "quotaLoading": "正在加载提示次数...",
+    "comingSoon": "⚠️ AI 图像生成功能尚未可用。模型即将上线，届时您的提示词将正常工作。",
+    "loginToPrompt": "登录去想象吧！ ✨"
   },
   "studio": {
     "title": "工作室",
@@ -146,7 +148,9 @@
     "saveArtTitle": "保存作品",
     "saveArtBody": "登录或注册以将作品保存到画廊。作品将关联到你的账户。",
     "saveArtCta": "登录 / 注册",
-    "saveArtLater": "稍后"
+    "saveArtLater": "稍后",
+    "comingSoon": "⚠️ AI 图像生成功能尚未可用。模型即将上线，届时您的提示词将正常工作。",
+    "loginToPrompt": "登录去想象吧！ ✨"
   },
   "gallery": {
     "title": "公共画廊",

@@ -118,7 +118,9 @@
     ],
     "quotaAvailable": "Oportunidades de prompt: {remaining} de {total}",
     "quotaReloadsIn": "Se recarga en",
-    "quotaLoading": "Cargando oportunidades de prompt..."
+    "quotaLoading": "Cargando oportunidades de prompt...",
+    "comingSoon": "⚠️ La generación de imágenes con IA aún no está disponible. Pronto se implementará un modelo y tus prompts funcionarán normalmente.",
+    "loginToPrompt": "¡Inicia sesión para imaginar! ✨"
   },
   "studio": {
     "title": "Estudio",
@@ -146,7 +148,9 @@
     "saveArtTitle": "Guarda tu arte",
     "saveArtBody": "Inicia sesión o regístrate para guardar esta arte en tu galería. Se vinculará a tu cuenta.",
     "saveArtCta": "Iniciar sesión / Registrarse",
-    "saveArtLater": "Ahora no"
+    "saveArtLater": "Ahora no",
+    "comingSoon": "⚠️ La generación de imágenes con IA aún no está disponible. Pronto se implementará un modelo y tus prompts funcionarán normalmente.",
+    "loginToPrompt": "¡Inicia sesión para imaginar! ✨"
   },
   "gallery": {
     "title": "Galería pública",
