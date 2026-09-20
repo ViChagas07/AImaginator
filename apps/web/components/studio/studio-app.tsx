@@ -84,7 +84,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
         {/* Overlay para usuário NÃO autenticado: "✨ Entre Para Imaginar! ✨" */}
         {isUnauthenticated && (
           <Link
-            href={`/${locale}/auth/login`}
+            href={`/${locale}/login`}
             className="absolute inset-0 rounded-xl bg-background/60 backdrop-blur flex items-center justify-center"
             aria-label={loginToPrompt}
           >
