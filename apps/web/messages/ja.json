@@ -120,7 +120,7 @@
     "quotaReloadsIn": "再読み込みまで",
     "quotaLoading": "プロンプト回数を読み込み中...",
     "comingSoon": "⚠️ AIによる画像生成はまだ利用できません。まもなくモデルが実装され、プロンプトが正常に機能するようになります。",
-    "loginToPrompt": "ログインして想像しよう！ ✨"
+    "loginToPrompt": "✨ ログインして想像しよう！ ✨"
   },
   "studio": {
     "title": "スタジオ",
@@ -150,7 +150,7 @@
     "saveArtCta": "ログイン / 登録",
     "saveArtLater": "後で",
     "comingSoon": "⚠️ AIによる画像生成はまだ利用できません。まもなくモデルが実装され、プロンプトが正常に機能するようになります。",
-    "loginToPrompt": "ログインして想像しよう！ ✨"
+    "loginToPrompt": "✨ ログインして想像しよう！ ✨"
   },
   "gallery": {
     "title": "公開ギャラリー",

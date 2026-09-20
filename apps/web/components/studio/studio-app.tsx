@@ -1,7 +1,8 @@
 "use client";
 
 import {useEffect, useRef, useState} from "react";
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
+import Link from "next/link";
 import {Loader2, Send, TriangleAlert, X, Lock} from "lucide-react";
 import {useAuthStore} from "@/stores/auth";
 import {isGeneratingStatus, useGenerationStore} from "@/stores/generation";
@@ -12,6 +13,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const t = useTranslations("studio");
   const tCommon = useTranslations("common");
   const tErrors = useTranslations("errors");
+  const locale = useLocale();
   const auth = useAuthStore();
   const gen = useGenerationStore();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -79,14 +81,18 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   return (
     <div className="space-y-10">
       <form onSubmit={handleSubmit} className="space-y-4 relative">
-        {/* Overlay para usuário NÃO autenticado: "Entre para imaginar! ✨" */}
+        {/* Overlay para usuário NÃO autenticado: "✨ Entre Para Imaginar! ✨" */}
         {isUnauthenticated && (
-          <div className="absolute inset-0 rounded-xl bg-background/60 backdrop-blur flex items-center justify-center pointer-events-none">
-            <div className="text-center px-3" role="alert" aria-live="polite">
+          <Link
+            href={`/${locale}/auth/login`}
+            className="absolute inset-0 rounded-xl bg-background/60 backdrop-blur flex items-center justify-center"
+            aria-label={loginToPrompt}
+          >
+            <div className="text-center px-3" role="button" tabIndex={0}>
               <Lock className="h-4 w-4 text-primary mx-auto mb-1" aria-hidden />
               <p className="text-xs text-primary font-medium">{loginToPrompt}</p>
             </div>
-          </div>
+          </Link>
         )}
 
         {/* Overlay para usuário autenticado: "em breve" (IA ainda não implementada) */}

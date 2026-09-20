@@ -120,7 +120,7 @@
     "quotaReloadsIn": "Se recarga en",
     "quotaLoading": "Cargando oportunidades de prompt...",
     "comingSoon": "⚠️ La generación de imágenes con IA aún no está disponible. Pronto se implementará un modelo y tus prompts funcionarán normalmente.",
-    "loginToPrompt": "¡Inicia sesión para imaginar! ✨"
+    "loginToPrompt": "✨ ¡Inicia Sesión Para Imaginar! ✨"
   },
   "studio": {
     "title": "Estudio",
@@ -150,7 +150,7 @@
     "saveArtCta": "Iniciar sesión / Registrarse",
     "saveArtLater": "Ahora no",
     "comingSoon": "⚠️ La generación de imágenes con IA aún no está disponible. Pronto se implementará un modelo y tus prompts funcionarán normalmente.",
-    "loginToPrompt": "¡Inicia sesión para imaginar! ✨"
+    "loginToPrompt": "✨ ¡Inicia Sesión Para Imaginar! ✨"
   },
   "gallery": {
     "title": "Galería pública",

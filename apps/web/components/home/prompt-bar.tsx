@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState} from "react";
 import {useLocale, useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
+import Link from "next/link";
 import {Loader2, Plus, Send, Timer, TriangleAlert, X, Lock} from "lucide-react";
 import {useGenerationStore} from "@/stores/generation";
 import {usePromptQuotaStore} from "@/stores/prompt-quota";
@@ -161,14 +162,18 @@ export function PromptBar({className}: {className?: string}) {
         </div>
       </form>
 
-      {/* Overlay para usuário NÃO autenticado: "Faça login para fazer prompts! ✨" */}
+      {/* Overlay para usuário NÃO autenticado: "✨ Entre Para Imaginar! ✨" */}
       {isUnauthenticated && (
-        <div className="absolute inset-0 rounded-xl bg-background/60 backdrop-blur flex items-center justify-center pointer-events-none">
-          <div className="text-center px-3" role="alert" aria-live="polite">
+        <Link
+          href={`/${locale}/auth/login`}
+          className="absolute inset-0 rounded-xl bg-background/60 backdrop-blur flex items-center justify-center"
+          aria-label={loginToPrompt}
+        >
+          <div className="text-center px-3" role="button" tabIndex={0}>
             <Lock className="h-4 w-4 text-primary mx-auto mb-1" aria-hidden />
             <p className="text-xs text-primary font-medium">{loginToPrompt}</p>
           </div>
-        </div>
+        </Link>
       )}
 
       {/* Overlay para usuário autenticado: "em breve" (IA ainda não implementada) */}

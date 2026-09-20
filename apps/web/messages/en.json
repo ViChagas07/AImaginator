@@ -64,7 +64,7 @@
     "quotaReloadsIn": "Reloads in",
     "quotaLoading": "Loading prompt chances...",
     "comingSoon": "⚠️ AI image generation is not yet available. A model will be implemented soon and your prompts will work normally.",
-    "loginToPrompt": "Log in to imagine! ✨",
+    "loginToPrompt": "✨ Log In To Imagine! ✨",
     "stepsTitle": "How it works",
     "steps": [
       {
@@ -163,7 +163,9 @@
     "saveArtTitle": "Save your art",
     "saveArtBody": "Log in or sign up to save this art to your gallery. Your art will be linked to your account.",
     "saveArtCta": "Log in / Sign up",
-    "saveArtLater": "Later"
+    "saveArtLater": "Later",
+    "comingSoon": "⚠️ AI image generation is not yet available. A model will be implemented soon and your prompts will work normally.",
+    "loginToPrompt": "✨ Log In To Imagine! ✨"
   },
   "gallery": {
     "title": "Public gallery",

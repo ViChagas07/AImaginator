@@ -64,7 +64,7 @@
     "quotaReloadsIn": "Recarrega em",
     "quotaLoading": "Carregando chances...",
     "comingSoon": "⚠️ A geração de imagens por IA ainda não está disponível. Em breve, um modelo será implementado e seus prompts funcionarão normalmente.",
-    "loginToPrompt": "Entre para imaginar! ✨",
+    "loginToPrompt": "✨ Entre Para Imaginar! ✨",
     "stepsTitle": "Como funciona",
     "steps": [
       {
@@ -163,7 +163,9 @@
     "saveArtTitle": "Salve sua arte",
     "saveArtBody": "Faça login ou cadastre-se para salvar esta arte na sua galeria. Sua arte será vinculada à sua conta.",
     "saveArtCta": "Login / Cadastro",
-    "saveArtLater": "Agora não"
+    "saveArtLater": "Agora não",
+    "comingSoon": "⚠️ A geração de imagens por IA ainda não está disponível. Em breve, um modelo será implementado e seus prompts funcionarão normalmente.",
+    "loginToPrompt": "✨ Entre Para Imaginar! ✨"
   },
   "gallery": {
     "title": "Galeria pública",

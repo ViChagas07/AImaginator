@@ -120,7 +120,7 @@
     "quotaReloadsIn": "重新加载于",
     "quotaLoading": "正在加载提示次数...",
     "comingSoon": "⚠️ AI 图像生成功能尚未可用。模型即将上线，届时您的提示词将正常工作。",
-    "loginToPrompt": "登录去想象吧！ ✨"
+    "loginToPrompt": "✨ 登录去想象吧！ ✨"
   },
   "studio": {
     "title": "工作室",
@@ -150,7 +150,7 @@
     "saveArtCta": "登录 / 注册",
     "saveArtLater": "稍后",
     "comingSoon": "⚠️ AI 图像生成功能尚未可用。模型即将上线，届时您的提示词将正常工作。",
-    "loginToPrompt": "登录去想象吧！ ✨"
+    "loginToPrompt": "✨ 登录去想象吧！ ✨"
   },
   "gallery": {
     "title": "公共画廊",

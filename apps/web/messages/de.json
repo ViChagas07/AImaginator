@@ -120,7 +120,7 @@
     "quotaReloadsIn": "Lädt neu in",
     "quotaLoading": "Prompt-Chancen werden geladen...",
     "comingSoon": "⚠️ Die KI-Bildgenerierung ist noch nicht verfügbar. Bald wird ein Modell implementiert und deine Prompts funktionieren dann normal.",
-    "loginToPrompt": "Melde dich an, um zu fantasieren! ✨"
+    "loginToPrompt": "✨ Anmelden Zum Fantasieren! ✨"
   },
   "studio": {
     "title": "Studio",
@@ -150,7 +150,7 @@
     "saveArtCta": "Anmelden / Registrieren",
     "saveArtLater": "Später",
     "comingSoon": "⚠️ Die KI-Bildgenerierung ist noch nicht verfügbar. Bald wird ein Modell implementiert und deine Prompts funktionieren dann normal.",
-    "loginToPrompt": "Melde dich an, um zu fantasieren! ✨"
+    "loginToPrompt": "✨ Anmelden Zum Fantasieren! ✨"
   },
   "gallery": {
     "title": "Öffentliche Galerie",

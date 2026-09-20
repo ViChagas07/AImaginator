@@ -120,7 +120,7 @@
     "quotaReloadsIn": "Se recharge dans",
     "quotaLoading": "Chargement des chances de prompt...",
     "comingSoon": "⚠️ La génération d'images par IA n'est pas encore disponible. Un modèle sera bientôt implémenté et vos prompts fonctionneront normalement.",
-    "loginToPrompt": "Connectez-vous pour imaginer ! ✨"
+    "loginToPrompt": "✨ Se Connecter Pour Imaginer ! ✨"
   },
   "studio": {
     "title": "Studio",
@@ -150,7 +150,7 @@
     "saveArtCta": "Se connecter / S'inscrire",
     "saveArtLater": "Plus tard",
     "comingSoon": "⚠️ La génération d'images par IA n'est pas encore disponible. Un modèle sera bientôt implémenté et vos prompts fonctionneront normalement.",
-    "loginToPrompt": "Connectez-vous pour imaginer ! ✨"
+    "loginToPrompt": "✨ Se Connecter Pour Imaginer ! ✨"
   },
   "gallery": {
     "title": "Galerie publique",
