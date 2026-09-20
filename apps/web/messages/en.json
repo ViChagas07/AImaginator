@@ -60,10 +60,11 @@
     "promptPlaceholder": "Describe the image you want to create...",
     "promptButton": "Create image",
     "promptStatusLoading": "Opening the studio...",
-    "quotaAvailable": "Prompt chances: {remaining} of {total}",
+    "quotaAvailable": "Remaining chances {remaining} of {total}",
     "quotaReloadsIn": "Reloads in",
     "quotaLoading": "Loading prompt chances...",
     "comingSoon": "⚠️ AI image generation is not yet available. A model will be implemented soon and your prompts will work normally.",
+    "loginToPrompt": "Log in to imagine! ✨"
     "stepsTitle": "How it works",
     "steps": [
       {

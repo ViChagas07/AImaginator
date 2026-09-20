@@ -3,9 +3,10 @@
 import {useEffect, useRef, useState} from "react";
 import {useLocale, useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
-import {Loader2, Plus, Send, Timer, TriangleAlert, X} from "lucide-react";
+import {Loader2, Plus, Send, Timer, TriangleAlert, X, Lock} from "lucide-react";
 import {useGenerationStore} from "@/stores/generation";
 import {usePromptQuotaStore} from "@/stores/prompt-quota";
+import {useAuthStore} from "@/stores/auth";
 import {useCountdown} from "@/lib/use-countdown";
 import {cn} from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export function PromptBar({className}: {className?: string}) {
   const router = useRouter();
   const gen = useGenerationStore();
   const quota = usePromptQuotaStore();
+  const auth = useAuthStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
@@ -70,8 +72,13 @@ export function PromptBar({className}: {className?: string}) {
 
   const inputDisabled = exhausted || busy || (!value.trim() && !imageBase64);
 
-  // Aviso de "em breve" — sempre visível, pois a geração de IA ainda não está implementada
+  // Textos de aviso
   const comingSoon = t("comingSoon");
+  const loginToPrompt = t("loginToPrompt");
+
+  // Estados de autenticação
+  const isAuthenticated = auth.status === "authenticated";
+  const isUnauthenticated = auth.status === "unauthenticated";
 
   return (
     <div className={cn("relative", className)}>
@@ -154,40 +161,55 @@ export function PromptBar({className}: {className?: string}) {
         </div>
       </form>
 
-      {/* Overlay de aviso "em breve" — sempre ativo (blur + texto vermelho) */}
-      <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-        <div className="text-center px-4" role="alert" aria-live="polite">
-          <TriangleAlert className="h-5 w-5 text-destructive mx-auto mb-1.5" aria-hidden />
-          <p className="text-sm text-destructive font-medium">{comingSoon}</p>
+      {/* Overlay para usuário NÃO autenticado: "Faça login para fazer prompts! ✨" */}
+      {isUnauthenticated && (
+        <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="text-center px-4" role="alert" aria-live="polite">
+            <Lock className="h-5 w-5 text-primary mx-auto mb-1.5" aria-hidden />
+            <p className="text-sm text-primary font-medium">{loginToPrompt}</p>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div
-        role="status"
-        aria-live="polite"
-        className="mt-3 flex items-center justify-center gap-2 text-sm text-muted"
-      >
-        {quota.loaded ? (
-          <>
-            <span>
-              {t("quotaAvailable", {
-                remaining: quota.chancesRemaining,
-                total: quota.chancesTotal,
-              })}
-            </span>
-            {exhausted ? (
-              <>
-                <span aria-hidden="true">·</span>
-                <Timer className="h-4 w-4" aria-hidden />
-                <span>{t("quotaReloadsIn")}</span>
-                <span className="font-mono tabular-nums">{formatCountdown(countdown)}</span>
-              </>
-            ) : null}
-          </>
-        ) : (
-          <span>{t("quotaLoading")}</span>
-        )}
-      </div>
+      {/* Overlay para usuário autenticado: "em breve" (IA ainda não implementada) */}
+      {isAuthenticated && (
+        <div className="absolute inset-0 rounded-xl bg-background/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <div className="text-center px-4" role="alert" aria-live="polite">
+            <TriangleAlert className="h-5 w-5 text-destructive mx-auto mb-1.5" aria-hidden />
+            <p className="text-sm text-destructive font-medium">{comingSoon}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Quota só aparece para usuários autenticados */}
+      {isAuthenticated && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mt-3 flex items-center justify-center gap-2 text-sm text-muted"
+        >
+          {quota.loaded ? (
+            <>
+              <span>
+                {t("quotaAvailable", {
+                  remaining: quota.chancesRemaining,
+                  total: quota.chancesTotal,
+                })}
+              </span>
+              {exhausted ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <Timer className="h-4 w-4" aria-hidden />
+                  <span>{t("quotaReloadsIn")}</span>
+                  <span className="font-mono tabular-nums">{formatCountdown(countdown)}</span>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <span>{t("quotaLoading")}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

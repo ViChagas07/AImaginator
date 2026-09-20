@@ -60,10 +60,11 @@
     "promptPlaceholder": "Descreva a imagem que você quer criar...",
     "promptButton": "Criar imagem",
     "promptStatusLoading": "Abrindo o estúdio...",
-    "quotaAvailable": "Chances de prompt: {remaining} de {total}",
+    "quotaAvailable": "Chances restantes {remaining} de {total}",
     "quotaReloadsIn": "Recarrega em",
     "quotaLoading": "Carregando chances...",
     "comingSoon": "⚠️ A geração de imagens por IA ainda não está disponível. Em breve, um modelo será implementado e seus prompts funcionarão normalmente.",
+    "loginToPrompt": "Entre para imaginar! ✨"
     "stepsTitle": "Como funciona",
     "steps": [
       {
