@@ -13,6 +13,7 @@ import httpx
 from infra.settings import Settings
 from modules.image_generation.adapters.ai_agents.orchestrator import LangGraphImageAgent
 from modules.image_generation.adapters.ai_agents.prompt_classifier import (
+    GeminiPromptClassifier,
     HttpPromptClassifier,
     StubPromptClassifier,
 )
@@ -38,8 +39,16 @@ def build_prompt_guard() -> PromptInjectionGuard:
 def build_topic_classifier(
     settings: Settings, *, http_client: httpx.AsyncClient
 ) -> IPromptClassifier:
-    if settings.topic_classifier_provider == "stub" or not settings.topic_classifier_api_key:
+    provider = settings.topic_classifier_provider
+    if provider == "stub" or not settings.topic_classifier_api_key:
         return StubPromptClassifier()
+    if provider == "gemini":
+        return GeminiPromptClassifier(
+            http_client=http_client,
+            api_key=settings.topic_classifier_api_key,
+            model=settings.topic_classifier_model,
+        )
+    # Default: OpenAI-compatible Chat Completions
     return HttpPromptClassifier(
         http_client=http_client,
         api_base_url=settings.topic_classifier_api_base_url,

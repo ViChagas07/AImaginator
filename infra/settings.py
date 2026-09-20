@@ -67,10 +67,11 @@ class Settings(BaseSettings):
     ai_image_api_base_url: str = ""
 
     # ---- Classificador de topico (guardrail de escopo, Camada 1) ----
-    topic_classifier_provider: str = "stub"  # "stub" | "http"
+    # "stub" (default, sem LLM) | "http" (OpenAI Chat Completions) | "gemini" (API nativa do Gemini)
+    topic_classifier_provider: str = "stub"
     topic_classifier_api_key: str = ""
     topic_classifier_api_base_url: str = ""
-    topic_classifier_model: str = "gpt-4o-mini"
+    topic_classifier_model: str = "gemini-1.5-flash"
     topic_classifier_timeout_seconds: float = 4.0
 
     # ---- Observabilidade ----

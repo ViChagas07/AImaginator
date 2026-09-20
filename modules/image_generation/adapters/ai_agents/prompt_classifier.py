@@ -115,3 +115,78 @@ class HttpPromptClassifier:
             cleaned_prompt=payload.cleaned_prompt,
             confidence=payload.confidence,
         )
+
+
+class GeminiPromptClassifier:
+    """Classificação via API nativa do Gemini (Generative Language API).
+
+    Diferente do HttpPromptClassifier (formato OpenAI Chat Completions),
+    este usa o endpoint nativo do Gemini com autenticação via query param
+    e payload/resposta no formato próprio do Gemini.
+    """
+
+    _BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
+
+    def __init__(
+        self,
+        *,
+        http_client: Any,
+        api_key: str,
+        model: str = "gemini-1.5-flash",
+    ) -> None:
+        self._http = http_client
+        self._api_key = api_key
+        # Normaliza o nome do modelo: aceita "gemini-1.5-flash" ou "models/gemini-1.5-flash"
+        self._model = model.replace("models/", "")
+
+    async def classify(self, prompt: str) -> ClassificationResult:
+        url = f"{self._BASE_URL}/models/{self._model}:generateContent?key={self._api_key}"
+
+        # Prompt completo (system + user) no formato Gemini
+        full_prompt = f"{TOPIC_CLASSIFIER_SYSTEM_PROMPT}\n\nUsuário: {prompt}"
+
+        response = await self._http.post(
+            url,
+            json={
+                "contents": [
+                    {
+                        "role": "user",
+                        "parts": [{"text": full_prompt}],
+                    }
+                ],
+                "generationConfig": {
+                    "temperature": 0,
+                    "maxOutputTokens": 512,
+                    "responseMimeType": "application/json",
+                },
+            },
+            timeout=10.0,
+        )
+
+        if response.status_code != 200:
+            # Tenta extrair erro do corpo da resposta
+            try:
+                err = response.json()
+                raise ValueError(f"Gemini API erro HTTP {response.status_code}: {err}")
+            except Exception:
+                raise ValueError(f"Gemini API erro HTTP {response.status_code}")
+
+        try:
+            # Resposta Gemini: candidates[0].content.parts[0].text
+            candidates = response.json()["candidates"]
+            if not candidates:
+                raise ValueError("Resposta do Gemini sem candidates")
+            content: str = candidates[0]["content"]["parts"][0]["text"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ValueError("Resposta do Gemini sem conteúdo utilizável.") from exc
+
+        try:
+            payload = _parse_json(content)
+        except ValidationError as exc:
+            raise ValueError(f"Resposta do classificador Gemini inválida: {exc}") from exc
+
+        return ClassificationResult(
+            is_image_related=payload.is_image_related,
+            cleaned_prompt=payload.cleaned_prompt,
+            confidence=payload.confidence,
+        )

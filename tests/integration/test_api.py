@@ -15,7 +15,12 @@ from fastapi.testclient import TestClient
 import apps.api.dependencies as deps
 from infra import redis_client as redis_module
 from infra.settings import get_settings
-from tests.conftest import InMemoryGenerationRepository, InMemoryUserRepository, SpyTaskQueue
+from tests.conftest import (
+    InMemoryGenerationRepository,
+    InMemoryUserRepository,
+    PassThroughTopicGuard,
+    SpyTaskQueue,
+)
 
 
 @pytest.fixture
@@ -35,6 +40,7 @@ def api_client(fake_redis, sample_user):
     app.dependency_overrides[deps.get_user_repository] = lambda: user_repo
     app.dependency_overrides[deps.get_generation_repository] = lambda: gen_repo
     app.dependency_overrides[deps.get_task_queue] = lambda: queue
+    app.dependency_overrides[deps.get_topic_guard] = lambda: PassThroughTopicGuard()
 
     with TestClient(app, raise_server_exceptions=False) as client:
         yield client, {"users": user_repo, "generations": gen_repo, "queue": queue}
