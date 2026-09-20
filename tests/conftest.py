@@ -141,3 +141,10 @@ class SpyEventPublisher:
 
     async def publish_progress(self, event) -> None:
         self.events.append(event)
+
+
+class PassThroughTopicGuard:
+    """Fake de IPromptTopicGuard: aceita qualquer prompt sem alterar."""
+
+    async def validate(self, prompt: str) -> str:
+        return prompt

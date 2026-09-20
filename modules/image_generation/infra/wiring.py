@@ -12,12 +12,20 @@ import httpx
 
 from infra.settings import Settings
 from modules.image_generation.adapters.ai_agents.orchestrator import LangGraphImageAgent
+from modules.image_generation.adapters.ai_agents.prompt_classifier import (
+    HttpPromptClassifier,
+    StubPromptClassifier,
+)
 from modules.image_generation.adapters.ai_agents.providers import (
     HttpImageProvider,
     ImageProvider,
     StubImageProvider,
 )
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
+from modules.image_generation.domain.prompt_topic_guard import (
+    IPromptClassifier,
+    PromptTopicGuard,
+)
 from modules.image_generation.domain.url_policy import UrlPolicy
 from modules.rate_limiting.bulkhead import bulkhead_registry
 from modules.rate_limiting.circuit_breaker import CircuitBreaker
@@ -25,6 +33,28 @@ from modules.rate_limiting.circuit_breaker import CircuitBreaker
 
 def build_prompt_guard() -> PromptInjectionGuard:
     return PromptInjectionGuard()
+
+
+def build_topic_classifier(
+    settings: Settings, *, http_client: httpx.AsyncClient
+) -> IPromptClassifier:
+    if settings.topic_classifier_provider == "stub" or not settings.topic_classifier_api_key:
+        return StubPromptClassifier()
+    return HttpPromptClassifier(
+        http_client=http_client,
+        api_base_url=settings.topic_classifier_api_base_url,
+        api_key=settings.topic_classifier_api_key,
+        model=settings.topic_classifier_model,
+    )
+
+
+def build_topic_guard(
+    settings: Settings, *, http_client: httpx.AsyncClient
+) -> PromptTopicGuard:
+    return PromptTopicGuard(
+        classifier=build_topic_classifier(settings, http_client=http_client),
+        timeout_seconds=settings.topic_classifier_timeout_seconds,
+    )
 
 
 def build_url_policy(settings: Settings) -> UrlPolicy:

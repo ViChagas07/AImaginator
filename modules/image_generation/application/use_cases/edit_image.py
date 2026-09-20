@@ -7,6 +7,7 @@ from modules.image_generation.application.schemas import EditImageInput, Generat
 from modules.image_generation.application.use_cases.generate_image import _STREAM_PATH
 from modules.image_generation.domain.entities import Generation, GenerationKind
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
+from modules.image_generation.domain.prompt_topic_guard import IPromptTopicGuard
 from modules.image_generation.domain.url_policy import UrlPolicy
 from modules.users.contracts import User, UserRepositoryPort
 
@@ -19,16 +20,19 @@ class EditImageFromPrompt:
         users: UserRepositoryPort,
         task_queue: TaskQueuePort,
         prompt_guard: PromptInjectionGuard,
+        topic_guard: IPromptTopicGuard,
         url_policy: UrlPolicy,
     ) -> None:
         self._generations = generations
         self._users = users
         self._queue = task_queue
         self._guard = prompt_guard
+        self._topic_guard = topic_guard
         self._url_policy = url_policy
 
     async def execute(self, *, user: User, data: EditImageInput) -> GenerationOutput:
         clean_prompt = self._guard.validate(data.prompt)
+        clean_prompt = await self._topic_guard.validate(clean_prompt)
         source_url = self._url_policy.validate(str(data.source_image_url))
 
         user.consume_credit()

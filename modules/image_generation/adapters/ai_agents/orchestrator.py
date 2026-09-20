@@ -1,13 +1,16 @@
 """Orquestrador de agentes de IA — UNICA camada que conhece LangGraph.
 
 Pipeline (maquina de estados, spec secao 12):
-    interpret_prompt -> safety_check -> generate_or_edit -> post_process
+    interpret_prompt -> safety_check -> scope_check -> generate_or_edit -> post_process
 
 - Imports LAZY de langgraph/langchain/crewai: o nucleo da app e os
   testes nao dependem dessas libs pesadas; sem elas instaladas o
   pipeline cai no executor sequencial equivalente.
 - SafetyReviewerAgent: revalida o prompt no pipeline (defesa em
   profundidade — a guarda do domain ja barrou no request).
+- ScopeGuardrail (Camada 2): recusa deterministisca de conteudo sem
+  instrucao clara de imagem (OUT_OF_SCOPE), via system prompt hardenizado
+  compartilhado (guardrails.SCOPE_GUARDRAIL_PROMPT).
 - O input do usuario NUNCA e concatenado direto em prompt de sistema:
   usa delimitadores estruturados (anti prompt injection).
 """
@@ -17,6 +20,10 @@ from __future__ import annotations
 import logging
 from typing import Any, TypedDict
 
+from modules.image_generation.adapters.ai_agents.guardrails import (
+    ScopeGuardrail,
+    build_scope_system_prompt,
+)
 from modules.image_generation.adapters.ai_agents.providers import ImageProvider
 from modules.image_generation.application.ports.image_agent_port import (
     ImageAgentPort,
@@ -34,15 +41,26 @@ _SYSTEM_DELIMITER = "<<<USER_PROMPT_BEGIN>>>"
 class _PipelineState(TypedDict, total=False):
     generation: Generation
     interpreted_prompt: str
+    scope_system_prompt: str
     progress: int
     result_url: str
     error: str
 
 
 class LangGraphImageAgent(ImageAgentPort):
-    def __init__(self, *, provider: ImageProvider, prompt_guard: PromptInjectionGuard) -> None:
+    _SYSTEM_ROLE = "interpretar prompts e gerar/editar imagens dentro do AImaginator"
+
+    def __init__(
+        self,
+        *,
+        provider: ImageProvider,
+        prompt_guard: PromptInjectionGuard,
+        scope_guardrail: ScopeGuardrail | None = None,
+    ) -> None:
         self._provider = provider
         self._guard = prompt_guard
+        self._scope_guardrail = scope_guardrail or ScopeGuardrail()
+        self._scope_system_prompt = build_scope_system_prompt(self._SYSTEM_ROLE)
         self._graph = self._try_build_langgraph()
 
     # ---- nos do grafo (cada um com responsabilidade unica — SOLID) ----
@@ -60,6 +78,7 @@ class LangGraphImageAgent(ImageAgentPort):
             f"{_SYSTEM_DELIMITER}{generation.prompt}{_SYSTEM_DELIMITER.replace('BEGIN', 'END')}"
             f"{style_hint}"
         )
+        state["scope_system_prompt"] = self._scope_system_prompt
         state["progress"] = 20
         return state
 
@@ -67,6 +86,18 @@ class LangGraphImageAgent(ImageAgentPort):
         """SafetyReviewerAgent: revalidacao independente antes de gerar."""
         self._guard.validate(state["generation"].prompt)
         state["progress"] = 30
+        return state
+
+    async def _scope_check(self, state: _PipelineState) -> _PipelineState:
+        """ScopeGuardrail (Camada 2): recusa conteudo sem instrucao de imagem.
+
+        Redundante de proposito: mesmo que o PromptTopicGuard (Camada 1) tenha
+        falhado ou sido contornado, o agente recusa de forma deterministica
+        retornando OUT_OF_SCOPE (via OutOfScopeError) em vez de gerar texto
+        livre ou adivinhar uma intencao alternativa.
+        """
+        self._scope_guardrail.check(state["generation"].prompt)
+        state["progress"] = 40
         return state
 
     async def _generate_or_edit(self, state: _PipelineState) -> _PipelineState:
@@ -101,11 +132,13 @@ class LangGraphImageAgent(ImageAgentPort):
         graph = StateGraph(_PipelineState)
         graph.add_node("interpret_prompt", self._interpret_prompt)
         graph.add_node("safety_check", self._safety_check)
+        graph.add_node("scope_check", self._scope_check)
         graph.add_node("generate_or_edit", self._generate_or_edit)
         graph.add_node("post_process", self._post_process)
         graph.add_edge(START, "interpret_prompt")
         graph.add_edge("interpret_prompt", "safety_check")
-        graph.add_edge("safety_check", "generate_or_edit")
+        graph.add_edge("safety_check", "scope_check")
+        graph.add_edge("scope_check", "generate_or_edit")
         graph.add_edge("generate_or_edit", "post_process")
         graph.add_edge("post_process", END)
         return graph.compile()
@@ -128,6 +161,7 @@ class LangGraphImageAgent(ImageAgentPort):
         for node in (
             self._interpret_prompt,
             self._safety_check,
+            self._scope_check,
             self._generate_or_edit,
             self._post_process,
         ):

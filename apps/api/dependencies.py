@@ -32,6 +32,7 @@ from modules.image_generation.adapters.repositories.generation_repository import
 )
 from modules.image_generation.application.ports.task_queue import TaskQueuePort
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
+from modules.image_generation.domain.prompt_topic_guard import PromptTopicGuard
 from modules.image_generation.domain.url_policy import UrlPolicy
 from modules.image_generation.infra import wiring as gen_wiring
 from modules.prompt_quota.adapters.redis_quota_store import RedisPromptQuotaStore
@@ -225,6 +226,13 @@ def get_prompt_guard() -> PromptInjectionGuard:
 
 
 PromptGuardDep = Annotated[PromptInjectionGuard, Depends(get_prompt_guard)]
+
+
+def get_topic_guard(settings: SettingsDep, http: HttpClientDep) -> PromptTopicGuard:
+    return gen_wiring.build_topic_guard(settings, http_client=http)
+
+
+TopicGuardDep = Annotated[PromptTopicGuard, Depends(get_topic_guard)]
 
 
 def get_url_policy(settings: SettingsDep) -> UrlPolicy:

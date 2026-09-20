@@ -9,6 +9,7 @@ from modules.image_generation.application.ports import (
 from modules.image_generation.application.schemas import GenerateImageInput, GenerationOutput
 from modules.image_generation.domain.entities import Generation, GenerationKind
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
+from modules.image_generation.domain.prompt_topic_guard import IPromptTopicGuard
 from modules.users.contracts import User, UserRepositoryPort
 
 _STREAM_PATH = "/api/v1/generations/{id}/stream"
@@ -40,14 +41,17 @@ class GenerateImageFromPrompt:
         users: UserRepositoryPort,
         task_queue: TaskQueuePort,
         prompt_guard: PromptInjectionGuard,
+        topic_guard: IPromptTopicGuard,
     ) -> None:
         self._generations = generations
         self._users = users
         self._queue = task_queue
         self._guard = prompt_guard
+        self._topic_guard = topic_guard
 
     async def execute(self, *, user: User, data: GenerateImageInput) -> GenerationOutput:
         clean_prompt = self._guard.validate(data.prompt)
+        clean_prompt = await self._topic_guard.validate(clean_prompt)
         clean_negative = (
             self._guard.validate(data.negative_prompt) if data.negative_prompt else None
         )
@@ -79,15 +83,18 @@ class GenerateImageAnonymous:
         generations: GenerationRepositoryPort,
         task_queue: TaskQueuePort,
         prompt_guard: PromptInjectionGuard,
+        topic_guard: IPromptTopicGuard,
     ) -> None:
         self._generations = generations
         self._queue = task_queue
         self._guard = prompt_guard
+        self._topic_guard = topic_guard
 
     async def execute(
         self, *, anonymous_session_id: str, data: GenerateImageInput
     ) -> GenerationOutput:
         clean_prompt = self._guard.validate(data.prompt)
+        clean_prompt = await self._topic_guard.validate(clean_prompt)
         clean_negative = (
             self._guard.validate(data.negative_prompt) if data.negative_prompt else None
         )

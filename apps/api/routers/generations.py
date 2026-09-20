@@ -20,6 +20,7 @@ from apps.api.dependencies import (
     PromptQuotaStoreDep,
     SettingsDep,
     TaskQueueDep,
+    TopicGuardDep,
     UrlPolicyDep,
     UserRepoDep,
     get_generation_rate_limiter,
@@ -53,6 +54,7 @@ async def create_generation(
     users: UserRepoDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
+    topic_guard: TopicGuardDep,
     settings: SettingsDep,
     store: PromptQuotaStoreDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
@@ -62,7 +64,11 @@ async def create_generation(
         total = settings.authenticated_prompt_chances_per_day
         await ConsumePromptQuota(store, total=total).execute(f"user:{current_user.id}")
         return await GenerateImageFromPrompt(
-            generations=generations, users=users, task_queue=queue, prompt_guard=guard
+            generations=generations,
+            users=users,
+            task_queue=queue,
+            prompt_guard=guard,
+            topic_guard=topic_guard,
         ).execute(user=current_user, data=data)
 
     anonymous_id, token = resolve_anonymous_session(request, settings)
@@ -71,7 +77,10 @@ async def create_generation(
     total = settings.anonymous_prompt_chances_per_day
     await ConsumePromptQuota(store, total=total).execute(f"anon:{anonymous_id}")
     return await GenerateImageAnonymous(
-        generations=generations, task_queue=queue, prompt_guard=guard
+        generations=generations,
+        task_queue=queue,
+        prompt_guard=guard,
+        topic_guard=topic_guard,
     ).execute(anonymous_session_id=anonymous_id, data=data)
 
 
@@ -87,6 +96,7 @@ async def create_edit(
     users: UserRepoDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
+    topic_guard: TopicGuardDep,
     url_policy: UrlPolicyDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
@@ -96,6 +106,7 @@ async def create_edit(
         users=users,
         task_queue=queue,
         prompt_guard=guard,
+        topic_guard=topic_guard,
         url_policy=url_policy,
     )
     return await use_case.execute(user=current_user, data=data)

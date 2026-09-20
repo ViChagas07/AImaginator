@@ -66,6 +66,13 @@ class Settings(BaseSettings):
     ai_image_api_key: str = ""
     ai_image_api_base_url: str = ""
 
+    # ---- Classificador de topico (guardrail de escopo, Camada 1) ----
+    topic_classifier_provider: str = "stub"  # "stub" | "http"
+    topic_classifier_api_key: str = ""
+    topic_classifier_api_base_url: str = ""
+    topic_classifier_model: str = "gpt-4o-mini"
+    topic_classifier_timeout_seconds: float = 4.0
+
     # ---- Observabilidade ----
     sentry_dsn_backend: str = ""
     sentry_environment: str = "development"

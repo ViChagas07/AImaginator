@@ -28,6 +28,7 @@ from shared_kernel.security_errors import PromptInjectionDetectedError
 from tests.conftest import (
     InMemoryGenerationRepository,
     InMemoryUserRepository,
+    PassThroughTopicGuard,
     SpyTaskQueue,
 )
 
@@ -73,6 +74,7 @@ class TestGenerateImageFromPrompt:
             users=users,
             task_queue=queue,
             prompt_guard=PromptInjectionGuard(),
+            topic_guard=PassThroughTopicGuard(),
         )
         output = await use_case.execute(
             user=sample_user, data=GenerateImageInput(prompt="um castelo nas nuvens")
@@ -90,6 +92,7 @@ class TestGenerateImageFromPrompt:
             users=InMemoryUserRepository(sample_user),
             task_queue=queue,
             prompt_guard=PromptInjectionGuard(),
+            topic_guard=PassThroughTopicGuard(),
         )
         with pytest.raises(QuotaExceededError):
             await use_case.execute(
@@ -105,6 +108,7 @@ class TestGenerateImageFromPrompt:
             users=users,
             task_queue=queue,
             prompt_guard=PromptInjectionGuard(),
+            topic_guard=PassThroughTopicGuard(),
         )
         with pytest.raises(PromptInjectionDetectedError):
             await use_case.execute(
