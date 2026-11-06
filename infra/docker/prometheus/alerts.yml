@@ -1,0 +1,62 @@
+groups:
+  - name: aimaginator-pipeline
+    rules:
+      - alert: AImaginatorEngineFailureRateHigh
+        expr: |
+          sum(rate(aimaginator_engine_failures_total[5m]))
+          /
+          clamp_min(sum(rate(aimaginator_generations_total[5m])), 0.001)
+          > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taxa de falha do motor acima de 20%"
+
+      - alert: AImaginatorEngineTimeoutsSpike
+        expr: sum(rate(aimaginator_engine_failures_total{reason="timeout"}[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Picos de timeout do motor de imagem"
+
+      - alert: AImaginatorQueueStalled
+        expr: max_over_time(aimaginator_celery_queue_size{queue="generation.standard"}[15m]) > 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fila generation.standard parada com tarefas pendentes"
+
+      - alert: AImaginatorRefusalRateAbnormal
+        expr: |
+          sum(rate(aimaginator_refusals_total[10m]))
+          /
+          clamp_min(sum(rate(aimaginator_generations_total[10m])), 0.001)
+          > 0.5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taxa de recusa anormal (possivel ataque ou regressao de guardrails)"
+
+      - alert: AImaginatorLlmUnavailable
+        expr: |
+          sum(rate(aimaginator_llm_requests_total{outcome=~"timeout|unavailable"}[5m]))
+          /
+          clamp_min(sum(rate(aimaginator_llm_requests_total[5m])), 0.001)
+          > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM local indisponivel ou com timeout frequente"
+
+      - alert: AImaginatorUploadFailures
+        expr: sum(rate(aimaginator_upload_failures_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Falhas de upload/persistencia de imagens"

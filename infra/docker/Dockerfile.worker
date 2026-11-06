@@ -29,6 +29,6 @@ COPY workers ./workers
 COPY shared_kernel ./shared_kernel
 COPY infra ./infra
 
-# Filas por custo (bulkhead em nivel de worker): generation.priority e
-# generation.standard. A DLQ e consumida por operacao manual (spec secao 14).
-CMD ["celery", "-A", "workers.celery_app.celery:celery_app", "worker", "--loglevel=info", "--queues=generation.standard,generation.priority"]
+# Fila generation.standard (uma difusao por vez; max-tasks-per-child recicla
+# o processo). A DLQ e consumida por operacao manual (spec secao 14).
+CMD ["celery", "-A", "workers.celery_app.celery:celery_app", "worker", "--loglevel=info", "--queues=generation.standard", "--concurrency=1", "--max-tasks-per-child=1"]

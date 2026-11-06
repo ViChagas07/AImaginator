@@ -2,11 +2,11 @@ name: aimaginator
 
 # ============================================================
 # AImaginator — orquestracao local completa (spec secao 19)
-#   docker compose up --build
-# Sobe: api, worker, postgres, redis, rabbitmq, prometheus, grafana.
-# O frontend (Next.js) roda via Vercel/`npm run dev` — nao faz parte
-# deste Compose por design (serverless nao sustenta workers de longa
-# duracao; ver README, secao de deploy).
+#   cp .env.development.example .env.development
+#   docker compose --env-file .env.development -f infra/docker/docker-compose.yml up --build
+# Sobe: api, worker, postgres, redis, rabbitmq, minio, prometheus, grafana.
+# Portas host escolhidas para evitar a stack ForjaB2B (5432/6379/5672/15672).
+# O frontend (Next.js) roda via `npm run dev` — nao faz parte deste Compose.
 # ============================================================
 
 services:
@@ -14,10 +14,10 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-aimaginator}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aimaginator}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aimaginator_dev}
       POSTGRES_DB: ${POSTGRES_DB:-aimaginator}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -30,7 +30,7 @@ services:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -42,29 +42,46 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
       timeout: 5s
       retries: 12
 
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-aimaginator}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-aimaginator_dev_minio}
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    volumes:
+      - minio_data:/data
+
   api:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.api
     env_file:
-      - ../../.env
+      - ../../.env.development
     environment:
-      # Hosts internos do Compose sobrepõem os valores do .env (localhost).
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-aimaginator}:${POSTGRES_PASSWORD:-aimaginator}@postgres:5432/${POSTGRES_DB:-aimaginator}
+      # Hosts internos do Compose sobrepõem os valores do .env.development (localhost).
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-aimaginator}:${POSTGRES_PASSWORD:-aimaginator_dev}@postgres:5432/${POSTGRES_DB:-aimaginator}
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/1
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_ENDPOINT_URL: http://localhost:9002
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-aimaginator}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-aimaginator_dev_minio}
+      PROMETHEUS_MULTIPROC_DIR: /tmp/aimaginator-prometheus
     ports:
-      - "8000:8000"
+      - "8001:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,19 +89,27 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      minio:
+        condition: service_started
 
   worker:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile.worker
     env_file:
-      - ../../.env
+      - ../../.env.development
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-aimaginator}:${POSTGRES_PASSWORD:-aimaginator}@postgres:5432/${POSTGRES_DB:-aimaginator}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-aimaginator}:${POSTGRES_PASSWORD:-aimaginator_dev}@postgres:5432/${POSTGRES_DB:-aimaginator}
       REDIS_URL: redis://redis:6379/0
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_BROKER_URL: amqp://guest:guest@rabbitmq:5672//
       CELERY_RESULT_BACKEND: redis://redis:6379/1
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_ENDPOINT_URL: http://localhost:9002
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-aimaginator}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-aimaginator_dev_minio}
+      PROMETHEUS_MULTIPROC_DIR: /tmp/aimaginator-prometheus
+      WORKER_METRICS_PORT: "9100"
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,13 +117,16 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      minio:
+        condition: service_started
 
   prometheus:
     image: prom/prometheus:v2.54.0
     ports:
-      - "9090:9090"
+      - "9091:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     depends_on:
       - api
@@ -106,10 +134,10 @@ services:
   grafana:
     image: grafana/grafana:11.2.0
     ports:
-      - "3001:3000"
+      - "3002:3000"
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin_dev}
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
@@ -120,5 +148,6 @@ services:
 volumes:
   pg_data:
   redis_data:
+  minio_data:
   prometheus_data:
   grafana_data:

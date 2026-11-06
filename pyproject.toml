@@ -17,10 +17,17 @@ pydantic-settings = "^2.5.0"
 python-multipart = "^0.0.9"   # uploads (edicao de imagem)
 sse-starlette = "^2.1.3"      # Server-Sent Events
 
-# --- Persistencia ---
+# --- Persistencia / storage ---
 sqlalchemy = { extras = ["asyncio"], version = "^2.0.35" }
 asyncpg = "^0.29.0"
 alembic = "^1.13.0"
+boto3 = ">=1.35,<2"
+
+# --- Recursos do host (guarda de RAM antes do sd-cli) ---
+psutil = ">=6,<8"
+
+# --- Imagem: marca d'agua, metadados e upscale Lanczos ---
+pillow = ">=13,<14"
 
 # --- Cache ---
 redis = "^5.0.8"
@@ -30,7 +37,10 @@ celery = { extras = ["redis"], version = "^5.4.0" }
 kombu = "^5.4.0"              # RabbitMQ via amqp
 
 # --- Auth (OAuth2 + OIDC) ---
-authlib = "^1.3.2"
+authlib = ">=1.9.1,<2"
+aiohttp = ">=3.14.4,<4"
+certifi = ">=2026.10.18"
+joserfc = ">=1.7.6,<2"
 itsdangerous = "^2.2.0"       # cookies de sessao assinados
 httpx = "^0.27.2"             # client HTTP async (OIDC, provedores)
 
@@ -44,6 +54,14 @@ langgraph = "^0.2.0"
 prometheus-client = "^0.20.0"
 sentry-sdk = { extras = ["fastapi", "celery"], version = "^2.14.0" }
 structlog = "^24.4.0"
+
+[tool.poetry.group.moderation]
+optional = true
+
+[tool.poetry.group.moderation.dependencies]
+torch = ">=2.2,<3"
+transformers = ">=4.40,<5"
+c2pa-python = ">=0.6,<1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.0"
@@ -77,6 +95,17 @@ ignore = ["S101"]  # asserts em testes sao esperados
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S105", "S106"]
+"tests/unit/test_s3_storage.py" = ["N803"]  # kwargs da API boto3
+"alembic/versions/**" = ["E501"]
+"modules/auth/application/jwt_service.py" = ["S106"]
+"modules/auth/application/oidc_service.py" = ["S105"]
+"modules/rate_limiting/token_bucket.py" = ["S105"]
+# Textos multilíngues contêm pontuação/vocabulário não latino intencional.
+"modules/image_generation/application/localization.py" = ["E501", "RUF001"]
+"modules/image_generation/application/services/prompt_assistant.py" = [
+    "E501",
+    "RUF001",
+]  # token especial de raciocínio do Qwen
 
 [tool.mypy]
 python_version = "3.11"

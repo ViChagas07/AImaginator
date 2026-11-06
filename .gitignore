@@ -1,5 +1,8 @@
 # ============ SEGREDOS — NUNCA COMMITAR ============
 .env
+.env.*
+!.env.example
+!.env*.example
 .env.local
 .env.*.local
 *.pem
@@ -54,3 +57,32 @@ playwright-report/
 
 # ============ Registros de sessao do agente (podem conter segredos) ============
 session-ses_*.md
+
+# Prometheus multiprocess metrics (worker)
+.prometheus-multiproc/
+
+
+# ============ Modelos / pesos (nunca versionar) ============
+*.gguf
+*.safetensors
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.bin
+tools/flux-spike/
+models/
+MODELS/
+
+# ============ Saidas e imagens de teste manual ============
+smoke-output.png
+teste*.png
+kontext*.png
+out/
+outputs/
+generated/
+*.webp
+*.jpg
+*.jpeg
+!apps/web/public/**/*.png
+!modules/image_generation/assets/**/*.png

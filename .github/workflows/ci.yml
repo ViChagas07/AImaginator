@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check .
+
+  backend-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: aimaginator
+          POSTGRES_PASSWORD: aimaginator
+          POSTGRES_DB: aimaginator
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U aimaginator"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      SECRET_KEY: "ci-only-secret-key-0123456789abcdef0123456789abcdef"
+      DATABASE_URL: postgresql+asyncpg://aimaginator:aimaginator@localhost:5432/aimaginator
+      REDIS_URL: redis://localhost:6379/0
+      RUN_DB_TESTS: "1"
+      AUTO_MIGRATE: "false"
+      IMAGE_ENGINE: stub
+      FEATURE_IMAGE_GENERATION_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: snok/install-poetry@v1
+        with:
+          version: "2.1.1"
+          virtualenvs-create: true
+          virtualenvs-in-project: false
+      - run: |
+          poetry install --with dev --no-interaction --no-ansi
+          poetry run pip install lupa
+      - run: poetry run pytest tests -q --tb=short
+      - run: poetry run pytest specs/evals -m eval -q --tb=short
+      - name: Python dependency audit (informativo)
+        continue-on-error: true
+        run: |
+          poetry run pip install pip-audit
+          poetry run pip-audit --local
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run test -- --run
+      - run: npm run build
+      - name: npm audit (informativo)
+        continue-on-error: true
+        run: npm audit --omit=dev
+
+  playwright:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
