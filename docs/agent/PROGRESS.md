@@ -1,0 +1,486 @@
+# PROGRESS — AImaginator
+
+> Atualizado ao final de cada bloco. Status: `pendente`, `em andamento`, `concluído`, `bloqueado`.
+
+## Fase 0 — Diagnóstico
+
+- [x] Relatório em `docs/agent/FASE0_REPORT.md`.
+- [x] VRAM real corrigida: ~8 GB dedicados (Vulkan `DEVICE_LOCAL` 7,98 GiB; dxdiag 8146 MB); WMI `AdapterRAM` de 4 GB descartado.
+
+## Fase 1 — Spike local
+
+- [x] Resultados manuais registrados em `docs/agent/FASE1_SPIKE.md`.
+- [x] Runtime de referência: stable-diffusion.cpp Vulkan `sd-master-37bc88b`.
+- [x] Decisão: geração Q4_K_S 512×512/8 steps ~202 s; edição Kontext Q4_0 512×512/8 steps ~422 s, com timeout de 600 s aprovado.
+
+## Fase 2 — Fundação
+
+### Bloco 1 — Documentação do agente
+
+- [x] `docs/agent/RULES.md`.
+- [x] `docs/agent/PROGRESS.md`.
+- [x] `docs/agent/FASE1_SPIKE.md` com os resultados medidos manualmente.
+
+### Bloco 2 — Configuração por variáveis de ambiente
+
+- [x] `infra/settings.py` com `IMAGE_ENGINE`, caminhos SDCPP, dimensões/steps/guidance, timeouts e limites de upload.
+- [x] Constantes de proporção no domínio (`AspectRatio.FOUR_THREE`, `ASPECT_RATIO_DIMENSIONS`).
+- [x] `.env.example` atualizado sem segredos.
+- [x] Testes de settings (`11 passed` com os testes de proporção).
+
+### Bloco 3 — Ambiente local de desenvolvimento
+
+- [x] `.env.development.example` com localhost e portas alternativas.
+- [x] Compose de desenvolvimento com portas 5433/6380/5673/15673/8001 e MinIO.
+- [x] README com instruções de API, worker e frontend em dev.
+- [x] `.env.development` adicionado ao `.gitignore`.
+
+### Bloco 4 — Fila e timeouts
+
+- [x] Worker com `concurrency=1`, `max-tasks-per-child=1`, prefetch 1.
+- [x] Limites soft/hard por `kind` (generate/edit): `270/300` e `570/600`.
+- [x] SSE com timeout dinâmico (maior timeout + 60 s = 660 s).
+- [x] Fila `generation.priority` removida (documentado).
+- [x] Testes de seleção de limites por kind (`8 passed`, incluindo o adapter Celery).
+
+### Bloco 5 — Contratos backend × frontend
+
+- [x] SSE: frontend lê `progress`, `result_image_url` e `error`.
+- [x] Histórico: frontend lê `next_cursor`.
+- [x] Erros HTTP: frontend usa `error.message`/`error.code` com fallback localizado.
+- [x] Contrato de upload de edição (`POST /generations/edits/upload`) com validação PNG/JPEG, bytes e dimensões; helpers no frontend.
+- [x] Overlays “em breve” e bloqueio de geração anônima removidos.
+- [x] Testes de contrato no backend e frontend.
+
+### Bloco 6 — SSE resiliente
+
+- [x] Estado inicial do banco ao conectar (`stream_events.py`).
+- [x] Evento `queued` publicado na criação (generate anônimo/autenticado e edit).
+- [x] Testes: conexão após término, durante processamento, falha, geração inexistente e payload (`7 passed`).
+- [x] Sem posição na fila.
+
+### Bloco 7 — Cota e limites
+
+- [x] Cota consumida depois dos guardrails (injeção, escopo e URL).
+- [x] Cota diária aplicada a edições.
+- [x] Relação `generation_credits` × cota diária documentada em `RULES.md`.
+- [x] Testes da ordem, de recusa sem consumo e de edição (`13 use case + 25 API`).
+
+### Bloco 8 — Suíte verde
+
+- [x] Teste property-based filtrado para palavras bloqueadas por design (a guarda não foi afrouxada).
+- [x] `pytest tests` verde: **167 passed, 1 skipped**.
+- [x] `pytest specs/evals -m eval` verde: **4 passed**.
+- [x] `npm run test -- --run` verde: **21 passed**.
+- [x] `npm run test:e2e` verde: **5 passed**.
+- [x] `npm run lint`: 0 errors (2 warnings pré-existentes em `auth-ui.tsx`).
+- [x] `npx tsc --noEmit`: sem erros.
+
+## Resultado final da Fase 2
+
+- Backend: `167 passed, 1 skipped` (`tests`); `4 passed` (`specs/evals`).
+- Frontend: `21 passed` (vitest); `5 passed` (Playwright); lint sem erros; typecheck limpo.
+- Nenhum commit/push realizado.
+- `IMAGE_ENGINE=sdcpp` permanece sem implementação real; o wiring falha explicitamente para evitar fallback silencioso.
+- A cota diária agora é consumida somente após injeção, escopo e URL; aplica-se a geração e edição.
+- O upload de edição valida bytes reais (PNG/JPEG), tamanho e dimensões, mas ainda não persiste nem processa a imagem.
+
+## Fase 3 — Adapters FLUX/Kontext + storage S3
+
+### Bloco 1 — Portas
+
+- [x] `ImageGeneratorPort` e `ImageEditorPort` separadas, devolvendo bytes +
+  metadados (`width`, `height`, `seed`, `duration_seconds`).
+- [x] Orquestrador escolhe gerador/editor pelo `kind` da `Generation`.
+- [x] `StubImageProvider` legado preservado para testes; stubs novos também
+  devolvem PNG válido.
+- [x] Erros de domínio: `engine_timeout`, `engine_oom`, `engine_failed`,
+  `insufficient_resources`, `invalid_dimensions`, `storage_unavailable`.
+
+### Bloco 2 — Adapter sdcpp
+
+- [x] `build_sdcpp_command` puro, argv em lista, paths com espaços suportados.
+- [x] `SdCppImageGenerator`/`SdCppImageEditor` com `asyncio.create_subprocess_exec`.
+- [x] Timeout por kind; kill da árvore (`taskkill /T /F` / grupo POSIX).
+- [x] Parser de progresso real (`| 3/8 - 19.5s/it`) mapeado para 10–90%.
+- [x] OOM/saída inválida/arquivo ausente mapeados; log completo só no interno.
+- [x] Temp dir limpo em `finally` (inclusive timeout).
+- [x] Guarda `MIN_FREE_RAM_MB` via psutil e `COOLDOWN_SECONDS_BETWEEN_JOBS`.
+- [x] Seed opcional devolvida; proporções canônicas validadas.
+
+### Bloco 3 — Storage S3
+
+- [x] `ObjectStoragePort` + `S3ObjectStorage` (boto3 em `asyncio.to_thread`).
+- [x] Settings S3 e exemplos de env (MinIO 9002/9003); `S3_PUBLIC_ENDPOINT_URL`
+  separa o endpoint interno do host usado nas URLs assinadas.
+- [x] Migration `20261106_120000`: `result_object_key`, `source_object_key`,
+  `seed`, `error_code`.
+- [x] Bucket criado automaticamente em desenvolvimento.
+- [x] URLs assinadas no SSE, histórico e galeria.
+- [x] Retenção configurável das origens (`S3_SOURCE_RETENTION_HOURS`) com
+  limpeza oportunista após edições e task periódica opcional.
+- [x] Testes com fake + integração MinIO opcional (`RUN_S3_TESTS=1`).
+
+### Bloco 4 — Fluxo de edição
+
+- [x] `POST /generations/edits/upload` valida, grava `sources/{id}/source.png`,
+  cria `Generation(kind=edit)` e enfileira (202).
+- [x] Variante `source_image_url` baixa via `SecureImageFetcher`, valida
+  tipo/tamanho/dimensões e grava no S3.
+- [x] Worker baixa a origem do S3 e executa o editor.
+
+### Bloco 5 — Orquestrador e wiring
+
+- [x] `_generate_or_edit` usa as portas novas e callback de progresso real.
+- [x] `_post_process` valida PNG/JPEG + dimensões antes do upload.
+- [x] Lista explícita de pós-processadores para marca d'água/moderação futuras.
+- [x] Wiring `sdcpp` exige caminhos e S3 no startup; `stub` continua funcionando.
+- [x] Falhas viram `FAILED` com código estável e mensagem segura; SSE publica
+  `error` + `error_code`.
+
+### Bloco 6 — Smoke test manual
+
+- [x] `tools/smoke_sdcpp.py` criado (não executado): RAM antes/depois, tempos,
+  aviso térmico, `--edit --source`.
+
+### Bloco 7 — Testes e entrega
+
+- [x] Testes de comando, parser, erros, timeout/kill, limpeza, RAM, proporções,
+  seleção por kind, storage fake e orquestrador.
+- [x] Documentação de como ligar `sdcpp`, variáveis e smoke test no README.
+
+## Resultado final da Fase 3
+
+- Backend: `pytest tests` verde — **205 passed, 2 skipped** (integrações
+  opcionais de MinIO/Postgres).
+- Evals: `pytest specs/evals -m eval` verde — **4 passed**.
+- Frontend: vitest **22 passed**, lint sem erros, `tsc --noEmit` limpo e
+  Playwright **5 passed**.
+- Nenhum commit/push realizado.
+- Nenhuma execução real de FLUX/Kontext em testes/comandos.
+
+## Fase 4 — Assistente multilíngue, moderação e penalidades
+
+### Bloco 1 — Cliente LLM
+
+- [x] Porta `LlmClientPort` + adapter HTTP OpenAI-compatible (LM Studio).
+- [x] Settings `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`,
+  `LLM_TIMEOUT_SECONDS`, `LLM_MAX_OUTPUT_TOKENS`, `LLM_TTL_SECONDS`,
+  `PROMPT_MAX_CHARS`.
+- [x] `temperature=0`, `response_format` json_schema, `ttl` e desativação de
+  raciocínio com fallback em HTTP 400/422 quando o servidor não aceita campos.
+- [x] `<think>` removido, parse tolerante, UM reparo e fail-closed.
+
+### Bloco 2 — PromptAssistant
+
+- [x] Serviço/porta com uma chamada estruturada: idioma, escopo, moderação,
+  confiança, parte de imagem, correção, `flux_prompt`/`kontext_instruction` e
+  `suggested_aspect_ratio` validado.
+- [x] System prompt em inglês, texto do usuário entre delimitadores, regras
+  anti-injeção e proibição de conversar.
+- [x] Regras de decisão em código (confiança mínima, escopo, fail-closed).
+- [x] Assistente roda no worker antes do motor e publica progresso 7–10%.
+- [x] Limites soft/hard da task e do SSE agora cobrem LLM + motor + margem,
+  sem alterar o timeout do subprocesso do sd-cli.
+- [x] FLUX recebe `flux_prompt`; Kontext recebe `kontext_instruction`; prompt
+  original permanece na `Generation`.
+- [x] Guarda determinística na requisição com normalização NFKC/zero-width/
+  leetspeak e injeções em pt, en, es, fr, de, it, ja, zh, ko, ru, ar.
+
+### Bloco 3 — Recusas localizadas
+
+- [x] Catálogo backend nos 11 locales: nsfw, gore, hate, self_harm,
+  out_of_scope, prompt_rejected, assistant_unavailable, temporarily_blocked,
+  warning_level_1 e account_under_review. Autolesão inclui apoio gentil.
+- [x] X-Locale > Accept-Language > pt-BR, validado; locale salvo na Generation.
+- [x] SSE entrega `message`, `error_code`, `warning_level` e
+  `warning_message`; HTTP entrega o mesmo no envelope `error`.
+- [x] CORS libera `X-Locale`.
+- [x] Teste garante todas as chaves nos 11 locales, não vazias e não copiadas
+  do pt-BR (exceto en/pt-BR).
+
+### Bloco 4 — Cota e penalidades
+
+- [x] `release` atômico no store Redis + `RefundPromptQuota`; worker devolve a
+  chance em recusa do LLM e falha do motor, com `generations.quota_refunded`
+  para evitar dupla devolução.
+- [x] Tabela `moderation_events` (migration) com SHA-256/comprimento, sem
+  texto por padrão; flag opcional trunca em 200.
+- [x] Penalidades 3/5/10 na janela 24h, bloqueio 1h, revisão 24h e
+  `users.moderation_flag`; anônimo por sessão + ip_hash.
+- [x] HTTP 429 `temporarily_blocked` com tempo restante; métrica Prometheus
+  por categoria/camada; log estruturado no nível 3. Penalidade vale para
+  geração e edição.
+
+### Bloco 5 — Frontend mínimo
+
+- [x] `X-Locale` nas requisições de geração e no stream SSE.
+- [x] Mensagem localizada de recusa e aviso de nível 1 exibidos; 429 mostra a
+  mensagem do backend. Sem posição na fila.
+
+### Bloco 6 — Testes e evals
+
+- [x] Testes com LLM falso: JSON válido/inválido, reparo, think, timeout,
+  categorias, limiar, escopo, prompt misto, injeção, refund, penalidades,
+  janela 24h e locale inválido.
+- [x] Evals multilíngues em `specs/evals` (11 idiomas, bloqueios, copyright,
+  escopo, injeção e limítrofes), marcadas e gated por `RUN_LLM_EVALS=1`.
+- [x] Documentação de política, variáveis e evals reais no README/RULES.
+
+## Resultado final da Fase 4
+
+- Backend: `pytest tests` verde — **276 passed, 2 skipped**.
+- Evals automáticas: **4 passed, 1 skipped** (a eval real do LLM é pulada).
+- Frontend: vitest **23 passed**, lint sem erros, `tsc --noEmit` limpo.
+- Nenhum teste/carrega o Qwen/LM Studio real; nenhuma eval real executada.
+- Nenhum commit/push realizado.
+
+## Fase 5 — i18n 11 idiomas + estúdio + créditos
+
+### Bloco 1 — i18n completo
+
+- [x] 11 locales em routing, seletor, settings, middleware e carregamento:
+  pt-BR, en, es, fr, de, it, ja, zh, ko, ru, ar.
+- [x] 344 chaves em todos os arquivos, com placeholders idênticos, sem vazios.
+- [x] It e Ko completos; 150 chaves antes faltantes preenchidas nos 7 locales.
+- [x] Árabe com `dir="rtl"`, propriedades lógicas no estúdio/galeria/menu.
+- [x] Fontes Noto JP/SC/KR/Arabic via next/font + stacks de fallback.
+- [x] Metadados/SEO por locale (`title`, `description`, `openGraph.locale`,
+  hreflang) e `lang` correto. README atualizado.
+
+### Bloco 2 — backend da interface
+
+- [x] `GenerateImageInput.seed` (0..2^32-1) e validação de proporção com
+  `invalid_input` 422 localizado; seed salva e devolvida no SSE/histórico.
+- [x] `POST /generations/{id}/variations`: mesmo prompt/proporção, seed nova,
+  guardrails/cota/penalidades/assistente, dono ou própria sessão anônima.
+- [x] Refino com `source_generation_id`: valida dono + DONE, lê o resultado do
+  S3, grava `parent_generation_id` (migration 20261106_140000).
+- [x] Histórico devolve seed e `parent_generation_id` além dos campos já
+  existentes; paginação `next_cursor` preservada.
+- [x] Créditos devolvidos em recusa do LLM, `assistant_unavailable`, falha do
+  motor e moderação; idempotente via `credits_refunded` (teste de dupla
+  devolução). Regra documentada em RULES.
+- [x] Edição/refino continuam exigindo login; anônimo gera e varia.
+
+### Bloco 3 — interface do estúdio
+
+- [x] Seletor de 5 proporções com rótulos traduzidos, preview e seed avançada
+  colapsável.
+- [x] Abas Gerar/Editar; anônimo vê edição desabilitada com CTA de login.
+- [x] Upload PNG/JPEG por drag-and-drop/seletor, preview e validação de
+  tipo/tamanho/dimensões no cliente.
+- [x] Resultado com Baixar, Gerar variação e Refinar (instrução encadeada).
+- [x] Progresso SSE real + estimativa traduzida; sem posição na fila.
+- [x] Histórico paginado com miniaturas, prompt, data, ações e cadeia parent.
+- [x] Recusas/avisos localizados do backend exibidos; layout responsivo,
+  acessível e com propriedades lógicas/RTL.
+
+### Bloco 4 — testes e entrega
+
+- [x] Backend: seed, variação, refino, histórico, validação e dupla devolução
+  de crédito cobertos.
+- [x] Frontend: contrato, validação de upload, store e paridade dos 11 locales.
+- [x] Playwright mockado: proporção/seed/progresso, variação, refino, upload
+  inválido/válido, recusa localizada, anônimo sem edição, ar/ja/ko/it.
+- [x] README/RULES/PROGRESS atualizados. Build de produção do frontend OK.
+
+## Resultado final da Fase 5
+
+- Backend: `pytest tests` verde — **296 passed, 2 skipped**.
+- Evals automáticas: **4 passed, 1 skipped** (LLM real continua gated).
+- Frontend: vitest **39 passed**; Playwright **12 passed**; lint sem erros;
+  `tsc --noEmit` limpo; `next build` concluído (118 páginas).
+- Nenhum commit/push; nenhum modelo real executado.
+
+## Fase 6 — moderação de imagem, marca d'água, metadados e upscale
+
+### Bloco 1 — pipeline
+
+- [x] Ordem: validação -> moderação da saída -> `original.png` privado ->
+  marca d'água -> metadados -> `result.png` público -> SSE (90–99%).
+- [x] `original_object_key` + migration; a chave privada não é exposta.
+- [x] Refino e upscale leem o original limpo; resultado público nunca é fonte.
+
+### Bloco 2 — moderação de imagem
+
+- [x] `ImageModeratorPort`, fake, adapter local NSFW+CLIP lazy/liberado por job
+  e fail-closed (`image_moderation_unavailable`).
+- [x] Origem de edição moderada no worker após o assistente; bloqueio apaga
+  S3, devolve crédito/cota e conta penalidade (`image_input`).
+- [x] Saída bloqueada não grava nada, devolve crédito, registra evento
+  (`image_output`) sem contar 3/5/10.
+- [x] Mensagens localizadas nos 11 locales e métrica Prometheus por
+  categoria/camada.
+
+### Bloco 3 — marca d'água
+
+- [x] Asset copiado para o backend, validado no startup (PNG com alfa).
+- [x] Logo proporcional, mínimo, margem, opacidade, sombra, Lanczos e cache
+  por tamanho; aplicada em geração/edição/variação/refino/upscale.
+- [x] Testes de geometria, alfa, todas as proporções e upscale.
+
+### Bloco 4 — metadados de IA
+
+- [x] tEXt/iTXt + XMP/IPTC com DigitalSourceType, gerador, modelo e data UTC.
+- [x] Sem prompt/seed/usuário/e-mail.
+- [x] C2PA opcional atrás de `C2PA_ENABLED`; ausência de lib/certificado só
+  gera aviso.
+
+### Bloco 5 — upscale
+
+- [x] `kind=upscale`, endpoint autenticado, dono DONE, original privado.
+- [x] Lanczos e ESRGAN (sd-cli com timeout/kill/limpeza/guarda de RAM).
+- [x] Limite próprio de 5/24h, liberado em falha; sem cota de prompts,
+  assistente ou nova moderação.
+- [x] Timeouts por kind na fila/SSE; marca/metadados no novo tamanho.
+
+### Bloco 6/7 — frontend e testes
+
+- [x] Botão Ampliar no resultado/histórico, progresso SSE e limite restante.
+- [x] Mensagens de imagem localizadas exibidas; download sempre público.
+- [x] Suíte sem o grupo opcional `moderation`.
+
+## Resultado final da Fase 6
+
+- Backend: `pytest tests` verde — **341 passed, 2 skipped** (após testes de
+  limites de upscale).
+- Evals automáticas: **4 passed, 1 skipped**.
+- Frontend: vitest **40 passed**; Playwright **13 passed**; lint/tsc limpos;
+  `next build` OK.
+- Nenhum peso/modelo real foi baixado ou executado; nenhum commit/push.
+
+## Fase 7 — métricas, observabilidade e scripts de validação
+
+### Bloco 1 — Prometheus multiprocesso
+
+- [x] `PROMETHEUS_MULTIPROC_DIR` lido por settings e configurado antes das
+  métricas; worker limpa o diretório no `worker_init`.
+- [x] Endpoint HTTP do processo principal do worker em `WORKER_METRICS_PORT`
+  (9100) com `MultiProcessCollector`; API `/metrics` compatível.
+- [x] Scrape `worker:9100` e regras em `infra/docker/prometheus/alerts.yml`.
+- [x] Teste de filho encerrado aparecendo no endpoint agregado.
+
+### Bloco 2 — métricas do pipeline
+
+- [x] Gerações por kind/status, duração, etapas (input_guard, assistant_llm,
+  input/output moderation, engine, watermark_metadata, upload, upscale).
+- [x] LLM: outcome, latência e reparos de JSON.
+- [x] Moderação/recusas, falhas do motor por motivo, RAM livre/pico do
+  subprocesso, créditos/cota devolvidos, penalidades, upscale, fila, SSE e
+  rate limit.
+- [x] Testes de nome/tipo/labels, baixa cardinalidade, fila e cronômetro.
+
+### Bloco 3 — logs e correlação
+
+- [x] `correlation_id` por geração no request, task, etapa e logs structlog;
+  nunca como label de métrica.
+- [x] Falhas registram tipo/código, sem payload bruto.
+- [x] Teste de scrubbing de logs com prompt proposital.
+
+### Bloco 4 — saúde e alertas
+
+- [x] `/readyz` verifica Postgres, Redis, RabbitMQ, S3, arquivos do sdcpp e
+  LM Studio como aviso não bloqueante.
+- [x] Regras de alerta versionadas para falha do motor, timeout, fila parada,
+  recusa anormal, LLM e upload.
+
+### Bloco 5 — Sentry
+
+- [x] Backend: scrubber ampliado para mensagens, breadcrumbs, request,
+  extras/tags/contextos, e-mail, IP, tokens e URLs assinadas.
+- [x] Frontend: `@sentry/nextjs` com DSN opcional, amostragem baixa e
+  scrubbing equivalente (`instrumentation.ts`/client).
+- [x] Testes dos scrubbers backend e frontend.
+
+### Bloco 6 — Grafana
+
+- [x] `api-health.json` usando apenas métricas reais.
+- [x] Novo dashboard `pipeline.json` com gerações, etapas, recusas, motor,
+  LLM, fila, RAM, créditos, penalidades e upscale.
+- [x] Validação de JSON e métricas referenciadas em teste.
+
+### Bloco 7 — scripts manuais
+
+- [x] `tools/smoke_assistant.py`, `tools/smoke_moderation.py` e
+  `tools/run_evals_report.py` criados (NÃO executados).
+- [x] `specs/evals` reutilizável gera `docs/agent/EVALS_REPORT.md` com
+  acurácia por categoria/idioma, falsos bloqueios/passes e latência.
+- [x] README documenta ordem, RAM/temperatura e VRAM via HWiNFO/Adrenalin.
+
+## Resultado final da Fase 7
+
+- Backend: **359 passed, 2 skipped**.
+- Evals automáticas: **4 passed, 1 skipped**.
+- Frontend: vitest **43 passed**; Playwright **13 passed**; lint/tsc limpos;
+  `next build` OK.
+- Ruff: sem erros nos arquivos da fase.
+- Nenhum modelo real, script manual ou eval real foi executado.
+- Nenhum commit/push.
+
+## Fase 8 — segurança, E2E, limpeza, documentação e entrega
+
+### Bloco 1 — revisão de segurança
+
+- [x] IDOR revisado em detalhe/histórico/galeria/variação/refino/upscale/
+  stream; testes de ownership e `original_object_key` nunca exposto.
+- [x] JWT removido da URL do SSE: ticket single-use em Redis (TTL 60s),
+  vinculado à geração e ao solicitante; frontend usa ticket.
+- [x] sd-cli: prompt sanitizado (controle/quebras, limite 2000, prefixo para
+  `-`), argv em lista sem shell e teste com executável falso registrando argv.
+- [x] Upload: `Image.MAX_IMAGE_PIXELS`, limite de pixels, `verify()`, reencode
+  PNG sem EXIF/metadados, temp dirs aleatórios/permissão mínima no POSIX.
+- [x] TokenBucket usa Redis TIME; teste com relógio monotônico local divergente.
+- [x] CORS restrito, CSP/headers Next+API, HSTS em produção, SSRF revisado.
+- [x] Dependências: pip-audit limpo; `npm audit --omit=dev` limpo; resíduos de
+  dev documentados em `docs/agent/SECURITY_REVIEW.md`.
+
+### Bloco 2 — feature flag e produção
+
+- [x] `FEATURE_IMAGE_GENERATION_ENABLED` (false em produção por padrão),
+  `feature_disabled` 503 localizado nos 11 locales, `/api/v1/config`.
+- [x] Validação de sdcpp/S3/LLM/watermark só com a flag ligada; produção sobe
+  desligada.
+- [x] `original_unavailable` (409) localizado em refino/upscale antigos.
+- [x] Migrations aditivas com downgrade; teste de inspeção.
+
+### Bloco 3 — E2E de infraestrutura
+
+- [x] `tests/integration/test_e2e_infra.py` (RUN_E2E_INFRA=1) cobre geração,
+  edição/upload, refino, variação, upscale, URLs assinadas, marca/metadados e
+  caminhos de recusa/limite. Pulado por padrão; não executado nesta fase.
+
+### Bloco 4 — CI
+
+- [x] `.github/workflows/ci.yml` com backend lint/test/eval, auditorias
+  informativas, frontend lint/tsc/vitest/build e Playwright mockado, sem
+  segredos. Workflow antigo em `infra/github` removido.
+
+### Bloco 5 — limpeza
+
+- [x] `.gitignore` cobre `.env*` com exceções de examples, modelos, saídas,
+  imagens de teste, logs, caches e node_modules.
+- [x] Stub `IMAGE_ENGINE=stub` preservado; validador de upload morto removido.
+- [x] README atualizado (estado real, feature flag, CI, licenças, avisos) e
+  ADRs em `docs/agent/adr/`.
+
+### Blocos 6/7 — varredura e testes finais
+
+- [x] Varredura de segredos/arquivos grandes e histórico local.
+- [x] Backend **380 passed, 4 skipped**; evals **4 passed, 1 skipped**;
+  vitest **43 passed**; Playwright **14 passed**; ruff/tsc/lint/build verdes.
+- [x] `docs/agent/{SECURITY_REVIEW,FINAL_REPORT,MANUAL_VALIDATION}.md`.
+
+## Entrega
+
+Branch: `feat/local-flux-engine`. Commits organizados e push conforme Bloco 9.
+Nenhum modelo real, script manual ou eval real foi executado.
+
+## Pendências para o usuário
+
+- Rodar smoke tests/evals reais e calibrar limiares.
+- Revisar traduções com nativos.
+- Emitir certificado C2PA confiável se desejado.
+- Definir host/modelo de produção e ligar a feature flag.
+- Backfill de `original_object_key` para gerações antigas.
+- Provisionar Prometheus/Grafana/Alertmanager e exporter de VRAM/temperatura.
