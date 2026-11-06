@@ -10,11 +10,36 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
+import struct
+import zlib
 from typing import Any, Protocol
 
 from modules.image_generation.application.ports.image_agent_port import ProgressCallback
-from modules.image_generation.domain.entities import Generation
+from modules.image_generation.application.ports.image_engine import EngineImage
+from modules.image_generation.domain.entities import ASPECT_RATIO_DIMENSIONS, Generation
 from shared_kernel.errors import DomainError
+
+
+def make_png_bytes(width: int, height: int) -> bytes:
+    """PNG RGB solido valido (sem Pillow) para o provider stub e testes."""
+
+    def chunk(tag: bytes, payload: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(payload))
+            + tag
+            + payload
+            + struct.pack(">I", zlib.crc32(tag + payload) & 0xFFFFFFFF)
+        )
+
+    header = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    row = b"\x00" + b"\x00\x00\x00" * width
+    pixels = zlib.compress(row * height, level=1)
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", header)
+        + chunk(b"IDAT", pixels)
+        + chunk(b"IEND", b"")
+    )
 
 
 class ImageProvider(Protocol):
@@ -38,10 +63,67 @@ class StubImageProvider:
             await on_progress(percent)
             await asyncio.sleep(0)  # cede a event loop (sem latencia artificial)
         seed = hashlib.sha256(generation.prompt.encode()).hexdigest()[:16]
-        size = {"1:1": (1024, 1024), "3:4": (768, 1024), "16:9": (1280, 720), "9:16": (720, 1280)}[
-            generation.aspect_ratio.value
-        ]
+        size = ASPECT_RATIO_DIMENSIONS[generation.aspect_ratio]
         return f"{self._storage_base}/seed/{seed}/{size[0]}/{size[1]}"
+
+
+class StubImageGenerator:
+    """Motor stub de geracao: PNG valido, progresso realista e seed estavel."""
+
+    async def generate(
+        self,
+        *,
+        prompt: str,
+        width: int,
+        height: int,
+        seed: int | None,
+        on_progress: ProgressCallback,
+    ) -> EngineImage:
+        await on_progress(10)
+        resolved_seed = seed if seed is not None else _seed_for(prompt)
+        for percent in (25, 45, 65, 90):
+            await on_progress(percent)
+            await asyncio.sleep(0)
+        return EngineImage(
+            image_bytes=make_png_bytes(width, height),
+            width=width,
+            height=height,
+            seed=resolved_seed,
+            duration_seconds=0.0,
+        )
+
+
+class StubImageEditor:
+    """Motor stub de edicao: aceita a origem e devolve um PNG valido."""
+
+    async def edit(
+        self,
+        *,
+        prompt: str,
+        source_image: bytes,
+        width: int,
+        height: int,
+        seed: int | None,
+        on_progress: ProgressCallback,
+    ) -> EngineImage:
+        if not source_image:
+            raise DomainError("Imagem de origem vazia.")
+        await on_progress(10)
+        resolved_seed = seed if seed is not None else _seed_for(prompt)
+        for percent in (30, 55, 75, 90):
+            await on_progress(percent)
+            await asyncio.sleep(0)
+        return EngineImage(
+            image_bytes=make_png_bytes(width, height),
+            width=width,
+            height=height,
+            seed=resolved_seed,
+            duration_seconds=0.0,
+        )
+
+
+def _seed_for(prompt: str) -> int:
+    return int(hashlib.sha256(prompt.encode()).hexdigest()[:8], 16)
 
 
 class HttpImageProvider:

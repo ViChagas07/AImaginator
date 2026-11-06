@@ -17,7 +17,14 @@ from shared_kernel.errors import UnauthorizedError
 
 
 class JWTService:
-    def __init__(self, *, secret_key: str, algorithm: str, access_ttl: int, refresh_ttl: int) -> None:
+    def __init__(
+        self,
+        *,
+        secret_key: str,
+        algorithm: str,
+        access_ttl: int,
+        refresh_ttl: int,
+    ) -> None:
         self._jwt = JsonWebToken([algorithm])
         self._secret = secret_key
         self._algorithm = algorithm

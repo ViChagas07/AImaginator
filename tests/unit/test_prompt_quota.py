@@ -40,6 +40,31 @@ class TestRedisPromptQuotaStore:
         assert quota.chances_total == 1
         assert quota.chances_remaining == 1
 
+    async def test_release_devolve_uma_chance(self, fake_redis) -> None:
+        store = RedisPromptQuotaStore(fake_redis)
+        await store.consume(principal_id="user:1", total=3)
+        quota = await store.get_quota(principal_id="user:1", total=3)
+        assert quota.chances_remaining == 2
+
+        assert await store.release(principal_id="user:1") is True
+        quota = await store.get_quota(principal_id="user:1", total=3)
+        assert quota.chances_remaining == 3
+
+    async def test_release_sem_chance_nao_quebra(self, fake_redis) -> None:
+        store = RedisPromptQuotaStore(fake_redis)
+        assert await store.release(principal_id="user:1") is False
+        quota = await store.get_quota(principal_id="user:1", total=3)
+        assert quota.chances_remaining == 3
+
+    async def test_release_permite_novo_consume(self, fake_redis) -> None:
+        store = RedisPromptQuotaStore(fake_redis)
+        await store.consume(principal_id="anon:1", total=1)
+        with pytest.raises(QuotaExceededError):
+            await store.consume(principal_id="anon:1", total=1)
+        assert await store.release(principal_id="anon:1") is True
+        quota = await store.consume(principal_id="anon:1", total=1)
+        assert quota.chances_remaining == 0
+
     async def test_usuarios_diferentes_nao_compartilham_cota(self, fake_redis) -> None:
         store = RedisPromptQuotaStore(fake_redis)
         await store.consume(principal_id="user:1", total=1)  # esgota o user:1

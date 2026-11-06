@@ -8,7 +8,10 @@ Stale-While-Revalidate: nunca derruba o banco em pico de trafego
 from __future__ import annotations
 
 from modules.image_generation.adapters.cache.swr import SWRCache
-from modules.image_generation.application.ports import GenerationRepositoryPort
+from modules.image_generation.application.ports import (
+    GenerationRepositoryPort,
+    ObjectStoragePort,
+)
 from modules.image_generation.application.schemas import GenerationOutput
 from modules.image_generation.application.use_cases.read_generations import _to_output
 
@@ -17,14 +20,23 @@ _SHOWCASE_SIZE = 24
 
 
 class ListPublicShowcase:
-    def __init__(self, *, generations: GenerationRepositoryPort, cache: SWRCache) -> None:
+    def __init__(
+        self,
+        *,
+        generations: GenerationRepositoryPort,
+        cache: SWRCache,
+        storage: ObjectStoragePort | None = None,
+    ) -> None:
         self._generations = generations
         self._cache = cache
+        self._storage = storage
 
     async def execute(self) -> list[GenerationOutput]:
         async def load() -> list[dict]:
             items = await self._generations.list_public_showcase(limit=_SHOWCASE_SIZE)
-            return [_to_output(g).model_dump(mode="json") for g in items]
+            return [
+                (await _to_output(g, self._storage)).model_dump(mode="json") for g in items
+            ]
 
         raw_items = await self._cache.get_or_load(
             _SHOWCASE_KEY, load, fresh_ttl_seconds=60, stale_ttl_seconds=600

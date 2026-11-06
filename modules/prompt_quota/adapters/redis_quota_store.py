@@ -45,6 +45,18 @@ redis.call('PEXPIRE', KEYS[1], window * 1000 + 1000)
 return {1, count, 0}
 """
 
+# KEYS[1] = chave do sorted set; ARGV = window
+_LUA_RELEASE = """
+local removed = redis.call('ZREMRANGEBYRANK', KEYS[1], -1, -1)
+local count = redis.call('ZCARD', KEYS[1])
+if count == 0 then
+  redis.call('DEL', KEYS[1])
+else
+  redis.call('PEXPIRE', KEYS[1], tonumber(ARGV[1]) * 1000 + 1000)
+end
+return removed
+"""
+
 # KEYS[1] = chave do sorted set; ARGV = total, now, window
 _LUA_STATUS = """
 redis.call('ZREMRANGEBYSCORE', KEYS[1], '-inf', ARGV[2] - ARGV[3])
@@ -103,6 +115,12 @@ class RedisPromptQuotaStore(PromptQuotaStorePort):
             chances_total=total,
             next_available_at=None,
         )
+
+    async def release(self, *, principal_id: str) -> bool:
+        removed = await self._redis.eval(
+            _LUA_RELEASE, 1, self._key(principal_id), _WINDOW_SECONDS
+        )
+        return int(removed) > 0
 
     @staticmethod
     def _to_quota(remaining: int, total: int, next_ts: int) -> PromptQuota:

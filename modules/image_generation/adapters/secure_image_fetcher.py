@@ -26,9 +26,16 @@ _MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 class SecureImageFetcher(ImageFetcherPort):
-    def __init__(self, *, url_policy: UrlPolicy, http_client: httpx.AsyncClient) -> None:
+    def __init__(
+        self,
+        *,
+        url_policy: UrlPolicy,
+        http_client: httpx.AsyncClient,
+        max_bytes: int = _MAX_IMAGE_BYTES,
+    ) -> None:
         self._policy = url_policy
         self._http = http_client
+        self._max_bytes = max_bytes
 
     async def fetch(self, url: str) -> bytes:
         self._policy.validate(url)
@@ -48,8 +55,8 @@ class SecureImageFetcher(ImageFetcherPort):
             chunks = bytearray()
             async for chunk in response.aiter_bytes(chunk_size=64 * 1024):
                 chunks.extend(chunk)
-                if len(chunks) > _MAX_IMAGE_BYTES:
-                    raise DomainError("Imagem excede o tamanho maximo permitido (10 MB).")
+                if len(chunks) > self._max_bytes:
+                    raise DomainError("Imagem excede o tamanho maximo permitido.")
         return bytes(chunks)
 
     async def fetch_base64_data_url(self, url: str) -> str:

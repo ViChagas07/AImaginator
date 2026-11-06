@@ -17,7 +17,11 @@ import httpx
 from authlib.jose import JsonWebKey, JsonWebToken
 from authlib.jose.errors import JoseError
 
-from modules.auth.application.pkce import code_challenge_s256, generate_code_verifier, generate_state
+from modules.auth.application.pkce import (
+    code_challenge_s256,
+    generate_code_verifier,
+    generate_state,
+)
 from modules.auth.domain.entities import GoogleProfile
 from shared_kernel.errors import UnauthorizedError
 

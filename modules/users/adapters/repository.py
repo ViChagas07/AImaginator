@@ -48,6 +48,8 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
         model.bio = user.bio
         model.handle = user.handle
         model.generation_credits = user.generation_credits
+        model.moderation_flag = user.moderation_flag
+        model.moderation_blocked_until = user.moderation_blocked_until
         model.updated_at = user.updated_at
         await self._session.flush()
         return user
@@ -99,6 +101,8 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
             bio=model.bio,
             handle=model.handle,
             generation_credits=model.generation_credits,
+            moderation_flag=model.moderation_flag,
+            moderation_blocked_until=model.moderation_blocked_until,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

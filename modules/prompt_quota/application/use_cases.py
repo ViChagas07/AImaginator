@@ -26,3 +26,13 @@ class ConsumePromptQuota:
 
     async def execute(self, principal_id: str) -> PromptQuota:
         return await self._store.consume(principal_id=principal_id, total=self._total)
+
+
+class RefundPromptQuota:
+    """Devolve uma chance consumida (recusa do LLM ou falha do motor)."""
+
+    def __init__(self, store: PromptQuotaStorePort) -> None:
+        self._store = store
+
+    async def refund(self, principal_id: str) -> bool:
+        return await self._store.release(principal_id=principal_id)

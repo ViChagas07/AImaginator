@@ -16,6 +16,7 @@ from fastapi import APIRouter, Query, Request, Response, status
 from apps.api.dependencies import (
     CurrentUserDep,
     GenerationRepoDep,
+    ObjectStorageDep,
     SettingsDep,
     SWRCacheDep,
     resolve_anonymous_session,
@@ -52,9 +53,13 @@ def _to_art(output: GenerationOutput) -> GalleryArtOutput:
 
 @router.get("/public", response_model=GalleryPage)
 async def public_gallery(
-    generations: GenerationRepoDep, cache: SWRCacheDep
+    generations: GenerationRepoDep,
+    cache: SWRCacheDep,
+    storage: ObjectStorageDep,
 ) -> GalleryPage:
-    outputs = await ListPublicShowcase(generations=generations, cache=cache).execute()
+    outputs = await ListPublicShowcase(
+        generations=generations, cache=cache, storage=storage
+    ).execute()
     return GalleryPage(items=[_to_art(o) for o in outputs], cursor=None)
 
 
@@ -62,10 +67,11 @@ async def public_gallery(
 async def my_gallery(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
+    storage: ObjectStorageDep,
     cursor: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=50),
 ) -> GalleryPage:
-    page = await ListUserGenerations(generations).execute(
+    page = await ListUserGenerations(generations, storage=storage).execute(
         user_id=current_user.id, cursor=cursor, limit=limit
     )
     return GalleryPage(
@@ -80,8 +86,9 @@ async def rename_art(
     data: RenameGenerationInput,
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
+    storage: ObjectStorageDep,
 ) -> GalleryArtOutput:
-    output = await RenameGeneration(generations).execute(
+    output = await RenameGeneration(generations, storage=storage).execute(
         user_id=current_user.id, generation_id=generation_id, title=data.title
     )
     return _to_art(output)

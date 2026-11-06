@@ -31,7 +31,7 @@ class Bulkhead:
 
     @property
     def available(self) -> bool:
-        return self._semaphore._value > 0 or self._queued < self._max_queued  # noqa: SLF001
+        return self._semaphore._value > 0 or self._queued < self._max_queued
 
     async def run(self, fn: Callable[[], Awaitable[T]], *, fail_fast: bool = False) -> T:
         if fail_fast and self._queued >= self._max_queued:

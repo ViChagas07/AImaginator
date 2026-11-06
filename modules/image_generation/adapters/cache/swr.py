@@ -75,7 +75,7 @@ class SWRCache:
             try:
                 value = await loader()
                 await self._store(key, value, fresh_ttl, stale_ttl)
-            except Exception as exc:  # noqa: BLE001 — background: engolir e reportar
+            except Exception as exc:  # background: engolir e reportar
                 if on_error:
                     on_error(exc)
             finally:

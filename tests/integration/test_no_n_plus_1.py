@@ -63,12 +63,11 @@ async def test_list_by_user_emite_uma_unica_query() -> None:
 async def test_list_by_user_sem_n_plus_1_contra_postgres() -> None:
     from sqlalchemy import event
 
-    from infra.database import Base, get_engine, get_session_factory
-
     # Registra os modelos na metadata (imports de efeito colateral) e cria as
     # tabelas — o teste e autocontido, sem depender de alembic no CI.
-    import modules.image_generation.adapters.repositories.models  # noqa: F401
+    import modules.image_generation.adapters.repositories.models
     import modules.users.adapters.models  # noqa: F401
+    from infra.database import Base, get_engine, get_session_factory
     from modules.image_generation.adapters.repositories.generation_repository import (
         SQLAlchemyGenerationRepository,
     )

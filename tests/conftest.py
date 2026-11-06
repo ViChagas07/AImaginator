@@ -13,11 +13,21 @@ from modules.users.contracts import User
 # Testes nunca devem disparar `alembic upgrade head` no boot da app
 # (o lifespan da API roda as migrations quando auto_migrate=True).
 os.environ.setdefault("AUTO_MIGRATE", "false")
+# Isola a suite do .env do desenvolvedor: modelos reais nunca rodam em teste.
+os.environ["IMAGE_ENGINE"] = "stub"
+os.environ["FEATURE_IMAGE_GENERATION_ENABLED"] = "true"
 
 
 @pytest.fixture
 def fake_redis() -> fakeredis.aioredis.FakeRedis:
     return fakeredis.aioredis.FakeRedis(decode_responses=True)
+
+
+@pytest.fixture
+def fake_sd_cli(tmp_path):
+    from tests.fakes import create_fake_sd_cli
+
+    return create_fake_sd_cli(tmp_path / "bin with spaces")
 
 
 @pytest.fixture
@@ -125,14 +135,67 @@ class InMemoryGenerationRepository:
         return items[:limit]
 
 
+class InMemoryObjectStorage:
+    """Fake de ObjectStoragePort para testes (sem MinIO)."""
+
+    def __init__(self) -> None:
+        self.objects: dict[str, bytes] = {}
+        self.content_types: dict[str, str] = {}
+        self.deleted: list[str] = []
+
+    async def put_object(self, key, data, *, content_type="image/png"):
+        self.objects[key] = data
+        self.content_types[key] = content_type
+
+    async def get_object(self, key):
+        return self.objects[key]
+
+    async def presigned_get_url(self, key, *, expires_seconds=None):
+        return f"https://storage.test/{key}?signature=test"
+
+    async def delete_object(self, key):
+        self.objects.pop(key, None)
+        self.deleted.append(key)
+
+    async def ensure_bucket(self):
+        return None
+
+    async def delete_objects_older_than(self, prefix, *, hours):
+        stale = [key for key in self.objects if key.startswith(prefix)]
+        for key in stale:
+            self.objects.pop(key, None)
+        return len(stale)
+
+
+class FakeImageFetcher:
+    """Fake de ImageFetcherPort: devolve um PNG valido pequeno."""
+
+    def __init__(self, data: bytes | None = None) -> None:
+        from modules.image_generation.adapters.ai_agents.providers import make_png_bytes
+
+        self.data = data if data is not None else make_png_bytes(64, 48)
+        self.calls: list[str] = []
+
+    async def fetch(self, url):
+        self.calls.append(url)
+        return self.data
+
+    async def fetch_base64_data_url(self, url):
+        import base64
+
+        return f"data:image/png;base64,{base64.b64encode(await self.fetch(url)).decode()}"
+
+
 class SpyTaskQueue:
-    """Spy de TaskQueuePort: registra enfileiramentos."""
+    """Spy de TaskQueuePort: registra enfileiramentos e kinds."""
 
     def __init__(self) -> None:
         self.enqueued: list[str] = []
+        self.kinds: list[str] = []
 
-    def enqueue_generation(self, generation_id, *, priority: bool = False) -> None:
+    def enqueue_generation(self, generation_id, *, kind: str = "generate") -> None:
         self.enqueued.append(str(generation_id))
+        self.kinds.append(kind)
 
 
 class SpyEventPublisher:
@@ -141,6 +204,16 @@ class SpyEventPublisher:
 
     async def publish_progress(self, event) -> None:
         self.events.append(event)
+
+
+class SpyPromptQuota:
+    """Spy de PromptQuotaConsumerPort: registra principals sem consumir Redis."""
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    async def execute(self, principal_id: str):
+        self.calls.append(principal_id)
 
 
 class PassThroughTopicGuard:

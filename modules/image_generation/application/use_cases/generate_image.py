@@ -2,15 +2,28 @@
 
 from __future__ import annotations
 
+from modules.image_generation.application.guardrails import (
+    check_scope_localized,
+    validate_prompt_localized,
+)
 from modules.image_generation.application.ports import (
+    EventPublisherPort,
     GenerationRepositoryPort,
     TaskQueuePort,
 )
-from modules.image_generation.application.schemas import GenerateImageInput, GenerationOutput
-from modules.image_generation.domain.entities import Generation, GenerationKind
+from modules.image_generation.application.schemas import (
+    GenerateImageInput,
+    GenerationOutput,
+    GenerationProgressEvent,
+)
+from modules.image_generation.domain.entities import Generation, GenerationKind, GenerationStatus
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
 from modules.image_generation.domain.prompt_topic_guard import IPromptTopicGuard
+from modules.image_generation.domain.scope_guard import ScopeGuardrail
+from modules.observability.logging_config import get_logger
+from modules.prompt_quota.contracts import PromptQuotaConsumerPort
 from modules.users.contracts import User, UserRepositoryPort
+from shared_kernel.errors import QuotaExceededError
 
 _STREAM_PATH = "/api/v1/generations/{id}/stream"
 
@@ -24,6 +37,8 @@ def _to_output(generation: Generation) -> GenerationOutput:
         style_preset=generation.style_preset,
         aspect_ratio=generation.aspect_ratio,
         title=generation.title,
+        seed=generation.seed,
+        parent_generation_id=generation.parent_generation_id,
         result_image_url=generation.result_image_url,
         error_message=generation.error_message,
         created_at=generation.created_at,
@@ -31,6 +46,9 @@ def _to_output(generation: Generation) -> GenerationOutput:
     )
     output.stream_url = _STREAM_PATH.format(id=generation.id)
     return output
+
+
+logger = get_logger(__name__)
 
 
 class GenerateImageFromPrompt:
@@ -41,20 +59,43 @@ class GenerateImageFromPrompt:
         users: UserRepositoryPort,
         task_queue: TaskQueuePort,
         prompt_guard: PromptInjectionGuard,
-        topic_guard: IPromptTopicGuard,
+        topic_guard: IPromptTopicGuard | None = None,
+        events: EventPublisherPort | None = None,
+        prompt_quota: PromptQuotaConsumerPort | None = None,
+        scope_guardrail: ScopeGuardrail | None = None,
     ) -> None:
         self._generations = generations
         self._users = users
         self._queue = task_queue
         self._guard = prompt_guard
         self._topic_guard = topic_guard
+        self._events = events
+        self._prompt_quota = prompt_quota
+        self._scope_guardrail = scope_guardrail or ScopeGuardrail()
 
-    async def execute(self, *, user: User, data: GenerateImageInput) -> GenerationOutput:
-        clean_prompt = self._guard.validate(data.prompt)
-        clean_prompt = await self._topic_guard.validate(clean_prompt)
+    async def execute(
+        self,
+        *,
+        user: User,
+        data: GenerateImageInput,
+        locale: str = "pt-BR",
+        ip_hash: str | None = None,
+    ) -> GenerationOutput:
+        clean_prompt = validate_prompt_localized(self._guard, data.prompt, locale)
+        if self._topic_guard is not None:
+            clean_prompt = await self._topic_guard.validate(clean_prompt)
+        check_scope_localized(self._scope_guardrail, clean_prompt, locale)
         clean_negative = (
-            self._guard.validate(data.negative_prompt) if data.negative_prompt else None
+            validate_prompt_localized(self._guard, data.negative_prompt, locale)
+            if data.negative_prompt
+            else None
         )
+
+        if not user.has_quota():
+            raise QuotaExceededError("Cota de geracoes esgotada.")
+
+        if self._prompt_quota is not None:
+            await self._prompt_quota.execute(f"user:{user.id}")
 
         user.consume_credit()  # regra de negocio na entidade (QuotaExceeded -> 429)
         await self._users.save(user)
@@ -67,9 +108,26 @@ class GenerateImageFromPrompt:
             style_preset=data.style_preset,
             aspect_ratio=data.aspect_ratio,
             title=data.title,
+            seed=data.seed,
+            locale=locale,
+            ip_hash=ip_hash,
         )
         await self._generations.save(generation)
-        self._queue.enqueue_generation(generation.id)
+        self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        logger.info(
+            "generation_created",
+            correlation_id=str(generation.id),
+            kind=generation.kind.value,
+            locale=locale,
+        )
+        if self._events is not None:
+            await self._events.publish_progress(
+                GenerationProgressEvent(
+                    generation_id=generation.id,
+                    status=GenerationStatus.QUEUED,
+                    progress=0,
+                )
+            )
 
         return _to_output(generation)
 
@@ -83,21 +141,39 @@ class GenerateImageAnonymous:
         generations: GenerationRepositoryPort,
         task_queue: TaskQueuePort,
         prompt_guard: PromptInjectionGuard,
-        topic_guard: IPromptTopicGuard,
+        topic_guard: IPromptTopicGuard | None = None,
+        events: EventPublisherPort | None = None,
+        prompt_quota: PromptQuotaConsumerPort | None = None,
+        scope_guardrail: ScopeGuardrail | None = None,
     ) -> None:
         self._generations = generations
         self._queue = task_queue
         self._guard = prompt_guard
         self._topic_guard = topic_guard
+        self._events = events
+        self._prompt_quota = prompt_quota
+        self._scope_guardrail = scope_guardrail or ScopeGuardrail()
 
     async def execute(
-        self, *, anonymous_session_id: str, data: GenerateImageInput
+        self,
+        *,
+        anonymous_session_id: str,
+        data: GenerateImageInput,
+        locale: str = "pt-BR",
+        ip_hash: str | None = None,
     ) -> GenerationOutput:
-        clean_prompt = self._guard.validate(data.prompt)
-        clean_prompt = await self._topic_guard.validate(clean_prompt)
+        clean_prompt = validate_prompt_localized(self._guard, data.prompt, locale)
+        if self._topic_guard is not None:
+            clean_prompt = await self._topic_guard.validate(clean_prompt)
+        check_scope_localized(self._scope_guardrail, clean_prompt, locale)
         clean_negative = (
-            self._guard.validate(data.negative_prompt) if data.negative_prompt else None
+            validate_prompt_localized(self._guard, data.negative_prompt, locale)
+            if data.negative_prompt
+            else None
         )
+
+        if self._prompt_quota is not None:
+            await self._prompt_quota.execute(f"anon:{anonymous_session_id}")
 
         generation = Generation(
             user_id=None,
@@ -108,8 +184,25 @@ class GenerateImageAnonymous:
             style_preset=data.style_preset,
             aspect_ratio=data.aspect_ratio,
             title=data.title,
+            seed=data.seed,
+            locale=locale,
+            ip_hash=ip_hash,
         )
         await self._generations.save(generation)
-        self._queue.enqueue_generation(generation.id)
+        self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        logger.info(
+            "generation_created",
+            correlation_id=str(generation.id),
+            kind=generation.kind.value,
+            locale=locale,
+        )
+        if self._events is not None:
+            await self._events.publish_progress(
+                GenerationProgressEvent(
+                    generation_id=generation.id,
+                    status=GenerationStatus.QUEUED,
+                    progress=0,
+                )
+            )
 
         return _to_output(generation)

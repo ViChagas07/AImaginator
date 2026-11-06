@@ -9,15 +9,15 @@ from __future__ import annotations
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from alembic import context
 from infra.database import Base
 from infra.settings import get_settings
+from modules.image_generation.adapters.repositories import models as _gen_models  # noqa: F401
 
 # Registro explicito dos modelos de cada modulo (imports de efeito colateral).
 from modules.users.adapters import models as _users_models  # noqa: F401
-from modules.image_generation.adapters.repositories import models as _gen_models  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", get_settings().database_url)

@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, model_validator
 
 from modules.image_generation.domain.entities import (
     AspectRatio,
@@ -28,11 +28,23 @@ class GenerateImageInput(BaseModel):
     negative_prompt: str | None = Field(default=None, max_length=MAX_PROMPT_LENGTH)
     style_preset: StylePreset = StylePreset.NONE
     aspect_ratio: AspectRatio = AspectRatio.SQUARE
+    seed: int | None = Field(default=None, ge=0, le=2**32 - 1)
     title: str | None = Field(default=None, max_length=200)
 
 
 class EditImageInput(GenerateImageInput):
-    source_image_url: HttpUrl  # validada pela guarda anti-SSRF no use case
+    source_image_url: HttpUrl | None = None  # validada pela guarda anti-SSRF
+    source_generation_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def _exactly_one_source(self) -> EditImageInput:
+        has_url = self.source_image_url is not None
+        has_generation = self.source_generation_id is not None
+        if has_url == has_generation:
+            raise ValueError(
+                "Informe exatamente uma origem: source_image_url ou source_generation_id."
+            )
+        return self
 
 
 class RenameGenerationInput(BaseModel):
@@ -51,6 +63,9 @@ class GenerationOutput(BaseModel):
     style_preset: StylePreset
     aspect_ratio: AspectRatio
     title: str | None = None
+    seed: int | None = None
+    parent_generation_id: UUID | None = None
+    upscale_remaining: int | None = None
     result_image_url: str | None
     error_message: str | None
     created_at: datetime
@@ -88,4 +103,9 @@ class GenerationProgressEvent(BaseModel):
     status: GenerationStatus
     progress: int = Field(ge=0, le=100, default=0)
     result_image_url: str | None = None
+    seed: int | None = None
+    parent_generation_id: UUID | None = None
     error: str | None = None
+    error_code: str | None = None
+    warning_level: int | None = None
+    warning_message: str | None = None

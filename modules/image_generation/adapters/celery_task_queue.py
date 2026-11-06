@@ -12,8 +12,15 @@ from modules.image_generation.application.ports.task_queue import TaskQueuePort
 
 
 class CeleryTaskQueue(TaskQueuePort):
-    def enqueue_generation(self, generation_id: UUID, *, priority: bool = False) -> None:
+    def enqueue_generation(self, generation_id: UUID, *, kind: str = "generate") -> None:
+        from infra.settings import get_settings
+        from workers.celery_app.limits import task_time_limits
         from workers.celery_app.tasks import process_generation_task
 
-        queue = "generation.priority" if priority else "generation.standard"
-        process_generation_task.apply_async(args=[str(generation_id)], queue=queue)
+        soft_limit, hard_limit = task_time_limits(kind, get_settings())
+        process_generation_task.apply_async(
+            args=[str(generation_id), kind],
+            queue="generation.standard",
+            soft_time_limit=soft_limit,
+            time_limit=hard_limit,
+        )

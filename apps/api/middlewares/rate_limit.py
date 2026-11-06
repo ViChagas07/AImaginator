@@ -11,7 +11,6 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from infra.redis_client import get_redis
-from infra.settings import get_settings
 from modules.rate_limiting.token_bucket import TokenBucket
 from shared_kernel.errors import RateLimitExceededError
 
@@ -23,7 +22,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.url.path.startswith(("/healthz", "/readyz", "/metrics")):
             return await call_next(request)
 
-        settings = get_settings()
         bucket = TokenBucket(get_redis(), capacity=_IP_CAPACITY, window_seconds=60)
         client_ip = request.client.host if request.client else "unknown"
         try:

@@ -1,43 +1,84 @@
-"""SSE bridge: GET /api/v1/generations/{id}/stream (spec secao 13).
+"""SSE bridge: ticket efemero de uso unico (nunca JWT na URL).
 
-O worker Celery publica progresso no Redis Pub/Sub; este endpoint
-apenas repassa (bridge) o canal para text/event-stream — qualquer
-replica da API serve o stream, nao importa qual worker processou.
-
-Autenticacao: EventSource nao suporta headers customizados, entao o
-access token vem via query param `token` (com fallback para
-Authorization/cookie). Encerra o stream quando chega evento terminal
-(done/failed) ou apos o timeout maximo (evita conexoes eternas).
+Fluxo:
+1. POST /generations/{id}/stream-ticket (auth ou sessao anonima) valida
+   ownership e grava um ticket aleatorio no Redis com TTL curto.
+2. GET /generations/{id}/stream?ticket=... consome o ticket (single-use) e
+   abre o EventSourceResponse.
 """
 
 from __future__ import annotations
 
-import asyncio
-import json
-from collections.abc import AsyncIterator
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sse_starlette.sse import EventSourceResponse
 
 from apps.api.dependencies import (
     GenerationRepoDep,
-    JWTDep,
+    ObjectStorageDep,
+    OptionalCurrentUserDep,
     RedisDep,
     SettingsDep,
-    UserRepoDep,
-    authenticate_user,
+    StreamTicketDep,
+    get_generation_rate_limiter,
     resolve_anonymous_session,
+    set_anonymous_session_cookie,
 )
-from modules.auth.application.anonymous_identity import unsign_anonymous_id
-from modules.image_generation.application.ports import stream_channel
-from modules.image_generation.contracts import GetGeneration
-from shared_kernel.errors import ForbiddenError, NotFoundError
+from modules.image_generation.application.stream_events import stream_generation_events
+from modules.image_generation.application.stream_policy import stream_timeout_seconds
+from modules.rate_limiting.token_bucket import TokenBucket
+from shared_kernel.errors import ForbiddenError, NotFoundError, UnauthorizedError
 
-_MAX_STREAM_SECONDS = 600
 _KEEPALIVE_SECONDS = 15
 
 router = APIRouter(prefix="/api/v1", tags=["streaming"])
+
+
+@router.post("/generations/{generation_id}/stream-ticket", include_in_schema=False)
+async def issue_stream_ticket(
+    generation_id: UUID,
+    request: Request,
+    response: Response,
+    current_user: OptionalCurrentUserDep,
+    generations: GenerationRepoDep,
+    settings: SettingsDep,
+    tickets: StreamTicketDep,
+    limiter: TokenBucket = Depends(get_generation_rate_limiter),
+) -> dict:
+    generation = await generations.get_by_id(generation_id)
+    if generation is None:
+        raise NotFoundError("Geracao nao encontrada.")
+
+    if current_user is not None:
+        if generation.user_id != current_user.id:
+            raise ForbiddenError("Acesso negado a esta geracao.")
+        principal = f"user:{current_user.id}"
+        user_id = current_user.id
+        anonymous_id = None
+    else:
+        anonymous_id, token = resolve_anonymous_session(request, settings)
+        set_anonymous_session_cookie(response, settings, token)
+        if (
+            generation.user_id is not None
+            or generation.anonymous_session_id != anonymous_id
+        ):
+            raise ForbiddenError("Acesso negado a esta geracao.")
+        principal = f"anon:{anonymous_id}"
+        user_id = None
+
+    await limiter.consume(f"stream-ticket:{principal}")
+    ticket = await tickets.issue(
+        generation_id=generation.id,
+        user_id=user_id,
+        anonymous_session_id=anonymous_id,
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        "ticket": ticket,
+        "stream_url": f"/api/v1/generations/{generation.id}/stream",
+        "expires_in": settings.stream_ticket_ttl_seconds,
+    }
 
 
 @router.get("/generations/{generation_id}/stream", include_in_schema=False)
@@ -45,62 +86,27 @@ async def stream_generation(
     generation_id: UUID,
     generations: GenerationRepoDep,
     redis: RedisDep,
-    jwt: JWTDep,
-    users: UserRepoDep,
     settings: SettingsDep,
-    request: Request,
-    token: str | None = Query(default=None),
-    anon: str | None = Query(default=None),
+    storage: ObjectStorageDep,
+    tickets: StreamTicketDep,
+    ticket: str = Query(..., min_length=16, max_length=256),
 ) -> EventSourceResponse:
-    # Valida ownership antes de abrir o stream (nao vaza canal a terceiros).
-    if token:
-        user = await authenticate_user(request, jwt, users, query_token=token)
-        await GetGeneration(generations).execute(user_id=user.id, generation_id=generation_id)
-    else:
-        anonymous_id = None
-        if anon:
-            anonymous_id = unsign_anonymous_id(
-                anon,
-                secret_key=settings.secret_key,
-                max_age=settings.anonymous_session_max_age_days * 86400,
-            )
-        if anonymous_id is None:
-            anonymous_id, _ = resolve_anonymous_session(request, settings)
-        generation = await generations.get_by_id(generation_id)
-        if generation is None:
-            raise NotFoundError("Geracao nao encontrada.")
-        if generation.anonymous_session_id != anonymous_id:
-            raise ForbiddenError("Acesso negado a esta geracao.")
+    principal = await tickets.redeem(ticket)
+    if principal is None:
+        raise UnauthorizedError("Ticket de stream invalido ou expirado.")
+    if principal.generation_id != generation_id:
+        raise ForbiddenError("Ticket nao pertence a esta geracao.")
+    if await generations.get_by_id(generation_id) is None:
+        raise NotFoundError("Geracao nao encontrada.")
 
-    async def event_generator() -> AsyncIterator[dict]:
-        pubsub = redis.pubsub()
-        await pubsub.subscribe(stream_channel(generation_id))
-        try:
-            deadline = asyncio.get_running_loop().time() + _MAX_STREAM_SECONDS
-            while True:
-                remaining = deadline - asyncio.get_running_loop().time()
-                if remaining <= 0:
-                    yield {"event": "error", "data": json.dumps({"error": "stream_timeout"})}
-                    break
-                message = await pubsub.get_message(
-                    ignore_subscribe_messages=True, timeout=_KEEPALIVE_SECONDS
-                )
-                if message is None:
-                    yield {"event": "ping", "data": "{}"}
-                    continue
-
-                payload = json.loads(message["data"])
-                event_name = {
-                    "queued": "status_update",
-                    "processing": "progress",
-                    "done": "result",
-                    "failed": "error",
-                }.get(payload.get("status"), "status_update")
-                yield {"event": event_name, "data": json.dumps(payload)}
-                if event_name in ("result", "error"):
-                    break
-        finally:
-            await pubsub.unsubscribe(stream_channel(generation_id))
-            await pubsub.aclose()
-
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(
+        stream_generation_events(
+            generation_id=generation_id,
+            generations=generations,
+            redis=redis,
+            max_seconds=stream_timeout_seconds(settings),
+            keepalive_seconds=_KEEPALIVE_SECONDS,
+            storage=storage,
+        ),
+        headers={"Cache-Control": "no-store"},
+    )

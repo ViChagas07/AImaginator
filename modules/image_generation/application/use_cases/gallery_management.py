@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from modules.image_generation.application.ports import GenerationRepositoryPort
+from modules.image_generation.application.ports import (
+    GenerationRepositoryPort,
+    ObjectStoragePort,
+)
 from modules.image_generation.application.schemas import GenerationOutput
 from modules.image_generation.application.use_cases.read_generations import _to_output
 from shared_kernel.errors import ForbiddenError, NotFoundError
@@ -13,8 +16,11 @@ from shared_kernel.errors import ForbiddenError, NotFoundError
 class RenameGeneration:
     """Renomeia uma arte do usuario (valida ownership — anti-IDOR)."""
 
-    def __init__(self, generations: GenerationRepositoryPort) -> None:
+    def __init__(
+        self, generations: GenerationRepositoryPort, *, storage: ObjectStoragePort | None = None
+    ) -> None:
         self._generations = generations
+        self._storage = storage
 
     async def execute(self, *, user_id: UUID, generation_id: UUID, title: str) -> GenerationOutput:
         generation = await self._generations.get_by_id(generation_id)
@@ -24,7 +30,7 @@ class RenameGeneration:
             raise ForbiddenError("Acesso negado a esta arte.")
         generation.rename(title)
         await self._generations.save(generation)
-        return _to_output(generation)
+        return await _to_output(generation, self._storage)
 
 
 class DeleteGeneration:

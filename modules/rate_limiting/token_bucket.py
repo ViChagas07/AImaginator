@@ -7,17 +7,17 @@ garante atomicidade (check + consumo em uma unica operacao).
 
 from __future__ import annotations
 
-import time
-
+from modules.observability.metrics import RATE_LIMIT_REJECTIONS
 from shared_kernel.errors import RateLimitExceededError
 
 # Lua: recarrega tokens proporcionalmente ao tempo decorrido e consome 1.
-# KEYS[1] = chave do balde; ARGV = capacity, refill_per_sec, now
+# KEYS[1] = chave do balde; ARGV = capacity, refill_per_sec; now = Redis TIME
 _LUA_TOKEN_BUCKET = """
 local bucket = redis.call('HMGET', KEYS[1], 'tokens', 'ts')
 local capacity = tonumber(ARGV[1])
 local refill_per_sec = tonumber(ARGV[2])
-local now = tonumber(ARGV[3])
+local now_parts = redis.call('TIME')
+local now = tonumber(now_parts[1]) + tonumber(now_parts[2]) / 1000000
 
 local tokens = tonumber(bucket[1]) or capacity
 local ts = tonumber(bucket[2]) or now
@@ -50,11 +50,11 @@ class TokenBucket:
 
     async def consume(self, key: str) -> None:
         """Consome 1 token ou levanta RateLimitExceededError com Retry-After."""
-        now = time.monotonic()
         allowed, retry_after = await self._redis.eval(
-            _LUA_TOKEN_BUCKET, 1, f"tb:{key}", self.capacity, self.refill_per_sec, now
+            _LUA_TOKEN_BUCKET, 1, f"tb:{key}", self.capacity, self.refill_per_sec
         )
         if not allowed:
+            RATE_LIMIT_REJECTIONS.labels(scope=key.split(":", 1)[0]).inc()
             raise RateLimitExceededError(retry_after_seconds=max(int(retry_after), 1))
 
     async def try_consume(self, key: str) -> bool:

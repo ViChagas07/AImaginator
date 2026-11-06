@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from modules.rate_limiting.token_bucket import TokenBucket
@@ -39,6 +41,17 @@ async def test_try_consume_nao_levanta(fake_redis) -> None:
     bucket = TokenBucket(fake_redis, capacity=1, window_seconds=60)
     assert await bucket.try_consume("k") is True
     assert await bucket.try_consume("k") is False
+
+
+@pytest.mark.unit
+async def test_relogio_local_divergente_nao_afeta_redis(
+    fake_redis, monkeypatch
+) -> None:
+    bucket = TokenBucket(fake_redis, capacity=1, window_seconds=60)
+    await bucket.consume("user:clock")
+    monkeypatch.setattr(time, "monotonic", lambda: 10**12)
+    with pytest.raises(RateLimitExceededError):
+        await bucket.consume("user:clock")
 
 
 @pytest.mark.unit

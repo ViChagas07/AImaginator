@@ -16,9 +16,11 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from apps.api import bootstrap as _bootstrap  # noqa: F401 - configura env antes das metricas
 from apps.api.middlewares.metrics import MetricsMiddleware
 from apps.api.middlewares.payload_limit import PayloadLimitMiddleware
 from apps.api.middlewares.rate_limit import RateLimitMiddleware
@@ -33,9 +35,16 @@ from apps.api.routers import (
     stream,
     users,
 )
+from apps.api.routers import (
+    config as config_router,
+)
 from infra.database import dispose_engine
 from infra.redis_client import close_redis
 from infra.settings import get_settings
+from modules.image_generation.application.localization import (
+    message_for,
+    resolve_locale,
+)
 from modules.observability.logging_config import configure_logging, get_logger
 from modules.observability.sentry_setup import init_sentry
 from shared_kernel.errors import AImaginatorError
@@ -116,13 +125,19 @@ def create_app() -> FastAPI:
         allow_origins=[settings.frontend_base_url],
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Anonymous-Session"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "X-Anonymous-Session",
+            "X-Locale",
+        ],
     )
 
     # Routers.
     app.include_router(health.router)
     app.include_router(metrics.router)
     app.include_router(auth.router)
+    app.include_router(config_router.router)
     app.include_router(generations.router)
     app.include_router(stream.router)
     app.include_router(gallery.router)
@@ -135,10 +150,36 @@ def create_app() -> FastAPI:
         retry_after = getattr(exc, "retry_after_seconds", None)
         if exc.http_status == 429 and retry_after is not None:
             headers["Retry-After"] = str(retry_after)
+        payload: dict = {"code": exc.code, "message": exc.message}
+        warning_level = getattr(exc, "warning_level", None)
+        warning_message = getattr(exc, "warning_message", None)
+        if warning_level is not None:
+            payload["warning_level"] = warning_level
+        if warning_message:
+            payload["warning_message"] = warning_message
+        if retry_after is not None:
+            payload["retry_after_seconds"] = retry_after
         return JSONResponse(
             status_code=exc.http_status,
             headers=headers,
-            content={"error": {"code": exc.code, "message": exc.message}},
+            content={"error": payload},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def _validation_error_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        locale = resolve_locale(
+            request.headers.get("X-Locale"), request.headers.get("Accept-Language")
+        )
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": {
+                    "code": "invalid_input",
+                    "message": message_for("invalid_input", locale),
+                }
+            },
         )
 
     @app.exception_handler(Exception)

@@ -18,6 +18,20 @@ poetry run pytest specs/evals -m eval -q
 | `progress_monotonic`  | progresso nunca regride          | >= 1.00   |
 | `latency_sla`         | pipeline stub < 2s por geração   | >= 1.00   |
 
+## Evals reais do assistente de prompts (LLM local)
+
+O arquivo `test_prompt_assistant_evals.py` cobre 11 idiomas, erros de
+escrita, categorias bloqueadas, personagens com copyright, fora de escopo,
+injeções e casos limítrofes legítimos. Por padrão ele é **skipado**; rode
+manualmente com o LM Studio/Qwen carregado:
+
+```bash
+RUN_LLM_EVALS=1 poetry run pytest specs/evals -m eval -k prompt_assistant -s
+```
+
+Métricas impressas: acerto geral, acerto por categoria, falsos bloqueios e
+falsos passes. Nenhum teste automático da fase carrega o modelo real.
+
 ## Provedor
 
 Os evals rodam contra o `StubImageProvider` (determinístico, sem custo de

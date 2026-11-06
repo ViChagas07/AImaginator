@@ -10,24 +10,46 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 
 from apps.api.dependencies import (
     CurrentUserDep,
+    EventPublisherDep,
     GenerationRepoDep,
+    ImageFetcherDep,
+    ImageGenerationEnabledDep,
+    LocaleDep,
+    ModerationServiceDep,
+    ObjectStorageDep,
     OptionalCurrentUserDep,
     PromptGuardDep,
     PromptQuotaStoreDep,
     SettingsDep,
     TaskQueueDep,
-    TopicGuardDep,
+    UpscaleQuotaDep,
     UrlPolicyDep,
     UserRepoDep,
+    ensure_not_moderation_blocked,
+    get_client_ip_hash,
     get_generation_rate_limiter,
     resolve_anonymous_session,
     set_anonymous_session_cookie,
 )
+from modules.image_generation.application.schemas import MAX_PROMPT_LENGTH
 from modules.image_generation.contracts import (
+    CreateEditFromUpload,
+    CreateUpscale,
+    CreateVariation,
     EditImageFromPrompt,
     EditImageInput,
     GenerateImageAnonymous,
@@ -38,6 +60,8 @@ from modules.image_generation.contracts import (
     GetGeneration,
     ListUserGenerations,
 )
+from modules.image_generation.domain.entities import AspectRatio, StylePreset
+from modules.image_generation.domain.storage_errors import StorageUnavailableError
 from modules.prompt_quota.contracts import ConsumePromptQuota
 from modules.rate_limiting.token_bucket import TokenBucket
 
@@ -54,34 +78,175 @@ async def create_generation(
     users: UserRepoDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
-    topic_guard: TopicGuardDep,
     settings: SettingsDep,
     store: PromptQuotaStoreDep,
+    events: EventPublisherDep,
+    moderation: ModerationServiceDep,
+    locale: LocaleDep,
+    _enabled: ImageGenerationEnabledDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
+    ip_hash = get_client_ip_hash(request)
     if current_user is not None:
+        await ensure_not_moderation_blocked(
+            moderation,
+            user=current_user,
+            anonymous_session_id=None,
+            ip_hash=ip_hash,
+            locale=locale,
+        )
         await limiter.consume(f"user:{current_user.id}")
         total = settings.authenticated_prompt_chances_per_day
-        await ConsumePromptQuota(store, total=total).execute(f"user:{current_user.id}")
         return await GenerateImageFromPrompt(
             generations=generations,
             users=users,
             task_queue=queue,
             prompt_guard=guard,
-            topic_guard=topic_guard,
-        ).execute(user=current_user, data=data)
+            events=events,
+            prompt_quota=ConsumePromptQuota(store, total=total),
+        ).execute(
+            user=current_user, data=data, locale=locale, ip_hash=ip_hash
+        )
 
     anonymous_id, token = resolve_anonymous_session(request, settings)
     set_anonymous_session_cookie(response, settings, token)
+    await ensure_not_moderation_blocked(
+        moderation,
+        user=None,
+        anonymous_session_id=anonymous_id,
+        ip_hash=ip_hash,
+        locale=locale,
+    )
     await limiter.consume(f"anon:{anonymous_id}")
     total = settings.anonymous_prompt_chances_per_day
-    await ConsumePromptQuota(store, total=total).execute(f"anon:{anonymous_id}")
     return await GenerateImageAnonymous(
         generations=generations,
         task_queue=queue,
         prompt_guard=guard,
-        topic_guard=topic_guard,
-    ).execute(anonymous_session_id=anonymous_id, data=data)
+        events=events,
+        prompt_quota=ConsumePromptQuota(store, total=total),
+    ).execute(
+        anonymous_session_id=anonymous_id,
+        data=data,
+        locale=locale,
+        ip_hash=ip_hash,
+    )
+
+
+@router.post(
+    "/generations/{generation_id}/upscale",
+    response_model=GenerationOutput,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def create_upscale(
+    generation_id: UUID,
+    request: Request,
+    current_user: CurrentUserDep,
+    generations: GenerationRepoDep,
+    queue: TaskQueueDep,
+    settings: SettingsDep,
+    events: EventPublisherDep,
+    quota: UpscaleQuotaDep,
+    locale: LocaleDep,
+    _enabled: ImageGenerationEnabledDep,
+    limiter: TokenBucket = Depends(get_generation_rate_limiter),
+) -> GenerationOutput:
+    ip_hash = get_client_ip_hash(request)
+    await limiter.consume(f"upscale:{current_user.id}")
+    return await CreateUpscale(
+        generations=generations,
+        task_queue=queue,
+        quota_store=quota,
+        daily_limit=settings.upscale_daily_limit,
+        events=events,
+    ).execute(
+        generation_id=generation_id,
+        user=current_user,
+        locale=locale,
+        ip_hash=ip_hash,
+    )
+
+
+@router.post(
+    "/generations/{generation_id}/variations",
+    response_model=GenerationOutput,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def create_variation(
+    generation_id: UUID,
+    request: Request,
+    response: Response,
+    current_user: OptionalCurrentUserDep,
+    generations: GenerationRepoDep,
+    users: UserRepoDep,
+    queue: TaskQueueDep,
+    guard: PromptGuardDep,
+    settings: SettingsDep,
+    store: PromptQuotaStoreDep,
+    events: EventPublisherDep,
+    moderation: ModerationServiceDep,
+    locale: LocaleDep,
+    _enabled: ImageGenerationEnabledDep,
+    limiter: TokenBucket = Depends(get_generation_rate_limiter),
+) -> GenerationOutput:
+    ip_hash = get_client_ip_hash(request)
+    if current_user is not None:
+        await ensure_not_moderation_blocked(
+            moderation,
+            user=current_user,
+            anonymous_session_id=None,
+            ip_hash=ip_hash,
+            locale=locale,
+        )
+        await limiter.consume(f"user:{current_user.id}")
+        generate = GenerateImageFromPrompt(
+            generations=generations,
+            users=users,
+            task_queue=queue,
+            prompt_guard=guard,
+            events=events,
+            prompt_quota=ConsumePromptQuota(
+                store, total=settings.authenticated_prompt_chances_per_day
+            ),
+        )
+        return await CreateVariation(
+            generations=generations, generate_authenticated=generate
+        ).execute(
+            generation_id=generation_id,
+            user=current_user,
+            anonymous_session_id=None,
+            locale=locale,
+            ip_hash=ip_hash,
+        )
+
+    anonymous_id, token = resolve_anonymous_session(request, settings)
+    set_anonymous_session_cookie(response, settings, token)
+    await ensure_not_moderation_blocked(
+        moderation,
+        user=None,
+        anonymous_session_id=anonymous_id,
+        ip_hash=ip_hash,
+        locale=locale,
+    )
+    await limiter.consume(f"anon:{anonymous_id}")
+    generate_anon = GenerateImageAnonymous(
+        generations=generations,
+        task_queue=queue,
+        prompt_guard=guard,
+        events=events,
+        prompt_quota=ConsumePromptQuota(
+            store, total=settings.anonymous_prompt_chances_per_day
+        ),
+    )
+    return await CreateVariation(
+        generations=generations, generate_anonymous=generate_anon
+    ).execute(
+        generation_id=generation_id,
+        user=None,
+        anonymous_session_id=anonymous_id,
+        locale=locale,
+        ip_hash=ip_hash,
+    )
 
 
 @router.post(
@@ -96,30 +261,129 @@ async def create_edit(
     users: UserRepoDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
-    topic_guard: TopicGuardDep,
     url_policy: UrlPolicyDep,
+    events: EventPublisherDep,
+    settings: SettingsDep,
+    store: PromptQuotaStoreDep,
+    storage: ObjectStorageDep,
+    image_fetcher: ImageFetcherDep,
+    moderation: ModerationServiceDep,
+    locale: LocaleDep,
+    _enabled: ImageGenerationEnabledDep,
+    request: Request,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
+    ip_hash = get_client_ip_hash(request)
+    await ensure_not_moderation_blocked(
+        moderation,
+        user=current_user,
+        anonymous_session_id=None,
+        ip_hash=ip_hash,
+        locale=locale,
+    )
     await limiter.consume(f"user:{current_user.id}")
     use_case = EditImageFromPrompt(
         generations=generations,
         users=users,
         task_queue=queue,
         prompt_guard=guard,
-        topic_guard=topic_guard,
         url_policy=url_policy,
+        events=events,
+        prompt_quota=ConsumePromptQuota(
+            store, total=settings.authenticated_prompt_chances_per_day
+        ),
+        image_fetcher=image_fetcher,
+        storage=storage,
+        max_upload_bytes=settings.edit_upload_max_bytes,
+        max_upload_dimension=settings.edit_upload_max_dimension,
+        max_upload_pixels=settings.edit_upload_max_pixels,
     )
-    return await use_case.execute(user=current_user, data=data)
+    return await use_case.execute(
+        user=current_user, data=data, locale=locale, ip_hash=ip_hash
+    )
+
+
+@router.post(
+    "/generations/edits/upload",
+    response_model=GenerationOutput,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def create_edit_upload(
+    current_user: CurrentUserDep,
+    generations: GenerationRepoDep,
+    users: UserRepoDep,
+    queue: TaskQueueDep,
+    guard: PromptGuardDep,
+    events: EventPublisherDep,
+    settings: SettingsDep,
+    store: PromptQuotaStoreDep,
+    storage: ObjectStorageDep,
+    moderation: ModerationServiceDep,
+    locale: LocaleDep,
+    _enabled: ImageGenerationEnabledDep,
+    request: Request,
+    prompt: str = Form(..., min_length=1, max_length=MAX_PROMPT_LENGTH),
+    file: UploadFile = File(...),
+    negative_prompt: str | None = Form(default=None, max_length=MAX_PROMPT_LENGTH),
+    style_preset: StylePreset = Form(default=StylePreset.NONE),
+    aspect_ratio: AspectRatio = Form(default=AspectRatio.SQUARE),
+    seed: int | None = Form(default=None, ge=0, le=2**32 - 1),
+    title: str | None = Form(default=None, max_length=200),
+    limiter: TokenBucket = Depends(get_generation_rate_limiter),
+) -> GenerationOutput:
+    """Valida, persiste a origem no S3 e enfileira a edicao."""
+    if storage is None:
+        raise StorageUnavailableError()
+    ip_hash = get_client_ip_hash(request)
+    await ensure_not_moderation_blocked(
+        moderation,
+        user=current_user,
+        anonymous_session_id=None,
+        ip_hash=ip_hash,
+        locale=locale,
+    )
+    await limiter.consume(f"user:{current_user.id}")
+    image_bytes = await file.read(settings.edit_upload_max_bytes + 1)
+    data = GenerateImageInput(
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        style_preset=style_preset,
+        aspect_ratio=aspect_ratio,
+        seed=seed,
+        title=title,
+    )
+    return await CreateEditFromUpload(
+        generations=generations,
+        users=users,
+        task_queue=queue,
+        prompt_guard=guard,
+        storage=storage,
+        events=events,
+        prompt_quota=ConsumePromptQuota(
+            store, total=settings.authenticated_prompt_chances_per_day
+        ),
+        max_upload_bytes=settings.edit_upload_max_bytes,
+        max_upload_dimension=settings.edit_upload_max_dimension,
+        max_upload_pixels=settings.edit_upload_max_pixels,
+    ).execute(
+        user=current_user,
+        data=data,
+        image_bytes=image_bytes,
+        declared_content_type=file.content_type,
+        locale=locale,
+        ip_hash=ip_hash,
+    )
 
 
 @router.get("/generations", response_model=GenerationPage)
 async def list_generations(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
+    storage: ObjectStorageDep,
     cursor: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=50),
 ) -> GenerationPage:
-    return await ListUserGenerations(generations).execute(
+    return await ListUserGenerations(generations, storage=storage).execute(
         user_id=current_user.id, cursor=cursor, limit=limit
     )
 
@@ -129,7 +393,8 @@ async def get_generation(
     generation_id: UUID,
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
+    storage: ObjectStorageDep,
 ) -> GenerationOutput:
-    return await GetGeneration(generations).execute(
+    return await GetGeneration(generations, storage=storage).execute(
         user_id=current_user.id, generation_id=generation_id
     )

@@ -27,10 +27,17 @@ from modules.auth.contracts import GoogleOIDCService, JWTService
 from modules.image_generation.adapters.cache.swr import SWRCache
 from modules.image_generation.adapters.celery_task_queue import CeleryTaskQueue
 from modules.image_generation.adapters.redis_event_publisher import RedisEventPublisher
+from modules.image_generation.adapters.redis_stream_tickets import RedisStreamTicketStore
 from modules.image_generation.adapters.repositories.generation_repository import (
     SQLAlchemyGenerationRepository,
 )
+from modules.image_generation.application.localization import message_for
+from modules.image_generation.application.ports import (
+    ImageFetcherPort,
+    ObjectStoragePort,
+)
 from modules.image_generation.application.ports.task_queue import TaskQueuePort
+from modules.image_generation.application.services.moderation import ModerationService
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
 from modules.image_generation.domain.prompt_topic_guard import PromptTopicGuard
 from modules.image_generation.domain.url_policy import UrlPolicy
@@ -41,6 +48,7 @@ from modules.rate_limiting.token_bucket import TokenBucket
 from modules.users.adapters.repository import SQLAlchemyUserRepository
 from modules.users.contracts import User
 from shared_kernel.errors import UnauthorizedError
+from shared_kernel.security_errors import FeatureDisabledError
 
 ACCESS_COOKIE = "aimaginator_access"
 REFRESH_COOKIE = "aimaginator_refresh"
@@ -122,18 +130,9 @@ async def authenticate_user(
     request: Request,
     jwt: JWTDep,
     users: UserRepoDep,
-    *,
-    query_token: str | None = None,
 ) -> User:
-    """Resolve o usuario autenticado.
-
-    Precedencia: token de query (SSE, que nao suporta headers customizados),
-    depois `Authorization: Bearer`, depois cookie httpOnly (retrocompatibilidade
-    com o fluxo antigo em ambiente same-origin).
-    """
-    token = query_token
-    if not token:
-        token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+    """Resolve o usuario autenticado por Authorization ou cookie httpOnly."""
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
     if not token:
         token = request.cookies.get(ACCESS_COOKIE, "")
     if not token:
@@ -221,11 +220,40 @@ def get_task_queue() -> TaskQueuePort:
 TaskQueueDep = Annotated[TaskQueuePort, Depends(get_task_queue)]
 
 
-def get_prompt_guard() -> PromptInjectionGuard:
-    return gen_wiring.build_prompt_guard()
+def get_prompt_guard(settings: SettingsDep) -> PromptInjectionGuard:
+    return gen_wiring.build_prompt_guard(max_length=settings.prompt_max_chars)
 
 
 PromptGuardDep = Annotated[PromptInjectionGuard, Depends(get_prompt_guard)]
+
+
+def get_locale(request: Request) -> str:
+    from modules.image_generation.application.localization import resolve_locale
+
+    return resolve_locale(
+        request.headers.get("X-Locale"),
+        request.headers.get("Accept-Language"),
+    )
+
+
+LocaleDep = Annotated[str, Depends(get_locale)]
+
+
+def require_image_generation(settings: SettingsDep, locale: LocaleDep) -> None:
+    if not settings.image_generation_enabled:
+        raise FeatureDisabledError(message_for("feature_disabled", locale))
+
+
+ImageGenerationEnabledDep = Annotated[None, Depends(require_image_generation)]
+
+
+def get_client_ip_hash(request: Request) -> str | None:
+    import hashlib
+
+    host = request.client.host if request.client else None
+    if not host:
+        return None
+    return hashlib.sha256(host.encode("utf-8")).hexdigest()
 
 
 def get_topic_guard(settings: SettingsDep, http: HttpClientDep) -> PromptTopicGuard:
@@ -240,6 +268,85 @@ def get_url_policy(settings: SettingsDep) -> UrlPolicy:
 
 
 UrlPolicyDep = Annotated[UrlPolicy, Depends(get_url_policy)]
+
+
+def get_object_storage(settings: SettingsDep) -> ObjectStoragePort | None:
+    return gen_wiring.build_object_storage(settings)
+
+
+ObjectStorageDep = Annotated[ObjectStoragePort | None, Depends(get_object_storage)]
+
+
+def get_secure_image_fetcher(
+    settings: SettingsDep, http: HttpClientDep
+) -> ImageFetcherPort:
+    return gen_wiring.build_secure_image_fetcher(settings, http_client=http)
+
+
+ImageFetcherDep = Annotated[ImageFetcherPort, Depends(get_secure_image_fetcher)]
+
+
+def get_stream_ticket_store(
+    settings: SettingsDep, redis: RedisDep
+) -> RedisStreamTicketStore:
+    return RedisStreamTicketStore(
+        redis, ttl_seconds=settings.stream_ticket_ttl_seconds
+    )
+
+
+StreamTicketDep = Annotated[RedisStreamTicketStore, Depends(get_stream_ticket_store)]
+
+
+def get_upscale_quota_store(redis: RedisDep) -> RedisPromptQuotaStore:
+    return RedisPromptQuotaStore(redis, namespace="upscale-quota")
+
+
+UpscaleQuotaDep = Annotated[RedisPromptQuotaStore, Depends(get_upscale_quota_store)]
+
+
+def get_moderation_service(
+    settings: SettingsDep,
+    session: SessionDep,
+    users: UserRepoDep,
+    redis: RedisDep,
+) -> ModerationService:
+    return gen_wiring.build_moderation_service(
+        settings=settings, session=session, users=users, redis_client=redis
+    )
+
+
+ModerationServiceDep = Annotated[ModerationService, Depends(get_moderation_service)]
+
+
+async def ensure_not_moderation_blocked(
+    service: ModerationService,
+    *,
+    user,
+    anonymous_session_id: str | None,
+    ip_hash: str | None,
+    locale: str,
+) -> None:
+    from datetime import UTC, datetime
+
+    from shared_kernel.security_errors import TemporarilyBlockedError
+
+    until = await service.current_block(
+        user=user,
+        anonymous_session_id=anonymous_session_id,
+        ip_hash=ip_hash,
+    )
+    if until is None:
+        return
+    retry_after = max(1, int((until - datetime.now(UTC)).total_seconds()))
+    flagged = bool(user and user.moderation_flag)
+    code = "account_under_review" if flagged else "temporarily_blocked"
+    message = message_for(code, locale)
+    raise TemporarilyBlockedError(
+        message,
+        retry_after_seconds=retry_after,
+        warning_level=2,
+        warning_message=message,
+    )
 
 
 def get_swr_cache(redis: RedisDep) -> SWRCache:

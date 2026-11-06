@@ -7,6 +7,6 @@ from uuid import UUID
 
 
 class TaskQueuePort(Protocol):
-    def enqueue_generation(self, generation_id: UUID, *, priority: bool = False) -> None:
-        """Enfileira o processamento assincrono de uma geracao (202)."""
+    def enqueue_generation(self, generation_id: UUID, *, kind: str = "generate") -> None:
+        """Enfileira o processamento assincrono de uma geracao/edicao (202)."""
         ...

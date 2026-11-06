@@ -22,6 +22,8 @@ class User:
     handle: str | None = None
     id: UUID = field(default_factory=uuid4)
     generation_credits: int = DEFAULT_MONTHLY_CREDITS
+    moderation_flag: bool = False
+    moderation_blocked_until: datetime | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 

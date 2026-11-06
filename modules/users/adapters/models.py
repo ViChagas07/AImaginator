@@ -25,6 +25,10 @@ class UserModel(Base):
     bio: Mapped[str | None] = mapped_column(String(160), nullable=True)
     handle: Mapped[str | None] = mapped_column(String(50), unique=True, index=True, nullable=True)
     generation_credits: Mapped[int] = mapped_column(Integer, default=50)
+    moderation_flag: Mapped[bool] = mapped_column(Boolean, default=False)
+    moderation_blocked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )

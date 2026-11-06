@@ -5,7 +5,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infra.database import Base
@@ -28,9 +38,24 @@ class GenerationModel(Base):
     style_preset: Mapped[str | None] = mapped_column(String(64), nullable=True)
     aspect_ratio: Mapped[str | None] = mapped_column(String(16), nullable=True)
     source_image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    source_object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     result_image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    original_object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    result_object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    parent_generation_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("generations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    warning_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    warning_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    locale: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    ip_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    quota_refunded: Mapped[bool] = mapped_column(Boolean, default=False)
+    credits_refunded: Mapped[bool] = mapped_column(Boolean, default=False)
+    upscale_refunded: Mapped[bool] = mapped_column(Boolean, default=False)
     credits_cost: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
@@ -43,4 +68,34 @@ class GenerationModel(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True
+    )
+
+
+class ModerationEventModel(Base):
+    __tablename__ = "moderation_events"
+    __table_args__ = (
+        Index("ix_moderation_events_user_created", "user_id", "created_at"),
+        Index(
+            "ix_moderation_events_anon_created", "anonymous_session_id", "created_at"
+        ),
+        Index("ix_moderation_events_ip_created", "ip_hash", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    anonymous_session_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True
+    )
+    ip_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    locale: Mapped[str] = mapped_column(String(16), nullable=False)
+    category: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    layer: Mapped[str] = mapped_column(String(16), nullable=False)
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    prompt_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    prompt_length: Mapped[int] = mapped_column(Integer, nullable=False)
+    prompt_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )

@@ -5,7 +5,10 @@ from __future__ import annotations
 import base64
 from uuid import UUID
 
-from modules.image_generation.application.ports import GenerationRepositoryPort
+from modules.image_generation.application.ports import (
+    GenerationRepositoryPort,
+    ObjectStoragePort,
+)
 from modules.image_generation.application.schemas import GenerationOutput, GenerationPage
 from modules.image_generation.domain.entities import Generation
 from shared_kernel.errors import ForbiddenError, NotFoundError
@@ -15,7 +18,12 @@ _DEFAULT_PAGE_SIZE = 20
 _MAX_PAGE_SIZE = 50
 
 
-def _to_output(generation: Generation) -> GenerationOutput:
+async def _to_output(
+    generation: Generation, storage: ObjectStoragePort | None = None
+) -> GenerationOutput:
+    result_url = generation.result_image_url
+    if storage is not None and generation.result_object_key:
+        result_url = await storage.presigned_get_url(generation.result_object_key)
     return GenerationOutput(
         id=generation.id,
         kind=generation.kind,
@@ -24,7 +32,9 @@ def _to_output(generation: Generation) -> GenerationOutput:
         style_preset=generation.style_preset,
         aspect_ratio=generation.aspect_ratio,
         title=generation.title,
-        result_image_url=generation.result_image_url,
+        seed=generation.seed,
+        parent_generation_id=generation.parent_generation_id,
+        result_image_url=result_url,
         error_message=generation.error_message,
         created_at=generation.created_at,
         completed_at=generation.completed_at,
@@ -33,8 +43,11 @@ def _to_output(generation: Generation) -> GenerationOutput:
 
 
 class GetGeneration:
-    def __init__(self, generations: GenerationRepositoryPort) -> None:
+    def __init__(
+        self, generations: GenerationRepositoryPort, *, storage: ObjectStoragePort | None = None
+    ) -> None:
         self._generations = generations
+        self._storage = storage
 
     async def execute(self, *, user_id: UUID, generation_id: UUID) -> GenerationOutput:
         generation = await self._generations.get_by_id(generation_id)
@@ -43,12 +56,15 @@ class GetGeneration:
         if generation.user_id != user_id:
             # Nao vaza existencia do recurso a terceiros (anti-enumeracao).
             raise ForbiddenError("Acesso negado a esta geracao.")
-        return _to_output(generation)
+        return await _to_output(generation, self._storage)
 
 
 class ListUserGenerations:
-    def __init__(self, generations: GenerationRepositoryPort) -> None:
+    def __init__(
+        self, generations: GenerationRepositoryPort, *, storage: ObjectStoragePort | None = None
+    ) -> None:
         self._generations = generations
+        self._storage = storage
 
     async def execute(
         self, *, user_id: UUID, cursor: str | None, limit: int = _DEFAULT_PAGE_SIZE
@@ -60,7 +76,8 @@ class ListUserGenerations:
         if len(items) > limit:
             items = items[:limit]
             next_cursor = self._encode_cursor(items[-1].id)
-        return GenerationPage(items=[_to_output(g) for g in items], next_cursor=next_cursor)
+        outputs = [await _to_output(g, self._storage) for g in items]
+        return GenerationPage(items=outputs, next_cursor=next_cursor)
 
     @staticmethod
     def _encode_cursor(generation_id: UUID) -> str:
