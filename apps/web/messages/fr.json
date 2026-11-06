@@ -11,7 +11,13 @@
     "gallery": "Galerie",
     "studio": "Studio",
     "login": "Imaginons ! ✨",
-    "logout": "Se déconnecter"
+    "logout": "Se déconnecter",
+    "account": {
+      "myAccount": "Mon compte",
+      "myAccountSubtitle": "Profil, sécurité, préférences",
+      "settings": "Paramètres",
+      "tierFree": "Forfait gratuit"
+    }
   },
   "auth": {
     "signIn": {
@@ -33,13 +39,13 @@
     "fullNamePlaceholder": "Jean Dupont",
     "signInButton": "Se connecter",
     "signUpButton": "S'inscrire",
+    "signingIn": "Connexion...",
+    "signingUp": "Inscription...",
     "showPassword": "Afficher le mot de passe",
     "hidePassword": "Masquer le mot de passe",
     "orContinue": "Ou continuer avec",
     "googleButton": "Continuer avec Google",
     "googleIconAlt": "Icône Google",
-    "signingIn": "Connexion...",
-    "signingUp": "Inscription...",
     "errors": {
       "invalidCredentials": "E-mail ou mot de passe invalide.",
       "emailInUse": "Un compte existe déjà avec cet e-mail.",
@@ -54,6 +60,11 @@
     "promptPlaceholder": "Décrivez l'image que vous souhaitez créer...",
     "promptButton": "Créer une image",
     "promptStatusLoading": "Ouverture du studio...",
+    "quotaAvailable": "Chances de prompt : {remaining} sur {total}",
+    "quotaReloadsIn": "Se recharge dans",
+    "quotaLoading": "Chargement des chances de prompt...",
+    "comingSoon": "⚠️ La génération d'images par IA n'est pas encore disponible. Un modèle sera bientôt implémenté et vos prompts fonctionneront normalement.",
+    "loginToPrompt": "✨ Se Connecter Pour Imaginer ! ✨",
     "stepsTitle": "Comment ça marche",
     "steps": [
       {
@@ -93,6 +104,14 @@
       {
         "prompt": "Un champ de fleurs colorées à l'aube, lumière chaude",
         "imageAlt": "Image IA : un champ de fleurs colorées à l'aube."
+      },
+      {
+        "prompt": "Un papillon coloré volant avec des ailes orange et noires sur un fond bleu vif",
+        "imageAlt": "Papillon coloré généré par l'IA avec des ailes orange et noires sur un fond bleu vif."
+      },
+      {
+        "prompt": "Exemple d'image générée par l'IA sur imagine.art",
+        "imageAlt": "Exemple d'image générée par l'IA - imagine.art"
       }
     ],
     "previewDialogTitle": "Prompt utilisé",
@@ -115,12 +134,7 @@
         "question": "Comment fonctionne la progression en temps réel ?",
         "answer": "Le statut de la génération est diffusé depuis l'API via des server-sent events (SSE), affichant le pourcentage de progression jusqu'à ce que l'image soit prête ou qu'une erreur survienne."
       }
-    ],
-    "quotaAvailable": "Chances de prompt : {remaining} sur {total}",
-    "quotaReloadsIn": "Se recharge dans",
-    "quotaLoading": "Chargement des chances de prompt...",
-    "comingSoon": "⚠️ La génération d'images par IA n'est pas encore disponible. Un modèle sera bientôt implémenté et vos prompts fonctionneront normalement.",
-    "loginToPrompt": "✨ Se Connecter Pour Imaginer ! ✨"
+    ]
   },
   "studio": {
     "title": "Studio",
@@ -128,6 +142,7 @@
     "loginButton": "Se connecter / S'inscrire",
     "promptLabel": "Prompt",
     "promptPlaceholder": "Décrivez l'image...",
+    "comingSoon": "⚠️ La génération d'images par IA n'est pas encore disponible. Un modèle sera bientôt implémenté et vos prompts fonctionneront normalement.",
     "uploadLabel": "Image facultative à éditer",
     "uploadHint": "PNG ou JPEG — facultatif, envoyé avec le prompt pour l'éditer.",
     "generateButton": "Générer",
@@ -149,8 +164,66 @@
     "saveArtBody": "Connectez-vous ou inscrivez-vous pour enregistrer cette œuvre dans votre galerie. Elle sera liée à votre compte.",
     "saveArtCta": "Se connecter / S'inscrire",
     "saveArtLater": "Plus tard",
-    "comingSoon": "⚠️ La génération d'images par IA n'est pas encore disponible. Un modèle sera bientôt implémenté et vos prompts fonctionneront normalement.",
-    "loginToPrompt": "✨ Se Connecter Pour Imaginer ! ✨"
+    "loginToPrompt": "✨ Se Connecter Pour Imaginer ! ✨",
+    "modeLabel": "Mode",
+    "modeGenerate": "Générer",
+    "modeEdit": "Modifier l'image",
+    "modeTablistLabel": "Choisir le mode de génération",
+    "aspectRatioLabel": "Rapport hauteur/largeur",
+    "aspectRatioSquare": "Carré (1:1)",
+    "aspectRatioFourThree": "Paysage (4:3)",
+    "aspectRatioPortrait": "Portraits (3:4)",
+    "aspectRatioLandscape": "Large (16:9)",
+    "aspectRatioTall": "Verticale (9:16)",
+    "aspectRatioPreview": "Rapport hauteur/largeur : {ratio}",
+    "seedLabel": "Graine",
+    "seedHint": "Nombre entier facultatif compris entre 0 et 4294967295. Laissez vide pour une graine aléatoire.",
+    "seedPlaceholder": "Aléatoire",
+    "seedAdvanced": "Options avancées",
+    "seedRandom": "Graine aléatoire",
+    "seedValue": "Graine : {seed}",
+    "timeEstimateGenerate": "La génération prend généralement quelques minutes.",
+    "timeEstimateEdit": "L'édition prend généralement quelques minutes, parfois plus.",
+    "editLoginRequired": "Connectez-vous pour modifier ou affiner les images.",
+    "editLoginCta": "Se connecter",
+    "uploadDrop": "Faites glisser et déposez un PNG ou un JPEG ici",
+    "uploadChoose": "Choisissez un fichier",
+    "uploadReplace": "Remplacer l'image",
+    "uploadRemove": "Supprimer l'image",
+    "uploadPreviewAlt": "Image source sélectionnée",
+    "uploadInvalidType": "Seules les images PNG ou JPEG sont acceptées.",
+    "uploadTooLarge": "L'image dépasse la taille maximale de {size} Mo.",
+    "uploadInvalidDimensions": "L'image dépasse la dimension maximale de {max} pixels.",
+    "uploadMaxHint": "PNG ou JPEG, jusqu'à {size} Mo et {max} pixels par côté.",
+    "resultActionsLabel": "Actions sur l'image",
+    "download": "Télécharger",
+    "generateVariation": "Générer une variation",
+    "refine": "Affiner",
+    "refineTitle": "Affiner cette image",
+    "refinePromptLabel": "Qu'est-ce qui devrait changer ?",
+    "refinePromptPlaceholder": "Changez uniquement le ciel en aurore. Gardez tout le reste exactement pareil.",
+    "refineSubmit": "Appliquer le raffinement",
+    "refineCancel": "Annuler",
+    "historyOpen": "Ouvrir",
+    "historyVariation": "Variation",
+    "historyRefine": "Affiner",
+    "historyDownload": "Télécharger",
+    "historyChain": "Raffinement de : {prompt}",
+    "historyChainUnknown": "Raffinement d'une image antérieure",
+    "historyLoadMore": "Charger plus",
+    "anonymousHistory": "Connectez-vous pour voir votre historique complet.",
+    "resultLabel": "Image générée",
+    "uploadErrorLabel": "Erreur de téléchargement",
+    "aspectRatioGroupLabel": "Choisissez un rapport hauteur/largeur",
+    "seedInvalid": "La graine doit être un nombre entier entre 0 et 4294967295.",
+    "editSubmit": "Modifier l'image",
+    "editPromptLabel": "Instruction de modification",
+    "editPromptPlaceholder": "Décrivez ce qui devrait changer dans l'image...",
+    "editUploadLabel": "Image source",
+    "uploadRequired": "Choisissez une image source pour continuer.",
+    "upscale": "Haut de gamme",
+    "upscaling": "Mise à l'échelle...",
+    "upscaleRemaining": "Gammes haut de gamme restantes aujourd'hui : {count}"
   },
   "gallery": {
     "title": "Galerie publique",
@@ -341,5 +414,231 @@
   "loader": {
     "generating": "Génération",
     "ariaLabel": "Génération de l'image en cours, veuillez patienter"
+  },
+  "account": {
+    "title": "Mon compte",
+    "subtitle": "Gérez votre profil, votre sécurité et vos préférences",
+    "sections": {
+      "profilePhoto": "Photo de profil",
+      "personalInfo": "Informations personnelles",
+      "accountStats": "Statistiques du compte",
+      "connectedProviders": "Fournisseurs connectés"
+    },
+    "profilePhoto": {
+      "changePhoto": "Changer de photo",
+      "removePhoto": "Supprimer la photo",
+      "uploading": "Téléchargement...",
+      "cropHint": "Recadrer l'image (rapport 1:1)",
+      "apply": "Appliquer",
+      "cancel": "Annuler",
+      "fileTypes": "JPG, ​​PNG ou WebP — maximum 5 Mo"
+    },
+    "personalInfo": {
+      "fullName": "Nom et prénom",
+      "fullNamePlaceholder": "John Doe",
+      "email": "E-mail",
+      "emailGoogleBadge": "Lié à Google",
+      "bio": "Biographie/À propos",
+      "bioPlaceholder": "Parlez-nous un peu de vous (max 160 caractères)",
+      "bioCharCount": "{count}/160",
+      "handle": "Nom d'utilisateur",
+      "handlePlaceholder": "nom d'utilisateur",
+      "handleHint": "Uniquement des lettres, des chiffres, _ et -",
+      "handleTaken": "Ce nom d'utilisateur est déjà pris",
+      "save": "Enregistrer les modifications",
+      "cancel": "Annuler",
+      "saving": "Économie...",
+      "saved": "Modifications enregistrées avec succès",
+      "error": "Erreur d'enregistrement. Veuillez réessayer."
+    },
+    "accountStats": {
+      "accountCreated": "Compte créé le",
+      "totalGenerations": "Total des arts générés",
+      "totalSavedArts": "Total des œuvres enregistrées dans la Galerie",
+      "currentPlan": "Forfait actuel",
+      "creditsUsed": "Crédits utilisés cette période",
+      "creditsLimit": "de {limit}"
+    },
+    "connectedProviders": {
+      "google": "Google",
+      "connected": "Connecté",
+      "none": "Aucun fournisseur connecté.",
+      "disconnect": "Déconnecter",
+      "disconnectConfirm": "Es-tu sûr? Vous aurez besoin d'une autre méthode pour vous connecter.",
+      "cannotDisconnectOnly": "Impossible de déconnecter la seule méthode de connexion. Définissez d'abord un mot de passe."
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Configurez les préférences de votre plateforme, les options d'apparence et d'accessibilité",
+    "tabs": {
+      "appearance": "Apparence",
+      "languageRegion": "Langue et région",
+      "accessibility": "Accessibilité",
+      "notifications": "Notifications",
+      "privacyData": "Confidentialité et données",
+      "advanced": "Avancé"
+    },
+    "save": "Enregistrer les paramètres",
+    "reset": "Restaurer les paramètres par défaut",
+    "saving": "Économie...",
+    "saved": "Paramètres enregistrés",
+    "resetConfirm": "Es-tu sûr? Toutes les préférences reviendront aux valeurs par défaut.",
+    "appearance": {
+      "title": "Apparence",
+      "description": "Personnalisez l'apparence de AImaginator pour vous",
+      "theme": {
+        "label": "Thème",
+        "dark": "Sombre",
+        "light": "Lumière",
+        "system": "Système"
+      },
+      "boldText": {
+        "label": "Texte en gras",
+        "description": "Augmente le poids de la police à l'échelle mondiale pour une meilleure lisibilité"
+      },
+      "fontSize": {
+        "label": "Taille de la police",
+        "small": "Petit",
+        "medium": "Moyen",
+        "large": "Grand",
+        "xl": "Très grand"
+      },
+      "elementSpacing": {
+        "label": "Taille de l'élément",
+        "compact": "Compact",
+        "comfortable": "Confortable",
+        "spacious": "Spacieux"
+      }
+    },
+    "languageRegion": {
+      "title": "Langue et région",
+      "description": "Choisissez votre langue et votre fuseau horaire",
+      "language": {
+        "label": "Langue"
+      },
+      "timezone": {
+        "label": "Fuseau horaire",
+        "placeholder": "Sélectionnez votre fuseau horaire",
+        "description": "Utilisé pour formater les dates et les heures sur la plateforme"
+      }
+    },
+    "accessibility": {
+      "title": "Accessibilité",
+      "description": "Ajuster les options pour améliorer la convivialité",
+      "highContrast": {
+        "label": "Contraste élevé",
+        "description": "Augmente le contraste entre le texte et l'arrière-plan"
+      },
+      "screenReaderOptimized": {
+        "label": "Optimisations du lecteur d'écran",
+        "description": "Active des attributs ARIA supplémentaires et des améliorations sémantiques"
+      },
+      "keyboardNavigation": {
+        "label": "Navigation au clavier",
+        "description": "Permet des raccourcis de navigation clavier optimisés"
+      },
+      "focusIndicator": {
+        "label": "Indicateur de mise au point",
+        "description": "Rend le contour du focus plus visible"
+      },
+      "dyslexiaFont": {
+        "label": "Police de dyslexie",
+        "description": "Passe à une police pour une meilleure lisibilité"
+      },
+      "reducedMotion": {
+        "label": "Mouvement réduit",
+        "description": "Réduit ou désactive les animations et les transitions"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Configurez comment et quand vous recevez des alertes",
+      "email": {
+        "label": "Alertes par e-mail",
+        "description": "Recevez des notifications par e-mail (génération terminée, crédits épuisés, actualités)"
+      },
+      "push": {
+        "label": "Notifications poussées",
+        "description": "Notifications push du navigateur en temps réel (image prête)"
+      },
+      "desktop": {
+        "label": "Alertes de bureau",
+        "description": "Fenêtres contextuelles de notification sur le bureau"
+      },
+      "sound": {
+        "label": "Alertes sonores",
+        "description": "Jouer du son lorsqu'une génération est terminée"
+      },
+      "summaryFrequency": {
+        "label": "Fréquence du résumé",
+        "daily": "Tous les jours",
+        "weekly": "Hebdomadaire",
+        "never": "Jamais",
+        "description": "Résumé par e-mail de l'activité du compte"
+      },
+      "notificationEmail": {
+        "label": "E-mail de notification",
+        "placeholder": "notifications@exemple.com",
+        "description": "Peut différer de l'e-mail de connexion (pour les comptes d'équipe)"
+      }
+    },
+    "privacyData": {
+      "title": "Confidentialité et données",
+      "description": "Gérez vos données et préférences de confidentialité",
+      "documents": {
+        "title": "Documents de politique",
+        "privacyPolicy": "Voir la politique de confidentialité",
+        "termsOfUse": "Voir les conditions d'utilisation"
+      },
+      "consentHistory": {
+        "title": "Historique des consentements",
+        "description": "Vous avez accepté la version {version} des conditions et de la politique de confidentialité le {date}"
+      },
+      "exportData": {
+        "title": "Exportation de données (portabilité)",
+        "description": "Téléchargez toutes vos données personnelles (profil, historique des générations, arts enregistrés, paramètres) conformément au LGPD Art. 18, V.",
+        "button": "Exporter mes données",
+        "exporting": "Préparation de l'exportation...",
+        "success": "Exportation demandée. Vous recevrez un e-mail avec le lien de téléchargement lorsque vous serez prêt."
+      },
+      "deleteAccount": {
+        "title": "Suppression de compte",
+        "description": "Supprimez définitivement votre compte et toutes les données associées. Cette action ne peut être annulée après le délai de grâce de 30 jours (LGPD Art. 18, VI)",
+        "button": "Demander la suppression du compte",
+        "confirmTitle": "Confirmer la suppression du compte",
+        "confirmDescription": "Es-tu sûr? Votre compte sera désactivé et sa suppression définitive sera programmée dans 30 jours. Vous pouvez annuler en vous reconnectant pendant cette période.",
+        "cancel": "Annuler",
+        "confirm": "Oui, demander la suppression"
+      }
+    },
+    "advanced": {
+      "title": "Avancé",
+      "description": "Options pour les développeurs et la maintenance",
+      "developerMode": {
+        "label": "Mode développeur",
+        "description": "Expose les outils de débogage/d'inspection dans le client (ID internes, journaux de requêtes, charges utiles API)"
+      },
+      "clearCache": {
+        "label": "Effacer le cache local",
+        "description": "Efface le cache local (localStorage/IndexedDB) sans affecter les données du serveur",
+        "button": "Vider le cache",
+        "success": "Cache local vidé"
+      },
+      "exportData": {
+        "title": "Exporter mes données",
+        "description": "Raccourci vers l'export des données (même fonction que l'onglet Confidentialité)",
+        "button": "Exporter mes données"
+      },
+      "resetAllSettings": {
+        "title": "Réinitialiser tous les paramètres",
+        "description": "Réinitialise toutes les préférences de tous les onglets aux valeurs par défaut",
+        "button": "Tout réinitialiser",
+        "confirmTitle": "Confirmer la réinitialisation",
+        "confirmDescription": "Es-tu sûr? Tous les paramètres reviendront aux valeurs par défaut. Cette action ne peut pas être annulée.",
+        "cancel": "Annuler",
+        "confirm": "Oui, tout réinitialiser"
+      }
+    }
   }
 }

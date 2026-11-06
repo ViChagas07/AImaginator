@@ -18,8 +18,10 @@ const OPEN_GRAPH_LOCALES: Record<string, string> = {
   es: "es_ES",
   fr: "fr_FR",
   de: "de_DE",
+  it: "it_IT",
   ja: "ja_JP",
   zh: "zh_CN",
+  ko: "ko_KR",
   ru: "ru_RU",
   ar: "ar_AR",
 };

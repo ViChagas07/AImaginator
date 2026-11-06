@@ -11,7 +11,13 @@
     "gallery": "画廊",
     "studio": "工作室",
     "login": "让我们想象吧！✨",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "account": {
+      "myAccount": "我的账户",
+      "myAccountSubtitle": "个人资料、安全性、偏好",
+      "settings": "设置",
+      "tierFree": "免费计划"
+    }
   },
   "auth": {
     "signIn": {
@@ -33,13 +39,13 @@
     "fullNamePlaceholder": "张三",
     "signInButton": "登录",
     "signUpButton": "注册",
+    "signingIn": "登录中...",
+    "signingUp": "注册中...",
     "showPassword": "显示密码",
     "hidePassword": "隐藏密码",
     "orContinue": "或使用以下方式继续",
     "googleButton": "使用 Google 继续",
     "googleIconAlt": "Google 图标",
-    "signingIn": "登录中...",
-    "signingUp": "注册中...",
     "errors": {
       "invalidCredentials": "邮箱或密码无效。",
       "emailInUse": "该邮箱已有账户。",
@@ -54,6 +60,11 @@
     "promptPlaceholder": "描述你想要创建的图像...",
     "promptButton": "创建图像",
     "promptStatusLoading": "正在打开工作室...",
+    "quotaAvailable": "提示次数：{remaining}/{total}",
+    "quotaReloadsIn": "重新加载于",
+    "quotaLoading": "正在加载提示次数...",
+    "comingSoon": "⚠️ AI 图像生成功能尚未可用。模型即将上线，届时您的提示词将正常工作。",
+    "loginToPrompt": "✨ 登录去想象吧！ ✨",
     "stepsTitle": "使用方法",
     "steps": [
       {
@@ -93,6 +104,14 @@
       {
         "prompt": "黎明时分五彩缤纷的花田，温暖的阳光",
         "imageAlt": "AI 图像：黎明时分的五彩花田。"
+      },
+      {
+        "prompt": "一只色彩缤纷的蝴蝶，在充满活力的蓝色背景下，用橙色和黑色的翅膀飞翔",
+        "imageAlt": "人工智能生成的彩色蝴蝶，翅膀为橙色和黑色，背景为充满活力的蓝色。"
+      },
+      {
+        "prompt": "Imagine.art 上 AI 生成的示例图像",
+        "imageAlt": "AI 生成的图像示例 — Imagine.art"
       }
     ],
     "previewDialogTitle": "使用的提示词",
@@ -115,12 +134,7 @@
         "question": "实时进度是如何运作的？",
         "answer": "生成状态通过 server-sent events (SSE) 从 API 流式传输，显示百分比进度，直到图像完成或返回错误。"
       }
-    ],
-    "quotaAvailable": "提示次数：{remaining}/{total}",
-    "quotaReloadsIn": "重新加载于",
-    "quotaLoading": "正在加载提示次数...",
-    "comingSoon": "⚠️ AI 图像生成功能尚未可用。模型即将上线，届时您的提示词将正常工作。",
-    "loginToPrompt": "✨ 登录去想象吧！ ✨"
+    ]
   },
   "studio": {
     "title": "工作室",
@@ -128,6 +142,7 @@
     "loginButton": "登录/注册",
     "promptLabel": "提示词",
     "promptPlaceholder": "描述图像...",
+    "comingSoon": "⚠️ AI 图像生成功能尚未可用。模型即将上线，届时您的提示词将正常工作。",
     "uploadLabel": "可选的要编辑的图像",
     "uploadHint": "PNG 或 JPEG — 可选，随提示词一起发送以进行编辑。",
     "generateButton": "生成",
@@ -149,8 +164,66 @@
     "saveArtBody": "登录或注册以将作品保存到画廊。作品将关联到你的账户。",
     "saveArtCta": "登录 / 注册",
     "saveArtLater": "稍后",
-    "comingSoon": "⚠️ AI 图像生成功能尚未可用。模型即将上线，届时您的提示词将正常工作。",
-    "loginToPrompt": "✨ 登录去想象吧！ ✨"
+    "loginToPrompt": "✨ 登录去想象吧！ ✨",
+    "modeLabel": "模式",
+    "modeGenerate": "生成",
+    "modeEdit": "编辑图像",
+    "modeTablistLabel": "选择生成模式",
+    "aspectRatioLabel": "宽高比",
+    "aspectRatioSquare": "正方形 (1:1)",
+    "aspectRatioFourThree": "横向 (4:3)",
+    "aspectRatioPortrait": "纵向 (3:4)",
+    "aspectRatioLandscape": "宽屏 (16:9)",
+    "aspectRatioTall": "竖屏 (9:16)",
+    "aspectRatioPreview": "纵横比：{ratio}",
+    "seedLabel": "随机种子",
+    "seedHint": "可选整数，范围 0 到 4294967295。留空则使用随机种子。",
+    "seedPlaceholder": "随机的",
+    "seedAdvanced": "高级选项",
+    "seedRandom": "随机种子",
+    "seedValue": "种子：{seed}",
+    "timeEstimateGenerate": "生成通常需要几分钟。",
+    "timeEstimateEdit": "编辑通常需要几分钟，有时甚至更长。",
+    "editLoginRequired": "登录以编辑或优化图像。",
+    "editLoginCta": "登入",
+    "uploadDrop": "将 PNG 或 JPEG 拖放到此处",
+    "uploadChoose": "选择一个文件",
+    "uploadReplace": "替换图片",
+    "uploadRemove": "删除图像",
+    "uploadPreviewAlt": "选定的源图像",
+    "uploadInvalidType": "仅接受 PNG 或 JPEG 图像。",
+    "uploadTooLarge": "图像超过 {size} MB 的最大大小。",
+    "uploadInvalidDimensions": "图像超出了 {max} 像素的最大尺寸。",
+    "uploadMaxHint": "PNG 或 JPEG，每边最多 {size} MB 和 {max} 像素。",
+    "resultActionsLabel": "图像动作",
+    "download": "下载",
+    "generateVariation": "生成变体",
+    "refine": "精修",
+    "refineTitle": "精修此图像",
+    "refinePromptLabel": "要改变什么？",
+    "refinePromptPlaceholder": "只把天空改成极光，其他部分保持完全一致。",
+    "refineSubmit": "应用精修",
+    "refineCancel": "取消",
+    "historyOpen": "打开",
+    "historyVariation": "变体",
+    "historyRefine": "精修",
+    "historyDownload": "下载",
+    "historyChain": "精修自：{prompt}",
+    "historyChainUnknown": "精修自之前的图像",
+    "historyLoadMore": "加载更多",
+    "anonymousHistory": "登录以查看您的完整历史记录。",
+    "resultLabel": "生成的图像",
+    "uploadErrorLabel": "上传错误",
+    "aspectRatioGroupLabel": "选择纵横比",
+    "seedInvalid": "种子必须是 0 到 4294967295 之间的整数。",
+    "editSubmit": "编辑图像",
+    "editPromptLabel": "编辑指令",
+    "editPromptPlaceholder": "描述图像中应该改变什么...",
+    "editUploadLabel": "源图片",
+    "uploadRequired": "选择源图像以继续。",
+    "upscale": "高档",
+    "upscaling": "升级...",
+    "upscaleRemaining": "今日剩余高档商品：{count}"
   },
   "gallery": {
     "title": "公共画廊",
@@ -341,5 +414,231 @@
   "loader": {
     "generating": "生成中",
     "ariaLabel": "正在生成图像，请稍候"
+  },
+  "account": {
+    "title": "我的账户",
+    "subtitle": "管理您的个人资料、安全性和偏好设置",
+    "sections": {
+      "profilePhoto": "个人资料照片",
+      "personalInfo": "个人信息",
+      "accountStats": "账户统计",
+      "connectedProviders": "互联提供商"
+    },
+    "profilePhoto": {
+      "changePhoto": "更改照片",
+      "removePhoto": "删除照片",
+      "uploading": "正在上传...",
+      "cropHint": "裁剪图像（1:1 比例）",
+      "apply": "申请",
+      "cancel": "取消",
+      "fileTypes": "JPG、PNG 或 WebP — 最大 5MB"
+    },
+    "personalInfo": {
+      "fullName": "姓名",
+      "fullNamePlaceholder": "约翰·多伊",
+      "email": "电子邮件",
+      "emailGoogleBadge": "链接到Google",
+      "bio": "简介/关于",
+      "bioPlaceholder": "向我们介绍一下您自己（最多 160 个字符）",
+      "bioCharCount": "{count}/160",
+      "handle": "用户名",
+      "handlePlaceholder": "用户名",
+      "handleHint": "仅限字母、数字、_ 和 -",
+      "handleTaken": "该用户名已被占用",
+      "save": "保存更改",
+      "cancel": "取消",
+      "saving": "保存...",
+      "saved": "更改已成功保存",
+      "error": "保存时出错。请再试一次。"
+    },
+    "accountStats": {
+      "accountCreated": "帐户创建于",
+      "totalGenerations": "产生的总艺术作品",
+      "totalSavedArts": "画廊中保存的总艺术作品",
+      "currentPlan": "目前计划",
+      "creditsUsed": "本期间使用的积分",
+      "creditsLimit": "{limit} 的"
+    },
+    "connectedProviders": {
+      "google": "Google",
+      "connected": "已连接",
+      "none": "没有连接的提供商。",
+      "disconnect": "断开",
+      "disconnectConfirm": "你确定吗？您需要使用另一种方法来登录。",
+      "cannotDisconnectOnly": "无法断开唯一的登录方法。先设置密码。"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "subtitle": "配置您的平台首选项、外观和辅助功能选项",
+    "tabs": {
+      "appearance": "外貌",
+      "languageRegion": "语言及地区",
+      "accessibility": "无障碍",
+      "notifications": "通知",
+      "privacyData": "隐私和数据",
+      "advanced": "先进的"
+    },
+    "save": "保存设置",
+    "reset": "恢复默认值",
+    "saving": "保存...",
+    "saved": "设置已保存",
+    "resetConfirm": "你确定吗？所有首选项将恢复为默认值。",
+    "appearance": {
+      "title": "外貌",
+      "description": "自定义 AImaginator 的外观",
+      "theme": {
+        "label": "主题",
+        "dark": "黑暗的",
+        "light": "光",
+        "system": "系统"
+      },
+      "boldText": {
+        "label": "粗体文字",
+        "description": "全局增加字体粗细以提高可读性"
+      },
+      "fontSize": {
+        "label": "字体大小",
+        "small": "小的",
+        "medium": "中等的",
+        "large": "大的",
+        "xl": "特大号"
+      },
+      "elementSpacing": {
+        "label": "元件尺寸",
+        "compact": "袖珍的",
+        "comfortable": "舒服的",
+        "spacious": "宽敞"
+      }
+    },
+    "languageRegion": {
+      "title": "语言及地区",
+      "description": "选择您的语言和时区",
+      "language": {
+        "label": "语言"
+      },
+      "timezone": {
+        "label": "时区",
+        "placeholder": "选择您的时区",
+        "description": "用于跨平台格式化日期和时间"
+      }
+    },
+    "accessibility": {
+      "title": "无障碍",
+      "description": "调整选项以提高可用性",
+      "highContrast": {
+        "label": "高对比度",
+        "description": "增加文本和背景之间的对比度"
+      },
+      "screenReaderOptimized": {
+        "label": "屏幕阅读器优化",
+        "description": "启用额外的 ARIA 属性和语义改进"
+      },
+      "keyboardNavigation": {
+        "label": "键盘导航",
+        "description": "启用优化的键盘导航快捷键"
+      },
+      "focusIndicator": {
+        "label": "焦点指示器",
+        "description": "使焦点轮廓更加明显"
+      },
+      "dyslexiaFont": {
+        "label": "诵读困难字体",
+        "description": "切换到字体以获得更好的可读性"
+      },
+      "reducedMotion": {
+        "label": "减少运动",
+        "description": "最小化或禁用动画和过渡"
+      }
+    },
+    "notifications": {
+      "title": "通知",
+      "description": "配置接收警报的方式和时间",
+      "email": {
+        "label": "电子邮件提醒",
+        "description": "接收电子邮件通知（生成完成、积分不足、新闻）"
+      },
+      "push": {
+        "label": "推送通知",
+        "description": "浏览器实时推送通知（图像就绪）"
+      },
+      "desktop": {
+        "label": "桌面警报",
+        "description": "桌面通知弹出窗口"
+      },
+      "sound": {
+        "label": "声音警报",
+        "description": "一代完成时播放声音"
+      },
+      "summaryFrequency": {
+        "label": "摘要频率",
+        "daily": "日常的",
+        "weekly": "每周",
+        "never": "绝不",
+        "description": "帐户活动的电子邮件摘要"
+      },
+      "notificationEmail": {
+        "label": "通知邮件",
+        "placeholder": "notification@example.com",
+        "description": "可能与登录电子邮件不同（对于团队帐户）"
+      }
+    },
+    "privacyData": {
+      "title": "隐私和数据",
+      "description": "管理您的数据和隐私偏好",
+      "documents": {
+        "title": "政策文件",
+        "privacyPolicy": "查看隐私政策",
+        "termsOfUse": "查看使用条款"
+      },
+      "consentHistory": {
+        "title": "同意历史",
+        "description": "您于 {date} 接受了 {version} 版本的条款和隐私政策"
+      },
+      "exportData": {
+        "title": "数据导出（便携性）",
+        "description": "根据 LGPD 艺术下载您的所有个人数据（个人资料、世代历史、保存的艺术、设置）。 18、五",
+        "button": "导出我的数据",
+        "exporting": "正在准备导出...",
+        "success": "要求导出。准备好后，您将收到一封包含下载链接的电子邮件。"
+      },
+      "deleteAccount": {
+        "title": "帐户删除",
+        "description": "永久删除您的帐户和所有相关数据。此操作在 30 天宽限期后无法撤消（LGPD 第 18 条，VI）",
+        "button": "请求删除帐户",
+        "confirmTitle": "确认帐户删除",
+        "confirmDescription": "你确定吗？您的帐户将被停用并计划在 30 天内永久删除。在此期间您可以通过重新登录来取消。",
+        "cancel": "取消",
+        "confirm": "是的，请求删除"
+      }
+    },
+    "advanced": {
+      "title": "先进的",
+      "description": "开发人员和维护人员的选项",
+      "developerMode": {
+        "label": "开发者模式",
+        "description": "公开客户端中的调试/检查工具（内部 ID、请求日志、API 有效负载）"
+      },
+      "clearCache": {
+        "label": "清除本地缓存",
+        "description": "清除本地缓存（localStorage/IndexedDB）而不影响服务器数据",
+        "button": "清除缓存",
+        "success": "本地缓存已清除"
+      },
+      "exportData": {
+        "title": "导出我的数据",
+        "description": "数据导出快捷方式（与“隐私”选项卡功能相同）",
+        "button": "导出我的数据"
+      },
+      "resetAllSettings": {
+        "title": "重置所有设置",
+        "description": "将所有选项卡上的所有首选项重置为默认值",
+        "button": "重置一切",
+        "confirmTitle": "确认重置",
+        "confirmDescription": "你确定吗？所有设置将恢复为默认值。此操作无法撤消。",
+        "cancel": "取消",
+        "confirm": "是的，重置一切"
+      }
+    }
   }
 }

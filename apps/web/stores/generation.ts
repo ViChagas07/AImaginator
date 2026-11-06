@@ -3,6 +3,23 @@ import {API_BASE_URL} from "@/lib/constants";
 import {authedFetch} from "@/lib/api";
 import {getAccessToken} from "@/lib/auth-token";
 import {getAnonymousToken} from "@/lib/anonymous-session";
+import {
+  buildEditImageUploadForm,
+  ApiGenerationItem,
+  GenerationRecord,
+  parseGenerationOutput,
+  readApiError,
+  readErrorMessage,
+  readNextCursor,
+  readParentGenerationId,
+  readProgress,
+  readResultUrl,
+  readSeed,
+  readUpscaleRemaining,
+  readWarningMessage,
+  toHistoryItem,
+} from "@/lib/generation-contract";
+import type {AspectRatioValue} from "@/lib/studio-config";
 
 export type GenerationStatus =
   | "idle"
@@ -11,12 +28,9 @@ export type GenerationStatus =
   | "done"
   | "failed";
 
-export type HistoryItem = {
-  id: string;
-  prompt: string;
-  imageUrl: string | null;
-  createdAt: string;
-};
+export type GenerationMode = "generate" | "edit";
+
+export type HistoryItem = GenerationRecord;
 
 export type GenerationErrorMessages = {
   http: (status: number) => string;
@@ -26,21 +40,56 @@ export type GenerationErrorMessages = {
 
 type GenerationState = {
   prompt: string;
+  mode: GenerationMode;
+  aspectRatio: AspectRatioValue;
+  seed: string;
+  uploadFile: File | null;
   imageBase64: string | undefined;
   status: GenerationStatus;
   progress: number;
+  result: GenerationRecord | null;
   resultUrl: string | null;
   error: string | null;
+  warning: string | null;
   history: HistoryItem[];
   historyCursor: string | null;
+  historyLoading: boolean;
+  upscaleRemaining: number | null;
   startGeneration: (
     prompt: string,
-    imageBase64: string | undefined,
     errors: GenerationErrorMessages,
+    locale?: string,
   ) => Promise<void>;
-  loadHistory: () => Promise<void>;
+  startEditUpload: (
+    prompt: string,
+    errors: GenerationErrorMessages,
+    locale?: string,
+  ) => Promise<void>;
+  startUpscale: (
+    generationId: string,
+    errors: GenerationErrorMessages,
+    locale?: string,
+  ) => Promise<void>;
+  startVariation: (
+    generationId: string,
+    errors: GenerationErrorMessages,
+    locale?: string,
+  ) => Promise<void>;
+  startRefine: (
+    generationId: string,
+    instruction: string,
+    aspectRatio: AspectRatioValue,
+    errors: GenerationErrorMessages,
+    locale?: string,
+  ) => Promise<void>;
+  loadHistory: (reset?: boolean) => Promise<void>;
+  showResult: (item: GenerationRecord) => void;
   reset: () => void;
   setPrompt: (p: string) => void;
+  setMode: (mode: GenerationMode) => void;
+  setAspectRatio: (ratio: AspectRatioValue) => void;
+  setSeed: (seed: string) => void;
+  setUploadFile: (file: File | null) => void;
   setImage: (image: string | undefined) => void;
 };
 
@@ -48,97 +97,451 @@ export function isGeneratingStatus(status: GenerationStatus): boolean {
   return status === "queued" || status === "processing";
 }
 
+export function parseSeedInput(seed: string): number | undefined {
+  const value = seed.trim();
+  if (!value) return undefined;
+  if (!/^\d+$/.test(value)) return undefined;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0 || parsed > 2 ** 32 - 1) {
+    return undefined;
+  }
+  return parsed;
+}
+
 let source: EventSource | null = null;
+
+function closeSource() {
+  source?.close();
+  source = null;
+}
+
+type SetState = (
+  partial:
+    | Partial<GenerationState>
+    | ((state: GenerationState) => Partial<GenerationState>),
+) => void;
+
+type GetState = () => GenerationState;
+
+async function connectStream(
+  streamPath: string,
+  generationId: string,
+  locale: string | undefined,
+  errors: GenerationErrorMessages,
+  set: SetState,
+  get: GetState,
+) {
+  closeSource();
+  try {
+    const headers = new Headers();
+    if (locale) headers.set("X-Locale", locale);
+    const anon = getAnonymousToken();
+    if (anon) headers.set("X-Anonymous-Session", anon);
+    const ticketResponse = await authedFetch(
+      `${API_BASE_URL}/api/v1/generations/${encodeURIComponent(generationId)}/stream-ticket`,
+      {method: "POST", headers},
+    );
+    if (!ticketResponse.ok) {
+      set({status: "failed", error: await readFailure(ticketResponse, errors)});
+      return;
+    }
+    const ticketData = (await ticketResponse.json()) as {
+      ticket?: unknown;
+      stream_url?: unknown;
+    };
+    if (
+      typeof ticketData.ticket !== "string" ||
+      typeof ticketData.stream_url !== "string"
+    ) {
+      set({status: "failed", error: errors.failed});
+      return;
+    }
+    const absolute = ticketData.stream_url.startsWith("http")
+      ? ticketData.stream_url
+      : `${API_BASE_URL}${ticketData.stream_url}`;
+    const params = new URLSearchParams({ticket: ticketData.ticket});
+    if (locale) params.set("locale", locale);
+    source = new EventSource(`${absolute}?${params.toString()}`);
+  } catch {
+    set({status: "failed", error: errors.network});
+    return;
+  }
+  source.addEventListener("status_update", (event) => {
+    const payload = JSON.parse((event as MessageEvent).data) as {
+      status: GenerationStatus;
+    };
+    set({status: payload.status});
+  });
+  source.addEventListener("progress", (event) => {
+    const payload = JSON.parse((event as MessageEvent).data) as unknown;
+    set({status: "processing", progress: readProgress(payload) ?? 0});
+  });
+  source.addEventListener("result", (event) => {
+    const payload = JSON.parse((event as MessageEvent).data) as unknown;
+    closeSource();
+    const current = get().result;
+    const url = readResultUrl(payload);
+    set({
+      status: "done",
+      progress: 100,
+      resultUrl: url,
+      result: current
+        ? {
+            ...current,
+            status: "done",
+            imageUrl: url ?? current.imageUrl,
+            seed: readSeed(payload) ?? current.seed,
+            parentGenerationId:
+              readParentGenerationId(payload) ?? current.parentGenerationId,
+          }
+        : current,
+    });
+    if (getAccessToken()) void get().loadHistory(true);
+  });
+  source.addEventListener("error", (event) => {
+    closeSource();
+    let message = errors.failed;
+    let warning: string | null = null;
+    try {
+      const payload = JSON.parse((event as MessageEvent).data) as unknown;
+      message = readErrorMessage(payload) ?? message;
+      warning = readWarningMessage(payload);
+    } catch {
+      // evento nativo de rede do EventSource: manter fallback localizado
+    }
+    set({status: "failed", error: message, warning});
+    if (getAccessToken()) void get().loadHistory(true);
+  });
+}
+
+async function readFailure(
+  response: Response,
+  errors: GenerationErrorMessages,
+): Promise<string> {
+  try {
+    const apiError = readApiError(await response.json());
+    return apiError.message ?? apiError.code ?? errors.http(response.status);
+  } catch {
+    return errors.http(response.status);
+  }
+}
 
 export const useGenerationStore = create<GenerationState>((set, get) => ({
   prompt: "",
+  mode: "generate",
+  aspectRatio: "1:1",
+  seed: "",
+  uploadFile: null,
   imageBase64: undefined,
   status: "idle",
   progress: 0,
+  result: null,
   resultUrl: null,
   error: null,
+  warning: null,
   history: [],
   historyCursor: null,
+  historyLoading: false,
+  upscaleRemaining: null,
 
   setPrompt: (prompt) => set({prompt}),
-
+  setMode: (mode) => set({mode}),
+  setAspectRatio: (aspectRatio) => set({aspectRatio}),
+  setSeed: (seed) => set({seed}),
+  setUploadFile: (uploadFile) => set({uploadFile}),
   setImage: (imageBase64) => set({imageBase64}),
 
+  showResult: (item) =>
+    set({
+      prompt: item.prompt,
+      result: item,
+      resultUrl: item.imageUrl,
+      status:
+        item.status === "failed"
+          ? "failed"
+          : item.status === "queued"
+            ? "queued"
+            : item.status === "processing"
+              ? "processing"
+              : "done",
+      error: null,
+      warning: null,
+    }),
+
   reset: () => {
-    source?.close();
-    source = null;
-    set({prompt: "", imageBase64: undefined, status: "idle", progress: 0, resultUrl: null, error: null});
+    closeSource();
+    set({
+      prompt: "",
+      mode: "generate",
+      aspectRatio: "1:1",
+      seed: "",
+      uploadFile: null,
+      imageBase64: undefined,
+      status: "idle",
+      progress: 0,
+      result: null,
+      resultUrl: null,
+      error: null,
+      warning: null,
+      upscaleRemaining: null,
+    });
   },
 
-  async startGeneration(prompt, imageBase64, errors) {
-    source?.close();
-    set({prompt, status: "queued", progress: 0, resultUrl: null, error: null});
+  async startGeneration(prompt, errors, locale) {
+    closeSource();
+    set({
+      prompt,
+      status: "queued",
+      progress: 0,
+      result: null,
+      resultUrl: null,
+      error: null,
+      warning: null,
+    });
     try {
       const headers = new Headers({"content-type": "application/json"});
+      if (locale) headers.set("X-Locale", locale);
       const anonToken = getAnonymousToken();
       if (anonToken) headers.set("X-Anonymous-Session", anonToken);
+      const body: Record<string, unknown> = {
+        prompt,
+        aspect_ratio: get().aspectRatio,
+      };
+      const seed = parseSeedInput(get().seed);
+      if (seed !== undefined) body.seed = seed;
       const res = await authedFetch(`${API_BASE_URL}/api/v1/generations`, {
         method: "POST",
         headers,
-        body: JSON.stringify({prompt, image: imageBase64 ?? null}),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
-        set({status: "failed", error: errors.http(res.status)});
+        set({status: "failed", error: await readFailure(res, errors)});
         return;
       }
-      const data = (await res.json()) as {id: string; stream_url: string};
-      const base = data.stream_url.startsWith("http")
-        ? data.stream_url
-        : `${API_BASE_URL}${data.stream_url}`;
-      const token = getAccessToken();
-      const anon = getAnonymousToken();
-      const authParam = token
-        ? `token=${encodeURIComponent(token)}`
-        : anon
-          ? `anon=${encodeURIComponent(anon)}`
-          : null;
-      const url = authParam ? `${base}?${authParam}` : base;
-      source = new EventSource(url);
-      source.addEventListener("status_update", (event) => {
-        const payload = JSON.parse((event as MessageEvent).data) as {status: GenerationStatus};
-        set({status: payload.status});
-      });
-      source.addEventListener("progress", (event) => {
-        const payload = JSON.parse((event as MessageEvent).data) as {percent: number};
-        set({status: "processing", progress: payload.percent});
-      });
-      source.addEventListener("result", (event) => {
-        const payload = JSON.parse((event as MessageEvent).data) as {imageUrl: string};
-        source?.close();
-        source = null;
-        set({status: "done", progress: 100, resultUrl: payload.imageUrl});
-      });
-      source.addEventListener("error", (event) => {
-        source?.close();
-        source = null;
-        let message = errors.failed;
-        try {
-          const payload = JSON.parse((event as MessageEvent).data) as {message?: string};
-          if (payload.message) message = payload.message;
-        } catch {
-          // evento nativo de rede do EventSource — manter mensagem padrão
-        }
-        set({status: "failed", error: message});
-      });
+      const data = (await res.json()) as unknown;
+      const created = parseGenerationOutput(data);
+      if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
+        set({status: "failed", error: errors.failed});
+        return;
+      }
+      set({result: created, resultUrl: created.imageUrl});
+      void connectStream(
+        (data as {stream_url: string}).stream_url,
+        created.id,
+        locale,
+        errors,
+        set,
+        get,
+      );
     } catch {
       set({status: "failed", error: errors.network});
     }
   },
 
-  async loadHistory() {
-    const cursor = get().historyCursor;
-    const params = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-    const res = await authedFetch(`${API_BASE_URL}/api/v1/generations${params}`);
-    if (!res.ok) return;
-    const data = (await res.json()) as {items: HistoryItem[]; cursor: string | null};
+  async startEditUpload(prompt, errors, locale) {
+    const file = get().uploadFile;
+    if (!file) {
+      set({status: "failed", error: errors.failed});
+      return;
+    }
+    closeSource();
     set({
-      history: [...get().history, ...data.items],
-      historyCursor: data.cursor,
+      prompt,
+      mode: "edit",
+      status: "queued",
+      progress: 0,
+      result: null,
+      resultUrl: null,
+      error: null,
+      warning: null,
     });
+    try {
+      const headers = new Headers();
+      if (locale) headers.set("X-Locale", locale);
+      const anonToken = getAnonymousToken();
+      if (anonToken) headers.set("X-Anonymous-Session", anonToken);
+      const seed = parseSeedInput(get().seed);
+      const form = buildEditImageUploadForm(file, prompt, file.name, {
+        aspectRatio: get().aspectRatio,
+        seed,
+      });
+      const res = await authedFetch(
+        `${API_BASE_URL}/api/v1/generations/edits/upload`,
+        {method: "POST", headers, body: form},
+      );
+      if (!res.ok) {
+        set({status: "failed", error: await readFailure(res, errors)});
+        return;
+      }
+      const data = (await res.json()) as unknown;
+      const created = parseGenerationOutput(data);
+      if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
+        set({status: "failed", error: errors.failed});
+        return;
+      }
+      set({result: created, resultUrl: created.imageUrl});
+      void connectStream(
+        (data as {stream_url: string}).stream_url,
+        created.id,
+        locale,
+        errors,
+        set,
+        get,
+      );
+    } catch {
+      set({status: "failed", error: errors.network});
+    }
+  },
+
+  async startUpscale(generationId, errors, locale) {
+    closeSource();
+    set({
+      status: "queued",
+      progress: 0,
+      error: null,
+      warning: null,
+    });
+    try {
+      const headers = new Headers();
+      if (locale) headers.set("X-Locale", locale);
+      const res = await authedFetch(
+        `${API_BASE_URL}/api/v1/generations/${encodeURIComponent(generationId)}/upscale`,
+        {method: "POST", headers},
+      );
+      if (!res.ok) {
+        set({status: "failed", error: await readFailure(res, errors)});
+        return;
+      }
+      const data = (await res.json()) as unknown;
+      const created = parseGenerationOutput(data);
+      if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
+        set({status: "failed", error: errors.failed});
+        return;
+      }
+      set({
+        result: created,
+        resultUrl: created.imageUrl,
+        upscaleRemaining: readUpscaleRemaining(data),
+      });
+      void connectStream(
+        (data as {stream_url: string}).stream_url,
+        created.id,
+        locale,
+        errors,
+        set,
+        get,
+      );
+    } catch {
+      set({status: "failed", error: errors.network});
+    }
+  },
+
+  async startVariation(generationId, errors, locale) {
+    closeSource();
+    set({
+      status: "queued",
+      progress: 0,
+      error: null,
+      warning: null,
+    });
+    try {
+      const headers = new Headers();
+      if (locale) headers.set("X-Locale", locale);
+      const anonToken = getAnonymousToken();
+      if (anonToken) headers.set("X-Anonymous-Session", anonToken);
+      const res = await authedFetch(
+        `${API_BASE_URL}/api/v1/generations/${encodeURIComponent(generationId)}/variations`,
+        {method: "POST", headers},
+      );
+      if (!res.ok) {
+        set({status: "failed", error: await readFailure(res, errors)});
+        return;
+      }
+      const data = (await res.json()) as unknown;
+      const created = parseGenerationOutput(data);
+      if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
+        set({status: "failed", error: errors.failed});
+        return;
+      }
+      set({result: created, resultUrl: created.imageUrl, prompt: created.prompt});
+      void connectStream(
+        (data as {stream_url: string}).stream_url,
+        created.id,
+        locale,
+        errors,
+        set,
+        get,
+      );
+    } catch {
+      set({status: "failed", error: errors.network});
+    }
+  },
+
+  async startRefine(generationId, instruction, aspectRatio, errors, locale) {
+    closeSource();
+    set({
+      prompt: instruction,
+      mode: "edit",
+      status: "queued",
+      progress: 0,
+      error: null,
+      warning: null,
+    });
+    try {
+      const headers = new Headers({"content-type": "application/json"});
+      if (locale) headers.set("X-Locale", locale);
+      const res = await authedFetch(`${API_BASE_URL}/api/v1/generations/edits`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          prompt: instruction,
+          source_generation_id: generationId,
+          aspect_ratio: aspectRatio,
+        }),
+      });
+      if (!res.ok) {
+        set({status: "failed", error: await readFailure(res, errors)});
+        return;
+      }
+      const data = (await res.json()) as unknown;
+      const created = parseGenerationOutput(data);
+      if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
+        set({status: "failed", error: errors.failed});
+        return;
+      }
+      set({result: created, resultUrl: created.imageUrl});
+      void connectStream(
+        (data as {stream_url: string}).stream_url,
+        created.id,
+        locale,
+        errors,
+        set,
+        get,
+      );
+    } catch {
+      set({status: "failed", error: errors.network});
+    }
+  },
+
+  async loadHistory(reset = false) {
+    if (!getAccessToken()) return;
+    const cursor = reset ? null : get().historyCursor;
+    const params = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+    set({historyLoading: true});
+    try {
+      const res = await authedFetch(`${API_BASE_URL}/api/v1/generations${params}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as {
+        items: ApiGenerationItem[];
+        next_cursor: string | null;
+      };
+      const items = data.items.map(toHistoryItem);
+      set({
+        history: reset ? items : [...get().history, ...items],
+        historyCursor: readNextCursor(data),
+      });
+    } finally {
+      set({historyLoading: false});
+    }
   },
 }));

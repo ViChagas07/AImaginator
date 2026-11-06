@@ -11,7 +11,13 @@
     "gallery": "المعرض",
     "studio": "الاستوديو",
     "login": "هيا نتخيّل! ✨",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "account": {
+      "myAccount": "حسابي",
+      "myAccountSubtitle": "الملف الشخصي والأمن والتفضيلات",
+      "settings": "إعدادات",
+      "tierFree": "خطة مجانية"
+    }
   },
   "auth": {
     "signIn": {
@@ -33,13 +39,13 @@
     "fullNamePlaceholder": "علي محمد",
     "signInButton": "تسجيل الدخول",
     "signUpButton": "إنشاء حساب",
+    "signingIn": "جارٍ تسجيل الدخول...",
+    "signingUp": "جارٍ إنشاء الحساب...",
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
     "orContinue": "أو تابع باستخدام",
     "googleButton": "المتابعة باستخدام Google",
     "googleIconAlt": "أيقونة Google",
-    "signingIn": "جارٍ تسجيل الدخول...",
-    "signingUp": "جارٍ إنشاء الحساب...",
     "errors": {
       "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
       "emailInUse": "يوجد حساب بالفعل بهذا البريد الإلكتروني.",
@@ -47,13 +53,18 @@
       "generic": "حدث خطأ ما. حاول مرة أخرى."
     }
   },
-"landing": {
+  "landing": {
     "headline": "حوّل الكلمات إلى صور!",
     "logoAlt": "شعار AImaginator",
     "subheadline": "AImaginator هو مولّد صور بالذكاء الاصطناعي ينشئ الصور ويحرّرها انطلاقًا من أوامر باللغة الطبيعية. صِف ما تريده، وأنشئه في ثوانٍ، وحسّن النتيجة بشكل متكرر.",
     "promptPlaceholder": "صِف الصورة التي تريد إنشاءها...",
     "promptButton": "إنشاء صورة",
     "promptStatusLoading": "جارٍ فتح الاستوديو...",
+    "quotaAvailable": "فرص المطالبة: {remaining} من {total}",
+    "quotaReloadsIn": "يُعاد التحميل خلال",
+    "quotaLoading": "جارٍ تحميل فرص المطالبة...",
+    "comingSoon": "⚠️ توليد الصور بالذكاء الاصطناعي غير متاح بعد. سيتم تنفيذ نموذج قريباً وستعمل أوامرك بشكل طبيعي.",
+    "loginToPrompt": "✨ سجّل الدخول لتتخيّل! ✨",
     "stepsTitle": "كيف يعمل",
     "steps": [
       {
@@ -93,6 +104,14 @@
       {
         "prompt": "حقل من الزهور الملوّنة عند الفجر، ضوء دافئ",
         "imageAlt": "صورة بالذكاء الاصطناعي: حقل من الزهور الملوّنة عند الفجر."
+      },
+      {
+        "prompt": "فراشة ملونة تطير بأجنحة برتقالية وسوداء على خلفية زرقاء نابضة بالحياة",
+        "imageAlt": "فراشة ملونة تم إنشاؤها بواسطة الذكاء الاصطناعي بأجنحة برتقالية وسوداء على خلفية زرقاء نابضة بالحياة."
+      },
+      {
+        "prompt": "مثال للصورة التي تم إنشاؤها بواسطة الذكاء الاصطناعي على Imagine.art",
+        "imageAlt": "مثال على الصور التي تم إنشاؤها بواسطة الذكاء الاصطناعي – Imagine.art"
       }
     ],
     "previewDialogTitle": "الأمر المستخدم",
@@ -115,19 +134,15 @@
         "question": "كيف يعمل التقدّم في الوقت الفعلي؟",
         "answer": "تُبث حالة التوليد من واجهة برمجة التطبيقات عبر server-sent events (SSE)، مع عرض نسبة التقدّم حتى تكتمل الصورة أو يُعاد خطأ."
       }
-    ],
-    "quotaAvailable": "فرص المطالبة: {remaining} من {total}",
-    "quotaReloadsIn": "يُعاد التحميل خلال",
-    "quotaLoading": "جارٍ تحميل فرص المطالبة...",
-    "comingSoon": "⚠️ توليد الصور بالذكاء الاصطناعي غير متاح بعد. سيتم تنفيذ نموذج قريباً وستعمل أوامرك بشكل طبيعي.",
-    "loginToPrompt": "✨ سجّل الدخول لتتخيّل! ✨"
+    ]
   },
   "studio": {
     "title": "الاستوديو",
     "loginRequired": "سجّل الدخول أو أنشئ حسابًا للوصول إلى استوديو التوليد.",
     "loginButton": "تسجيل الدخول / إنشاء حساب",
-    "promptLabel": "الأمر",
+    "promptLabel": "البرومبت",
     "promptPlaceholder": "صِف الصورة...",
+    "comingSoon": "⚠️ توليد الصور بالذكاء الاصطناعي غير متاح بعد. سيتم تنفيذ نموذج قريباً وستعمل أوامرك بشكل طبيعي.",
     "uploadLabel": "صورة اختيارية للتعديل",
     "uploadHint": "PNG أو JPEG — اختيارية، تُرسل مع الأمر للتعديل.",
     "generateButton": "إنشاء",
@@ -141,7 +156,7 @@
       "failed": "فشل التوليد."
     },
     "resultAlt": "النتيجة المولّدة من أمرك.",
-    "historyTitle": "التوليدات الأخيرة",
+    "historyTitle": "أحدث الأعمال",
     "historyEmpty": "لا توجد توليدات بعد.",
     "errorLabel": "خطأ",
     "loadingAuth": "جارٍ التحقق من جلستك...",
@@ -149,8 +164,66 @@
     "saveArtBody": "سجّل الدخول أو أنشئ حسابًا لحفظ هذا العمل في معرضك. سيتم ربطه بحسابك.",
     "saveArtCta": "تسجيل الدخول / إنشاء حساب",
     "saveArtLater": "لاحقًا",
-    "comingSoon": "⚠️ توليد الصور بالذكاء الاصطناعي غير متاح بعد. سيتم تنفيذ نموذج قريباً وستعمل أوامرك بشكل طبيعي.",
-    "loginToPrompt": "✨ سجّل الدخول لتتخيّل! ✨"
+    "loginToPrompt": "✨ سجّل الدخول لتتخيّل! ✨",
+    "modeLabel": "وضع",
+    "modeGenerate": "إنشاء",
+    "modeEdit": "تحرير الصورة",
+    "modeTablistLabel": "اختر وضع التوليد",
+    "aspectRatioLabel": "نسبة العرض إلى الارتفاع",
+    "aspectRatioSquare": "مربع (1:1)",
+    "aspectRatioFourThree": "أفقي (4:3)",
+    "aspectRatioPortrait": "عمودي (3:4)",
+    "aspectRatioLandscape": "عريض (16:9)",
+    "aspectRatioTall": "طويل (9:16)",
+    "aspectRatioPreview": "نسبة العرض إلى الارتفاع: {ratio}",
+    "seedLabel": "Seed",
+    "seedHint": "عدد صحيح اختياري بين 0 و4294967295. اتركه فارغاً لاستخدام seed عشوائي.",
+    "seedPlaceholder": "عشوائي",
+    "seedAdvanced": "خيارات متقدمة",
+    "seedRandom": "بذرة عشوائية",
+    "seedValue": "Seed: {seed}",
+    "timeEstimateGenerate": "عادة ما يستغرق إنشاء بضع دقائق.",
+    "timeEstimateEdit": "يستغرق التحرير عادةً بضع دقائق، وأحيانًا أطول.",
+    "editLoginRequired": "قم بتسجيل الدخول لتحرير الصور أو تحسينها.",
+    "editLoginCta": "تسجيل الدخول",
+    "uploadDrop": "قم بسحب وإسقاط PNG أو JPEG هنا",
+    "uploadChoose": "اختر ملفًا",
+    "uploadReplace": "استبدال الصورة",
+    "uploadRemove": "إزالة الصورة",
+    "uploadPreviewAlt": "صورة المصدر المختارة",
+    "uploadInvalidType": "يتم قبول صور PNG أو JPEG فقط.",
+    "uploadTooLarge": "تتجاوز الصورة الحد الأقصى للحجم وهو {size} ميغابايت.",
+    "uploadInvalidDimensions": "تتجاوز الصورة الحد الأقصى للبعد وهو {max} بكسل.",
+    "uploadMaxHint": "PNG أو JPEG، حتى {size} ميغابايت و{max} بكسل لكل جانب.",
+    "resultActionsLabel": "إجراءات الصورة",
+    "download": "تحميل",
+    "generateVariation": "إنشاء تنويع",
+    "refine": "صقل",
+    "refineTitle": "تحسين هذه الصورة",
+    "refinePromptLabel": "ما الذي يجب أن يتغير؟",
+    "refinePromptPlaceholder": "تغيير السماء فقط إلى الشفق. احتفظ بكل شيء آخر كما هو تمامًا.",
+    "refineSubmit": "تطبيق التحسين",
+    "refineCancel": "يلغي",
+    "historyOpen": "فتح",
+    "historyVariation": "تنويع",
+    "historyRefine": "تحسين",
+    "historyDownload": "تحميل",
+    "historyChain": "تحسين من: {prompt}",
+    "historyChainUnknown": "تحسين لصورة سابقة",
+    "historyLoadMore": "تحميل المزيد",
+    "anonymousHistory": "قم بتسجيل الدخول لترى تاريخك الكامل.",
+    "resultLabel": "الصورة التي تم إنشاؤها",
+    "uploadErrorLabel": "خطأ في التحميل",
+    "aspectRatioGroupLabel": "اختر نسبة العرض إلى الارتفاع",
+    "seedInvalid": "يجب أن يكون seed عدداً صحيحاً بين 0 و4294967295.",
+    "editSubmit": "تحرير الصورة",
+    "editPromptLabel": "تعليمات التحرير",
+    "editPromptPlaceholder": "وضح ما الذي يجب أن يتغير في الصورة...",
+    "editUploadLabel": "صورة المصدر",
+    "uploadRequired": "اختر صورة المصدر للمتابعة.",
+    "upscale": "الراقي",
+    "upscaling": "الارتقاء...",
+    "upscaleRemaining": "الارتقاء المتبقي اليوم: {count}"
   },
   "gallery": {
     "title": "المعرض العام",
@@ -341,5 +414,231 @@
   "loader": {
     "generating": "جارٍ الإنشاء",
     "ariaLabel": "جارٍ إنشاء الصورة، يرجى الانتظار"
+  },
+  "account": {
+    "title": "حسابي",
+    "subtitle": "إدارة ملفك الشخصي والأمان والتفضيلات",
+    "sections": {
+      "profilePhoto": "صورة الملف الشخصي",
+      "personalInfo": "معلومات شخصية",
+      "accountStats": "إحصائيات الحساب",
+      "connectedProviders": "مقدمي الخدمة المتصلين"
+    },
+    "profilePhoto": {
+      "changePhoto": "تغيير الصورة",
+      "removePhoto": "إزالة الصورة",
+      "uploading": "جارٍ التحميل...",
+      "cropHint": "قص الصورة (نسبة 1:1)",
+      "apply": "يتقدم",
+      "cancel": "يلغي",
+      "fileTypes": "JPG أو PNG أو WebP — بحد أقصى 5 ميجابايت"
+    },
+    "personalInfo": {
+      "fullName": "الاسم الكامل",
+      "fullNamePlaceholder": "جون دو",
+      "email": "بريد إلكتروني",
+      "emailGoogleBadge": "مرتبط بـ Google",
+      "bio": "السيرة الذاتية / حول",
+      "bioPlaceholder": "أخبرنا قليلًا عن نفسك (بحد أقصى 160 حرفًا)",
+      "bioCharCount": "{count}/160",
+      "handle": "اسم المستخدم",
+      "handlePlaceholder": "اسم المستخدم",
+      "handleHint": "فقط الحروف والأرقام _ و -",
+      "handleTaken": "اسم المستخدم هذا مأخوذ بالفعل",
+      "save": "حفظ التغييرات",
+      "cancel": "يلغي",
+      "saving": "توفير...",
+      "saved": "تم حفظ التغييرات بنجاح",
+      "error": "حدث خطأ أثناء الحفظ. يرجى المحاولة مرة أخرى."
+    },
+    "accountStats": {
+      "accountCreated": "تم إنشاء الحساب بتاريخ",
+      "totalGenerations": "إجمالي الفنون التي تم إنشاؤها",
+      "totalSavedArts": "إجمالي الفنون المحفوظة في المعرض",
+      "currentPlan": "الخطة الحالية",
+      "creditsUsed": "الاعتمادات المستخدمة هذه الفترة",
+      "creditsLimit": "من {limit}"
+    },
+    "connectedProviders": {
+      "google": "Google",
+      "connected": "متصل",
+      "none": "لا يوجد مقدمي خدمات متصلين.",
+      "disconnect": "قطع الاتصال",
+      "disconnectConfirm": "هل أنت متأكد؟ ستحتاج إلى طريقة أخرى لتسجيل الدخول.",
+      "cannotDisconnectOnly": "لا يمكن فصل طريقة تسجيل الدخول الوحيدة. قم بتعيين كلمة المرور أولاً."
+    }
+  },
+  "settings": {
+    "title": "إعدادات",
+    "subtitle": "قم بتكوين تفضيلات النظام الأساسي الخاص بك والمظهر وخيارات الوصول",
+    "tabs": {
+      "appearance": "مظهر",
+      "languageRegion": "اللغة والمنطقة",
+      "accessibility": "إمكانية الوصول",
+      "notifications": "إشعارات",
+      "privacyData": "الخصوصية والبيانات",
+      "advanced": "متقدم"
+    },
+    "save": "حفظ الإعدادات",
+    "reset": "استعادة الإعدادات الافتراضية",
+    "saving": "توفير...",
+    "saved": "تم حفظ الإعدادات",
+    "resetConfirm": "هل أنت متأكد؟ ستعود كافة التفضيلات إلى القيم الافتراضية.",
+    "appearance": {
+      "title": "مظهر",
+      "description": "قم بتخصيص الشكل الذي يبدو عليه AImaginator بالنسبة لك",
+      "theme": {
+        "label": "سمة",
+        "dark": "مظلم",
+        "light": "ضوء",
+        "system": "نظام"
+      },
+      "boldText": {
+        "label": "نص غامق",
+        "description": "يزيد من وزن الخط عالميًا لتحسين إمكانية القراءة"
+      },
+      "fontSize": {
+        "label": "حجم الخط",
+        "small": "صغير",
+        "medium": "واسطة",
+        "large": "كبير",
+        "xl": "كبير جدا"
+      },
+      "elementSpacing": {
+        "label": "حجم العنصر",
+        "compact": "مدمج",
+        "comfortable": "مريح",
+        "spacious": "فسيحة"
+      }
+    },
+    "languageRegion": {
+      "title": "اللغة والمنطقة",
+      "description": "اختر لغتك والمنطقة الزمنية",
+      "language": {
+        "label": "لغة"
+      },
+      "timezone": {
+        "label": "المنطقة الزمنية",
+        "placeholder": "حدد منطقتك الزمنية",
+        "description": "يستخدم لتنسيق التواريخ والأوقات عبر النظام الأساسي"
+      }
+    },
+    "accessibility": {
+      "title": "إمكانية الوصول",
+      "description": "اضبط الخيارات لتحسين سهولة الاستخدام",
+      "highContrast": {
+        "label": "التباين العالي",
+        "description": "يزيد من التباين بين النص والخلفية"
+      },
+      "screenReaderOptimized": {
+        "label": "تحسينات قارئ الشاشة",
+        "description": "لتمكين سمات ARIA الإضافية والتحسينات الدلالية"
+      },
+      "keyboardNavigation": {
+        "label": "التنقل بلوحة المفاتيح",
+        "description": "لتمكين اختصارات التنقل المحسنة للوحة المفاتيح"
+      },
+      "focusIndicator": {
+        "label": "مؤشر التركيز",
+        "description": "يجعل مخطط التركيز أكثر وضوحًا"
+      },
+      "dyslexiaFont": {
+        "label": "عسر القراءة الخط",
+        "description": "يقوم بالتبديل إلى الخط لتحسين إمكانية القراءة"
+      },
+      "reducedMotion": {
+        "label": "انخفاض الحركة",
+        "description": "تقليل أو تعطيل الرسوم المتحركة والانتقالات"
+      }
+    },
+    "notifications": {
+      "title": "إشعارات",
+      "description": "تكوين كيف ومتى تتلقى التنبيهات",
+      "email": {
+        "label": "تنبيهات البريد الإلكتروني",
+        "description": "تلقي إشعارات البريد الإلكتروني (اكتمل الإنشاء، انخفاض الاعتمادات، الأخبار)"
+      },
+      "push": {
+        "label": "دفع الإخطارات",
+        "description": "إشعارات المتصفح في الوقت الفعلي (الصورة جاهزة)"
+      },
+      "desktop": {
+        "label": "تنبيهات سطح المكتب",
+        "description": "النوافذ المنبثقة لإشعارات سطح المكتب"
+      },
+      "sound": {
+        "label": "تنبيهات صوتية",
+        "description": "تشغيل الصوت عند اكتمال الجيل"
+      },
+      "summaryFrequency": {
+        "label": "تردد الملخص",
+        "daily": "يوميًا",
+        "weekly": "أسبوعي",
+        "never": "أبداً",
+        "description": "ملخص البريد الإلكتروني لنشاط الحساب"
+      },
+      "notificationEmail": {
+        "label": "البريد الإلكتروني للإخطار",
+        "placeholder": "notifications@example.com",
+        "description": "يمكن أن يختلف عن البريد الإلكتروني لتسجيل الدخول (لحسابات الفريق)"
+      }
+    },
+    "privacyData": {
+      "title": "الخصوصية والبيانات",
+      "description": "إدارة بياناتك وتفضيلات الخصوصية",
+      "documents": {
+        "title": "وثائق السياسة",
+        "privacyPolicy": "عرض سياسة الخصوصية",
+        "termsOfUse": "عرض شروط الاستخدام"
+      },
+      "consentHistory": {
+        "title": "تاريخ الموافقة",
+        "description": "لقد قبلت الإصدار {version} من الشروط وسياسة الخصوصية على {date}"
+      },
+      "exportData": {
+        "title": "تصدير البيانات (إمكانية النقل)",
+        "description": "قم بتنزيل جميع بياناتك الشخصية (الملف الشخصي، وتاريخ الإنشاء، والفنون المحفوظة، والإعدادات) بما يتوافق مع LGPD Art. 18، ف",
+        "button": "تصدير بياناتي",
+        "exporting": "جارٍ إعداد التصدير...",
+        "success": "تم طلب التصدير. ستتلقى رسالة بريد إلكتروني تحتوي على رابط التنزيل عندما يكون جاهزًا."
+      },
+      "deleteAccount": {
+        "title": "حذف الحساب",
+        "description": "حذف حسابك وجميع البيانات المرتبطة به نهائيًا. لا يمكن التراجع عن هذا الإجراء بعد فترة السماح البالغة 30 يومًا (LGPD المادة 18، ​​6)",
+        "button": "طلب حذف الحساب",
+        "confirmTitle": "تأكيد حذف الحساب",
+        "confirmDescription": "هل أنت متأكد؟ سيتم إلغاء تنشيط حسابك ومن المقرر حذفه نهائيًا خلال 30 يومًا. يمكنك الإلغاء عن طريق تسجيل الدخول مرة أخرى خلال هذه الفترة.",
+        "cancel": "يلغي",
+        "confirm": "نعم اطلب الحذف"
+      }
+    },
+    "advanced": {
+      "title": "متقدم",
+      "description": "خيارات للمطورين والصيانة",
+      "developerMode": {
+        "label": "وضع المطور",
+        "description": "الكشف عن أدوات التصحيح/الفحص في العميل (المعرفات الداخلية، وسجلات الطلبات، وحمولات واجهة برمجة التطبيقات)"
+      },
+      "clearCache": {
+        "label": "مسح ذاكرة التخزين المؤقت المحلية",
+        "description": "يمسح ذاكرة التخزين المؤقت المحلية (localStorage/IndexedDB) دون التأثير على بيانات الخادم",
+        "button": "مسح ذاكرة التخزين المؤقت",
+        "success": "تم مسح ذاكرة التخزين المؤقت المحلية"
+      },
+      "exportData": {
+        "title": "تصدير بياناتي",
+        "description": "اختصار لتصدير البيانات (نفس وظيفة علامة تبويب الخصوصية)",
+        "button": "تصدير بياناتي"
+      },
+      "resetAllSettings": {
+        "title": "إعادة ضبط جميع الإعدادات",
+        "description": "يعيد تعيين كافة التفضيلات عبر كافة علامات التبويب إلى القيم الافتراضية",
+        "button": "إعادة ضبط كل شيء",
+        "confirmTitle": "تأكيد إعادة التعيين",
+        "confirmDescription": "هل أنت متأكد؟ ستعود جميع الإعدادات إلى القيم الافتراضية. لا يمكن التراجع عن هذا الإجراء.",
+        "cancel": "يلغي",
+        "confirm": "نعم، إعادة ضبط كل شيء"
+      }
+    }
   }
 }

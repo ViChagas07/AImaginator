@@ -111,7 +111,7 @@ function GalleryGrid({
                 {item.status}
               </div>
             )}
-            <div className="space-y-2 p-3">
+            <div className="space-y-2 p-3 text-start">
               {editingId === item.id ? (
                 <div className="flex items-center gap-1">
                   <input

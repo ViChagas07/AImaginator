@@ -73,7 +73,7 @@ export function UserMenu() {
         aria-label={name}
         className={cn(
           "absolute end-0 top-full z-50 mt-2 min-w-[260px] overflow-hidden rounded-xl border border-foreground/10 bg-surface-raised shadow-2xl",
-          "origin-top-right transition-all duration-200 ease-out",
+          "origin-top transition-all duration-200 ease-out",
           open
             ? "translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-1 opacity-0",

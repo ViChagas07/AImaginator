@@ -29,27 +29,31 @@ import {cn} from "@/lib/utils";
 type AppLocale = (typeof routing.locales)[number];
 
 const LANGUAGE_NAMES: Record<AppLocale, string> = {
-  "pt-BR": "Português (BR)",
+  "pt-BR": "Portugu\u00eas (BR)",
   en: "English",
-  es: "Español",
-  fr: "Français",
+  es: "Espa\u00f1ol",
+  fr: "Fran\u00e7ais",
   de: "Deutsch",
-  ja: "日本語",
-  zh: "中文",
-  ru: "Русский",
-  ar: "العربية",
+  it: "Italiano",
+  ja: "\u65e5\u672c\u8a9e",
+  zh: "\u4e2d\u6587",
+  ko: "\ud55c\uad6d\uc5b4",
+  ru: "\u0420\u0443\u0441\u0441\u043a\u0438\u0439",
+  ar: "\u0627\u0644\u0639\u0631\u0628\u064a\u0629",
 };
 
 const LANGUAGE_FLAGS: Record<AppLocale, string> = {
-  "pt-BR": "🇧🇷",
-  en: "🇺🇸",
-  es: "🇪🇸",
-  fr: "🇫🇷",
-  de: "🇩🇪",
-  ja: "🇯🇵",
-  zh: "🇨🇳",
-  ru: "🇷🇺",
-  ar: "🇸🇦",
+  "pt-BR": "\u{1F1E7}\u{1F1F7}",
+  en: "\u{1F1FA}\u{1F1F8}",
+  es: "\u{1F1EA}\u{1F1F8}",
+  fr: "\u{1F1EB}\u{1F1F7}",
+  de: "\u{1F1E9}\u{1F1EA}",
+  it: "\u{1F1EE}\u{1F1F9}",
+  ja: "\u{1F1EF}\u{1F1F5}",
+  zh: "\u{1F1E8}\u{1F1F3}",
+  ko: "\u{1F1F0}\u{1F1F7}",
+  ru: "\u{1F1F7}\u{1F1FA}",
+  ar: "\u{1F1F8}\u{1F1E6}",
 };
 
 type TabId =

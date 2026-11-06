@@ -3,8 +3,7 @@
 import {useEffect, useRef, useState} from "react";
 import {useLocale, useTranslations} from "next-intl";
 import {useRouter} from "next/navigation";
-import Link from "next/link";
-import {Loader2, Plus, Send, Timer, TriangleAlert, X, Lock} from "lucide-react";
+import {Loader2, Plus, Send, Timer, X} from "lucide-react";
 import {useGenerationStore} from "@/stores/generation";
 import {usePromptQuotaStore} from "@/stores/prompt-quota";
 import {useAuthStore} from "@/stores/auth";
@@ -73,13 +72,8 @@ export function PromptBar({className}: {className?: string}) {
 
   const inputDisabled = exhausted || busy || (!value.trim() && !imageBase64);
 
-  // Textos de aviso
-  const comingSoon = t("comingSoon");
-  const loginToPrompt = t("loginToPrompt");
-
   // Estados de autenticação
   const isAuthenticated = auth.status === "authenticated";
-  const isUnauthenticated = auth.status === "unauthenticated";
 
   return (
     <div className={cn("relative", className)}>
@@ -92,7 +86,7 @@ export function PromptBar({className}: {className?: string}) {
         <input
           ref={fileRef}
           type="file"
-          accept="image/png,image/jpeg,image/webp"
+          accept="image/png,image/jpeg"
           onChange={handleFile}
           className="hidden"
           aria-label={tCommon("attachImage")}
@@ -161,30 +155,6 @@ export function PromptBar({className}: {className?: string}) {
           </button>
         </div>
       </form>
-
-      {/* Overlay para usuário NÃO autenticado: "✨ Entre Para Imaginar! ✨" */}
-      {isUnauthenticated && (
-        <Link
-          href={`/${locale}/login`}
-          className="absolute inset-0 rounded-xl bg-background/60 backdrop-blur flex items-center justify-center"
-          aria-label={loginToPrompt}
-        >
-          <div className="text-center px-3" role="button" tabIndex={0}>
-            <Lock className="h-4 w-4 text-primary mx-auto mb-1" aria-hidden />
-            <p className="text-xs text-primary font-medium">{loginToPrompt}</p>
-          </div>
-        </Link>
-      )}
-
-      {/* Overlay para usuário autenticado: "em breve" (IA ainda não implementada) */}
-      {isAuthenticated && (
-        <div className="absolute inset-0 rounded-xl bg-background/60 backdrop-blur flex items-center justify-center pointer-events-none">
-          <div className="text-center px-3" role="alert" aria-live="polite">
-            <TriangleAlert className="h-4 w-4 text-destructive mx-auto mb-1" aria-hidden />
-            <p className="text-xs text-destructive font-medium">{comingSoon}</p>
-          </div>
-        </div>
-      )}
 
       {/* Quota só aparece para usuários autenticados */}
       {isAuthenticated && (

@@ -1,0 +1,644 @@
+{
+  "common": {
+    "brand": "AImaginator",
+    "skipLink": "주요 콘텐츠로 건너뛰기",
+    "footerNote": "AImaginator — AI 이미지 생성 및 편집.",
+    "attachImage": "이미지 첨부",
+    "removeImage": "이미지 삭제",
+    "attachedImageAlt": "첨부된 이미지"
+  },
+  "nav": {
+    "gallery": "갱도",
+    "studio": "사진관",
+    "login": "상상해 보자! ✨",
+    "logout": "로그아웃",
+    "account": {
+      "myAccount": "내 계정",
+      "myAccountSubtitle": "프로필, 보안, 기본 설정",
+      "settings": "설정",
+      "tierFree": "무료 플랜"
+    }
+  },
+  "auth": {
+    "signIn": {
+      "title": "귀하의 계정에 로그인하세요",
+      "subtitle": "로그인하려면 아래에 이메일을 입력하세요",
+      "footerText": "계정이 없나요?",
+      "linkText": "가입"
+    },
+    "signUp": {
+      "title": "계정 만들기",
+      "subtitle": "가입하려면 아래에 세부 정보를 입력하세요.",
+      "footerText": "이미 계정이 있나요?",
+      "linkText": "로그인"
+    },
+    "email": "이메일",
+    "emailPlaceholder": "m@example.com",
+    "password": "비밀번호",
+    "fullName": "성명",
+    "fullNamePlaceholder": "존 도",
+    "signInButton": "로그인",
+    "signUpButton": "가입",
+    "signingIn": "로그인 중...",
+    "signingUp": "가입 중...",
+    "showPassword": "비밀번호 표시",
+    "hidePassword": "비밀번호 숨기기",
+    "orContinue": "아니면 계속해서",
+    "googleButton": "Google로 계속",
+    "googleIconAlt": "Google 아이콘",
+    "errors": {
+      "invalidCredentials": "이메일이나 비밀번호가 잘못되었습니다.",
+      "emailInUse": "이 이메일을 사용하는 계정이 이미 존재합니다.",
+      "signupFailed": "계정을 만들 수 없습니다. 다시 시도해 보세요.",
+      "generic": "문제가 발생했습니다. 다시 시도해 보세요."
+    }
+  },
+  "landing": {
+    "headline": "단어를 이미지로 바꿔보세요!",
+    "logoAlt": "AImaginator 로고",
+    "subheadline": "AImaginator은 자연어 프롬프트에서 이미지를 생성하고 편집하는 AI 이미지 생성기입니다. 원하는 것을 설명하고, 몇 초 만에 생성하고, 결과를 반복적으로 구체화하세요.",
+    "promptPlaceholder": "만들고 싶은 이미지를 설명해주세요.",
+    "promptButton": "이미지 생성",
+    "promptStatusLoading": "스튜디오를 오픈합니다..",
+    "quotaAvailable": "남은 기회 {remaining}/{total}",
+    "quotaReloadsIn": "다음에서 다시 로드",
+    "quotaLoading": "프롬프트 기회 로드 중...",
+    "comingSoon": "⚠️ AI 이미지 생성은 아직 지원되지 않습니다. 모델이 곧 구현될 예정이며 프롬프트가 정상적으로 작동할 것입니다.",
+    "loginToPrompt": "✨ 상상하려면 로그인하세요! ✨",
+    "stepsTitle": "작동 원리",
+    "steps": [
+      {
+        "title": "설명하다",
+        "description": "원하는 이미지를 설명하는 자연어 프롬프트를 작성하세요. 세부 사항이 구체적일수록 결과가 더 좋습니다.",
+        "imageAlt": "미니멀한 흰색 건축물의 AI 이미지 예시입니다."
+      },
+      {
+        "title": "생성하다",
+        "description": "AI 모델은 프롬프트를 처리하고 실시간으로 첫 번째 이미지를 생성하며 진행 상황이 단계별로 표시됩니다.",
+        "imageAlt": "호수가 있는 산 풍경의 AI 이미지 예시입니다."
+      },
+      {
+        "title": "구체화",
+        "description": "결과가 의도와 일치할 때까지 반복적으로 세부 정보를 편집하려면 프롬프트를 조정하거나 이미지를 업로드하세요.",
+        "imageAlt": "숲을 통과하는 햇빛의 AI 이미지 예시."
+      }
+    ],
+    "examplesTitle": "갤러리의 예",
+    "examples": [
+      {
+        "prompt": "위에서 본 맑고 투명한 청록색 물 위에 떠 있는 어선",
+        "imageAlt": "AI 이미지: 위에서 본 청록색 물 위의 낚시 보트."
+      },
+      {
+        "prompt": "도시 거리에 있는 고양이의 클로즈업 매크로 초상화",
+        "imageAlt": "AI 이미지: 도시 거리에 있는 고양이의 클로즈업 초상화."
+      },
+      {
+        "prompt": "은하수와 별이 빛나는 하늘 아래 눈 덮인 산",
+        "imageAlt": "AI 이미지: 별이 빛나는 하늘 아래 눈 덮인 산."
+      },
+      {
+        "prompt": "부드러운 네온 불빛으로 빛나는 사람의 예술적인 초상화",
+        "imageAlt": "AI 이미지: 부드러운 네온 불빛을 사용한 예술적인 초상화."
+      },
+      {
+        "prompt": "새벽의 화려한 꽃밭, 따뜻한 빛",
+        "imageAlt": "AI 이미지: 새벽의 화려한 꽃밭."
+      },
+      {
+        "prompt": "선명한 파란색 배경에 주황색과 검은색 날개를 가지고 날아다니는 화려한 나비",
+        "imageAlt": "AI가 생성한 화려한 나비는 생생한 파란색 배경에 주황색과 검은색 날개를 가지고 있습니다."
+      },
+      {
+        "prompt": "Imagine.art에서 AI가 생성한 예시 이미지",
+        "imageAlt": "AI 생성 이미지 예시 — Imagine.art"
+      }
+    ],
+    "previewDialogTitle": "사용된 프롬프트",
+    "closePreview": "닫다",
+    "faqTitle": "자주 묻는 질문",
+    "faq": [
+      {
+        "question": "AImaginator은(는) 무엇인가요?",
+        "answer": "AImaginator은 자연어 프롬프트에서 AI로 이미지를 생성하고 편집하는 웹 앱 및 API입니다. 이미지를 설명하면 모델이 실시간으로 이미지를 생성합니다."
+      },
+      {
+        "question": "계정을 만들어야 하나요?",
+        "answer": "예. 이미지를 생성하려면 Google 계정으로 로그인하세요. 공개갤러리는 로그인 없이도 이용 가능합니다."
+      },
+      {
+        "question": "기존 이미지를 편집할 수 있나요?",
+        "answer": "예. 스튜디오에서는 이미지를 업로드하고 원하는 편집 내용을 설명하고 결과를 반복할 수 있습니다."
+      },
+      {
+        "question": "실시간 진행은 어떻게 이루어지나요?",
+        "answer": "생성 상태는 서버에서 보낸 이벤트(SSE)를 통해 API에서 스트리밍되며, 이미지가 준비되거나 오류가 반환될 때까지 진행률을 표시합니다."
+      }
+    ]
+  },
+  "studio": {
+    "title": "스튜디오",
+    "loginRequired": "로그인/회원가입을 하시면 제너레이션 스튜디오에 접속하실 수 있습니다.",
+    "loginButton": "로그인 / 회원가입",
+    "promptLabel": "프롬프트",
+    "promptPlaceholder": "이미지를 설명하세요...",
+    "comingSoon": "⚠️ AI 이미지 생성은 아직 지원되지 않습니다. 모델이 곧 구현될 예정이며 프롬프트가 정상적으로 작동할 것입니다.",
+    "uploadLabel": "편집할 선택적 이미지",
+    "uploadHint": "PNG 또는 JPEG — 선택 사항이며 편집하라는 메시지와 함께 전송됩니다.",
+    "generateButton": "생성",
+    "generatingButton": "생성 중...",
+    "progressLabel": "생성 진행률",
+    "status": {
+      "idle": "대기 중. 이미지를 설명해 시작하세요.",
+      "queued": "대기열에 있습니다. 사용 가능한 워커를 기다리는 중입니다.",
+      "processing": "생성 처리 중입니다.",
+      "done": "완료. 이미지가 생성되었습니다.",
+      "failed": "생성에 실패했습니다."
+    },
+    "resultAlt": "요청한 프롬프트로 생성된 이미지.",
+    "historyTitle": "최근 생성물",
+    "historyEmpty": "아직 생성된 이미지가 없습니다.",
+    "errorLabel": "오류",
+    "loadingAuth": "세션을 확인하는 중...",
+    "saveArtTitle": "예술 작품을 저장하세요",
+    "saveArtBody": "이 작품을 갤러리에 저장하려면 로그인하거나 가입하세요. 귀하의 예술 작품이 귀하의 계정에 연결됩니다.",
+    "saveArtCta": "로그인 / 회원가입",
+    "saveArtLater": "나중에",
+    "loginToPrompt": "✨ 상상하려면 로그인하세요! ✨",
+    "modeLabel": "방법",
+    "modeGenerate": "생성",
+    "modeEdit": "이미지 편집",
+    "modeTablistLabel": "생성 모드 선택",
+    "aspectRatioLabel": "가로세로 비율",
+    "aspectRatioSquare": "정사각형 (1:1)",
+    "aspectRatioFourThree": "가로형 (4:3)",
+    "aspectRatioPortrait": "세로 (3:4)",
+    "aspectRatioLandscape": "와이드 (16:9)",
+    "aspectRatioTall": "세로형 (9:16)",
+    "aspectRatioPreview": "비율: {ratio}",
+    "seedLabel": "시드",
+    "seedHint": "0~4294967295 사이의 정수(선택). 비워 두면 무작위 시드가 사용됩니다.",
+    "seedPlaceholder": "무작위",
+    "seedAdvanced": "고급 옵션",
+    "seedRandom": "무작위 시드",
+    "seedValue": "시드: {seed}",
+    "timeEstimateGenerate": "생성에는 보통 몇 분이 걸립니다.",
+    "timeEstimateEdit": "편집에는 보통 몇 분, 때로는 더 오래 걸립니다.",
+    "editLoginRequired": "이미지를 편집하거나 다듬으려면 로그인하세요.",
+    "editLoginCta": "로그인",
+    "uploadDrop": "PNG 또는 JPEG 파일을 여기로 끌어다 놓으세요",
+    "uploadChoose": "파일 선택",
+    "uploadReplace": "이미지 교체",
+    "uploadRemove": "이미지 제거",
+    "uploadPreviewAlt": "선택한 원본 이미지",
+    "uploadInvalidType": "PNG 또는 JPEG 이미지만 사용할 수 있습니다.",
+    "uploadTooLarge": "이미지가 최대 {size}MB를 초과합니다.",
+    "uploadInvalidDimensions": "이미지가 최대 {max}픽셀을 초과합니다.",
+    "uploadMaxHint": "PNG 또는 JPEG, 최대 {size}MB, 한 변 {max}픽셀",
+    "resultActionsLabel": "이미지 작업",
+    "download": "다운로드",
+    "generateVariation": "변형 생성",
+    "refine": "다듬기",
+    "refineTitle": "이미지 다듬기",
+    "refinePromptLabel": "무엇을 바꿀까요?",
+    "refinePromptPlaceholder": "하늘만 오로라로 바꾸고 나머지는 그대로 유지하세요.",
+    "refineSubmit": "다듬기 적용",
+    "refineCancel": "취소",
+    "historyOpen": "열기",
+    "historyVariation": "변형",
+    "historyRefine": "다듬기",
+    "historyDownload": "다운로드",
+    "historyChain": "다듬기 원본: {prompt}",
+    "historyChainUnknown": "이전 이미지에서 다듬음",
+    "historyLoadMore": "더 보기",
+    "anonymousHistory": "전체 기록을 보려면 로그인하세요.",
+    "resultLabel": "생성된 이미지",
+    "uploadErrorLabel": "업로드 오류",
+    "aspectRatioGroupLabel": "비율 선택",
+    "seedInvalid": "시드는 0~4294967295 사이의 정수여야 합니다.",
+    "editSubmit": "이미지 편집",
+    "editPromptLabel": "편집 지시",
+    "editPromptPlaceholder": "이미지에서 무엇을 바꿀지 설명하세요...",
+    "editUploadLabel": "원본 이미지",
+    "uploadRequired": "계속하려면 원본 이미지를 선택하세요.",
+    "upscale": "고급",
+    "upscaling": "업스케일링 중...",
+    "upscaleRemaining": "오늘 남은 고급 수량: {count}"
+  },
+  "gallery": {
+    "title": "공개 갤러리",
+    "description": "AImaginator 커뮤니티에서 생성된 이미지입니다. 각 카드에는 이미지를 생성하는 데 사용된 프롬프트가 표시됩니다.",
+    "loadMore": "더 로드하기",
+    "empty": "아직 공개 이미지가 없습니다.",
+    "by": "~에 의해",
+    "myArtsTitle": "내 예술",
+    "myArtsEmpty": "아직 예술 작품이 없습니다. 여기에서 보려면 계정을 생성하세요.",
+    "loadingMyArts": "예술 작품 로드 중...",
+    "rename": "이름 바꾸기",
+    "renameLabel": "새 이름",
+    "saveRename": "이름 저장",
+    "cancelRename": "취소",
+    "delete": "삭제",
+    "deleteConfirm": "이 예술 작품을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다."
+  },
+  "errors": {
+    "generic": "문제가 발생했습니다. 다시 시도해 보세요.",
+    "generationHttp": "오류 {status}: 생성을 시작할 수 없습니다. 다시 시도해 보세요.",
+    "generationFailed": "생성에 실패했습니다. 다시 시도해 보세요.",
+    "generationNetwork": "API에 접속하는 중 네트워크 오류가 발생했습니다. 연결을 확인하고 다시 시도하세요."
+  },
+  "language": {
+    "selectorLabel": "언어 선택"
+  },
+  "footer": {
+    "tagline": "단어를 이미지로 바꿔보세요!",
+    "productTitle": "제품",
+    "gallery": "갱도",
+    "howItWorks": "작동 원리",
+    "pricing": "가격",
+    "apiDocs": "API/문서",
+    "newsletterTitle": "회람 신문",
+    "newsletterDescription": "AI 이미지 생성에 대한 뉴스, 튜토리얼, 업데이트를 받아보세요.",
+    "newsletterLabel": "이메일 주소",
+    "newsletterPlaceholder": "최고의 이메일",
+    "newsletterButton": "구독하다",
+    "newsletterSuccess": "구독이 확인되었습니다. 환영!",
+    "socialAria": {
+      "instagram": "AImaginator 인스타그램",
+      "x": "X의 AImaginator(트위터)",
+      "linkedin": "LinkedIn의 AImaginator",
+      "github": "GitHub의 AImaginator"
+    },
+    "copyright": "© {year} AImaginator. 모든 권리 보유."
+  },
+  "legal": {
+    "tabsLabel": "법률 페이지",
+    "tabs": {
+      "terms": "이용약관",
+      "privacy": "개인 정보 보호 정책",
+      "cookies": "쿠키"
+    },
+    "privacy": {
+      "kicker": "귀하의 데이터에 대한 우리의 약속",
+      "title": "개인 정보 보호 정책",
+      "description": "AImaginator이 LGPD에 따라 개인 데이터를 수집, 사용, 공유 및 보호하는 방법을 알아보세요.",
+      "updated": "최종 업데이트 날짜: 2026년 9월",
+      "sections": [
+        {
+          "title": "개인 진술서",
+          "body": "AImaginator에서는 귀하의 개인정보를 중요하게 생각합니다. 이 정책은 브라질의 일반 데이터 보호법(LGPD, 법률 No. 13,709/2018)에 따라 당사가 수집하는 데이터, 수집 이유, 공유 대상, 데이터에 대한 귀하의 권리를 투명하게 설명합니다. 당사 서비스를 이용함으로써 귀하는 여기에 설명된 관행에 동의하게 됩니다."
+        },
+        {
+          "title": "쿠키란 무엇입니까?",
+          "body": "쿠키는 귀하가 웹사이트를 방문할 때 귀하의 브라우저에 저장되는 작은 텍스트 파일입니다. 이는 귀하의 기본 설정을 기억하고, 로그인 세션을 활성 상태로 유지하며, AImaginator 사용 방법을 이해하는 데 도움이 되므로 지속적으로 경험을 개선할 수 있습니다."
+        },
+        {
+          "title": "우리가 쿠키를 사용하는 이유",
+          "body": "당사는 인증(로그인 유지), 기본 설정 쿠키(예: 선택한 언어, pt-BR 또는 en) 및 가능한 경우 익명화된 성능/분석 쿠키를 위해 꼭 필요한 쿠키를 사용하여 플랫폼 사용량을 측정하고 오류를 감지합니다. 브라우저 설정에서 쿠키를 비활성화할 수 있지만, 로그인 등 일부 기능이 작동하지 않을 수 있습니다."
+        },
+        {
+          "title": "당사가 구체적으로 수집하는 정보",
+          "body": "당사는 (i) OAuth 2.0을 통해 로그인에 사용된 귀하의 Google 계정에서 이름, 이메일 등의 데이터를 수집합니다. (ii) 제출된 프롬프트, 방문한 페이지 및 상호 작용과 같은 사용 데이터; (iii) 보안 및 남용 방지를 위해 사용되는 IP 주소, 브라우저 유형 및 액세스 로그와 같은 기술 데이터. 우리는 금융 또는 결제 데이터를 직접 수집하지 않습니다."
+        },
+        {
+          "title": "귀하의 정보를 공유하는 대상",
+          "body": "우리는 서비스에 필수적인 제공자, 즉 Google(OAuth 인증용), 인프라 및 호스팅 제공자(예: 데이터베이스, 큐, 스토리지), 프롬프트를 처리하기 위해 생성 파이프라인(예: CrewAI 및 LangChain로 조정된 파이프라인)을 실행하는 AI 제공자와만 데이터를 공유합니다. 이러한 제3자는 처리자 역할을 하며 기밀 유지 및 데이터 보호 의무에 따라 필요한 최소한의 정보만을 받습니다."
+        },
+        {
+          "title": "귀하가 업로드하고 생성하는 미디어",
+          "body": "편집을 위해 업로드한 이미지와 프롬프트에서 생성된 이미지는 서비스 제공을 위해 처리됩니다. 생성 내역 및 반복 편집이 가능하도록 임시로 저장될 수 있습니다. 공개 갤러리에 이미지를 게시하면 해당 이미지와 관련 메시지가 다른 사용자에게 표시됩니다."
+        },
+        {
+          "title": "정보 공개",
+          "body": "우리는 귀하의 개인 데이터를 판매하지 않습니다. 당사는 다음과 같은 경우에만 정보를 공개할 수 있습니다. (i) 법률, 법원 명령 또는 관할 당국에서 요구하는 경우; (ii) AImaginator, 사용자 또는 대중의 권리, 재산 또는 안전을 보호하는 데 필요합니다. 또는 (iii) 당사 이용 약관의 사기, 남용 또는 위반을 조사하고 예방하는 데 필요합니다."
+        },
+        {
+          "title": "데이터 주체로서의 귀하의 권리(LGPD)",
+          "body": "LGPD에 따라 귀하는 처리 존재 확인, 귀하의 데이터에 대한 액세스, 불완전하거나 오래된 데이터의 수정, 익명화, 불필요한 데이터의 차단 또는 삭제, 다른 제공업체로의 이동 및 동의 철회를 요청할 수 있습니다. 이러한 권리를 행사하려면 연락처/DPO 섹션에 있는 이메일을 사용하여 당사에 문의하십시오."
+        },
+        {
+          "title": "이 정책에 대한 업데이트",
+          "body": "당사는 서비스, 법률 또는 데이터 처리 관행의 변경 사항을 반영하기 위해 본 개인정보 보호정책을 주기적으로 업데이트할 수 있습니다. 업데이트 날짜와 함께 이 페이지에 개정판을 게시하겠습니다. 중대한 변경 사항은 해당되는 경우 이메일이나 제품 내 공지를 통해 전달됩니다."
+        },
+        {
+          "title": "연락처 / DPO",
+          "body": "개인 정보 보호에 관한 질문, 요청 또는 불만 사항은 개인 정보 보호 담당자(DPO)(privacy@aimaginator.app)에게 보낼 수 있습니다. 우리는 가능한 한 빨리, 그리고 어떤 경우에도 LGPD에서 정한 기한 내에 응답할 것입니다."
+        }
+      ]
+    },
+    "terms": {
+      "kicker": "주의 깊게 읽으십시오",
+      "title": "이용약관",
+      "description": "AImaginator 및 해당 서비스 사용에 적용되는 규칙입니다.",
+      "updated": "최종 업데이트 날짜: 2026년 9월",
+      "sections": [
+        {
+          "title": "본 약관의 수락",
+          "body": "AImaginator에 액세스하거나 이를 사용함으로써 귀하는 본 이용 약관을 읽고 이해했으며 이에 동의함을 확인합니다. 본 약관의 일부에 동의하지 않는 경우 플랫폼을 사용해서는 안 됩니다."
+        },
+        {
+          "title": "서비스 설명",
+          "body": "AImaginator은 자연어 프롬프트에서 인공 지능을 사용하여 이미지를 생성하고 편집하는 웹 애플리케이션 및 API입니다. 기능, 모델 및 가용성은 사전 통지 없이 시간이 지남에 따라 변경될 수 있습니다."
+        },
+        {
+          "title": "계정 및 자격",
+          "body": "이미지를 생성하려면 OAuth 2.0을 통해 Google 계정으로 로그인해야 합니다. 귀하는 귀하의 계정과 그 계정에서 발생하는 모든 활동에 대한 기밀을 유지할 책임이 있습니다. 서비스를 이용하려면 최소 13세 또는 해당 관할권에서 요구하는 최소 연령 이상이어야 합니다."
+        },
+        {
+          "title": "허용되는 사용",
+          "body": "귀하는 AImaginator을(를) 사용하여 불법, 유해, 명예훼손, 차별, 증오, 미성년자가 포함된 성적으로 노골적인 콘텐츠 또는 제3자의 권리를 침해하는 콘텐츠를 생성하지 않는다는 데 동의합니다. 또한 귀하는 플랫폼, 해당 API 또는 인프라에 대한 리버스 엔지니어링, 방해, 과부하 또는 무단 액세스를 시도하지 않는다는 데 동의합니다."
+        },
+        {
+          "title": "사용자 콘텐츠 및 라이선스",
+          "body": "제출한 프롬프트와 생성한 이미지에 대한 소유권은 귀하에게 있습니다. 서비스를 사용함으로써 귀하는 서비스 제공 목적으로만 귀하의 콘텐츠를 처리, 저장 및 표시할 수 있는 전 세계적이고 비독점적이며 로열티가 없는 라이센스를 AImaginator에 부여하게 됩니다. 공개 갤러리에 이미지를 게시하면 AImaginator 및 해당 사용자에게 플랫폼과 관련하여 해당 이미지를 보고 공유할 수 있는 라이선스를 부여하게 됩니다."
+        },
+        {
+          "title": "지적재산권",
+          "body": "AImaginator 브랜드, 소프트웨어, 디자인 및 문서는 AImaginator 또는 해당 라이센스 제공자의 자산이며 관련 지적재산권법에 의해 보호됩니다. 본 약관의 어떠한 조항도 명시적으로 허용된 경우를 제외하고 귀하에게 당사의 상표 또는 코드를 사용할 권리를 부여하지 않습니다."
+        },
+        {
+          "title": "면책조항 및 책임 제한",
+          "body": "서비스는 어떠한 종류의 보증도 없이 '있는 그대로', '이용 가능한 대로' 제공됩니다. AI로 생성된 콘텐츠는 부정확하거나, 편파적이거나, 불완전할 수 있으며, 사용하기 전에 이를 검토하는 것은 전적으로 귀하의 책임입니다. 법이 허용하는 최대 한도 내에서 AImaginator은(는) 귀하의 플랫폼 사용으로 인해 발생하는 간접적, 우발적 또는 결과적 손해에 대해 책임을 지지 않습니다."
+        },
+        {
+          "title": "종료",
+          "body": "귀하가 본 약관을 위반하거나 귀하의 사용이 플랫폼이나 다른 사용자에게 위험을 초래한다고 판단하는 경우 당사는 통지 여부에 관계없이 AImaginator에 대한 귀하의 액세스를 일시 중지하거나 종료할 수 있습니다."
+        },
+        {
+          "title": "본 약관의 변경",
+          "body": "당사는 본 이용약관을 주기적으로 업데이트할 수 있습니다. 업데이트 날짜와 함께 개정된 버전을 이 페이지에 게시하겠습니다. 변경 사항이 적용된 후 플랫폼을 계속 사용하면 새 약관에 동의하는 것으로 간주됩니다."
+        },
+        {
+          "title": "준거법 및 연락처",
+          "body": "본 약관은 국제사법 원칙에 관계없이 브라질 법률의 적용을 받습니다. 본 약관에 대한 질문은 Privacy@aimaginator.app으로 보내실 수 있습니다."
+        }
+      ]
+    },
+    "cookies": {
+      "kicker": "당사가 쿠키를 사용하는 방법",
+      "title": "쿠키",
+      "description": "AImaginator에서 쿠키 및 유사 기술을 사용하는 방법과 이를 제어할 수 있는 방법을 이해하세요.",
+      "updated": "최종 업데이트 날짜: 2026년 9월",
+      "sections": [
+        {
+          "title": "쿠키란 무엇입니까?",
+          "body": "쿠키는 귀하가 웹사이트를 방문할 때 웹사이트가 귀하의 장치에 저장하는 작은 텍스트 파일입니다. 이를 통해 사이트는 시간이 지남에 따라 귀하의 작업과 선호도를 기억할 수 있으며 웹사이트가 보다 효율적으로 작동하도록 하는 데 널리 사용됩니다."
+        },
+        {
+          "title": "쿠키를 사용하는 방법",
+          "body": "당사는 귀하의 로그인 상태를 유지하고, 귀하의 언어 기본 설정을 기억하고, 플랫폼 사용 방법을 이해하고, 오류나 남용을 감지 및 방지하기 위해 쿠키를 사용합니다. 일부 쿠키는 서비스가 작동하는 데 필수적입니다."
+        },
+        {
+          "title": "당사가 사용하는 쿠키 유형",
+          "body": "꼭 필요한 쿠키는 인증과 보안을 가능하게 합니다. 기본 설정 쿠키는 귀하의 언어(pt-BR, en 또는 기타 지원 언어)와 같은 선택 사항을 기억합니다. 분석 및 성능 쿠키는 가능할 때마다 익명화된 형식으로 사용량을 측정하여 경험을 개선하는 데 도움이 됩니다."
+        },
+        {
+          "title": "제3자 쿠키",
+          "body": "OAuth 인증을 위한 Google과 같은 일부 제3자는 귀하가 로그인할 때 자체 쿠키를 설정할 수 있습니다. 이러한 쿠키는 해당 제3자의 개인 정보 보호 정책의 적용을 받습니다."
+        },
+        {
+          "title": "쿠키 관리",
+          "body": "귀하는 브라우저 설정을 통해 쿠키를 제어하거나 삭제할 수 있으며 언제든지 동의를 철회할 수 있습니다. 특정 쿠키를 비활성화하면 로그인 상태 유지 등의 기능에 영향을 미칠 수 있습니다."
+        },
+        {
+          "title": "본 쿠키 정책의 변경 사항",
+          "body": "당사는 기술, 법률 또는 당사 관행의 변화를 반영하기 위해 이 정책을 업데이트할 수 있습니다. 개정된 버전은 업데이트 날짜와 함께 이 페이지에 게시됩니다."
+        },
+        {
+          "title": "연락하다",
+          "body": "당사의 쿠키 사용에 관한 질문은 당사의 데이터 보호 책임자(privacy@aimaginator.app)에게 보내실 수 있습니다."
+        }
+      ]
+    }
+  },
+  "loader": {
+    "generating": "생성 중",
+    "ariaLabel": "이미지를 생성하는 중입니다. 잠시 기다려 주세요."
+  },
+  "account": {
+    "title": "내 계정",
+    "subtitle": "프로필, 보안 및 기본 설정을 관리하세요",
+    "sections": {
+      "profilePhoto": "프로필 사진",
+      "personalInfo": "개인정보",
+      "accountStats": "계정 통계",
+      "connectedProviders": "연결된 제공업체"
+    },
+    "profilePhoto": {
+      "changePhoto": "사진 변경",
+      "removePhoto": "사진 삭제",
+      "uploading": "업로드 중...",
+      "cropHint": "이미지 자르기(1:1 비율)",
+      "apply": "적용하다",
+      "cancel": "취소",
+      "fileTypes": "JPG, ​​PNG 또는 WebP — 최대 5MB"
+    },
+    "personalInfo": {
+      "fullName": "성명",
+      "fullNamePlaceholder": "존 도",
+      "email": "이메일",
+      "emailGoogleBadge": "Google에 연결됨",
+      "bio": "약력/소개",
+      "bioPlaceholder": "자기소개를 부탁드립니다. (최대 160자)",
+      "bioCharCount": "{count}/160",
+      "handle": "사용자 이름",
+      "handlePlaceholder": "사용자 이름",
+      "handleHint": "문자, 숫자, _ 및 -만 가능",
+      "handleTaken": "이 사용자 이름은 이미 사용 중입니다.",
+      "save": "변경 사항 저장",
+      "cancel": "취소",
+      "saving": "절약...",
+      "saved": "변경사항이 성공적으로 저장되었습니다.",
+      "error": "저장하는 중에 오류가 발생했습니다. 다시 시도해 주세요."
+    },
+    "accountStats": {
+      "accountCreated": "계정 생성 날짜",
+      "totalGenerations": "총 예술 작품 생성",
+      "totalSavedArts": "갤러리에 저장된 총 예술 작품",
+      "currentPlan": "현재 계획",
+      "creditsUsed": "이 기간에 사용된 크레딧",
+      "creditsLimit": "{limit} 중"
+    },
+    "connectedProviders": {
+      "google": "Google",
+      "connected": "연결됨",
+      "none": "연결된 제공업체가 없습니다.",
+      "disconnect": "연결 끊기",
+      "disconnectConfirm": "확실합니까? 로그인하려면 다른 방법이 필요합니다.",
+      "cannotDisconnectOnly": "유일한 로그인 방법을 연결 해제할 수 없습니다. 먼저 비밀번호를 설정하세요."
+    }
+  },
+  "settings": {
+    "title": "설정",
+    "subtitle": "플랫폼 기본 설정, 모양 및 접근성 옵션을 구성하세요.",
+    "tabs": {
+      "appearance": "모습",
+      "languageRegion": "언어 및 지역",
+      "accessibility": "접근성",
+      "notifications": "알림",
+      "privacyData": "개인정보 보호 및 데이터",
+      "advanced": "고급의"
+    },
+    "save": "설정 저장",
+    "reset": "기본값 복원",
+    "saving": "절약...",
+    "saved": "설정이 저장되었습니다.",
+    "resetConfirm": "확실합니까? 모든 기본 설정이 기본값으로 돌아갑니다.",
+    "appearance": {
+      "title": "모습",
+      "description": "AImaginator이 당신을 찾는 방식을 맞춤 설정하세요",
+      "theme": {
+        "label": "주제",
+        "dark": "어두운",
+        "light": "빛",
+        "system": "체계"
+      },
+      "boldText": {
+        "label": "굵은 글씨",
+        "description": "가독성을 높이기 위해 전체적으로 글꼴 두께를 늘립니다."
+      },
+      "fontSize": {
+        "label": "글꼴 크기",
+        "small": "작은",
+        "medium": "중간",
+        "large": "크기가 큰",
+        "xl": "특대"
+      },
+      "elementSpacing": {
+        "label": "요소 크기",
+        "compact": "콤팩트",
+        "comfortable": "편안한",
+        "spacious": "넓다"
+      }
+    },
+    "languageRegion": {
+      "title": "언어 및 지역",
+      "description": "언어와 시간대를 선택하세요",
+      "language": {
+        "label": "언어"
+      },
+      "timezone": {
+        "label": "시간대",
+        "placeholder": "시간대를 선택하세요",
+        "description": "플랫폼 전체에서 날짜와 시간의 형식을 지정하는 데 사용됩니다."
+      }
+    },
+    "accessibility": {
+      "title": "접근성",
+      "description": "사용성 향상을 위한 옵션 조정",
+      "highContrast": {
+        "label": "고대비",
+        "description": "텍스트와 배경 사이의 대비를 높입니다."
+      },
+      "screenReaderOptimized": {
+        "label": "스크린 리더 최적화",
+        "description": "추가 ARIA 속성 및 의미론적 개선이 가능합니다."
+      },
+      "keyboardNavigation": {
+        "label": "키보드 탐색",
+        "description": "최적화된 키보드 탐색 단축키를 활성화합니다."
+      },
+      "focusIndicator": {
+        "label": "초점 표시기",
+        "description": "초점 윤곽선을 더 잘 보이게 만듭니다."
+      },
+      "dyslexiaFont": {
+        "label": "난독증 글꼴",
+        "description": "가독성을 높이기 위해 글꼴로 전환합니다."
+      },
+      "reducedMotion": {
+        "label": "움직임 감소",
+        "description": "애니메이션 및 전환을 최소화하거나 비활성화합니다."
+      }
+    },
+    "notifications": {
+      "title": "알림",
+      "description": "알림을 받는 방법과 시기 구성",
+      "email": {
+        "label": "이메일 알림",
+        "description": "이메일 알림 수신(생성 완료, 크레딧 부족, 뉴스)"
+      },
+      "push": {
+        "label": "푸시 알림",
+        "description": "실시간 브라우저 푸시 알림(이미지 준비)"
+      },
+      "desktop": {
+        "label": "데스크톱 알림",
+        "description": "데스크톱 알림 팝업"
+      },
+      "sound": {
+        "label": "소리 알림",
+        "description": "세대가 완료되면 소리 재생"
+      },
+      "summaryFrequency": {
+        "label": "요약 빈도",
+        "daily": "일일",
+        "weekly": "주간",
+        "never": "절대",
+        "description": "계정 활동에 대한 이메일 요약"
+      },
+      "notificationEmail": {
+        "label": "알림 이메일",
+        "placeholder": "알림@example.com",
+        "description": "로그인 이메일과 다를 수 있음(팀 계정의 경우)"
+      }
+    },
+    "privacyData": {
+      "title": "개인정보 보호 및 데이터",
+      "description": "데이터 및 개인 정보 보호 기본 설정을 관리하세요",
+      "documents": {
+        "title": "정책 문서",
+        "privacyPolicy": "개인정보 보호정책 보기",
+        "termsOfUse": "이용약관 보기"
+      },
+      "consentHistory": {
+        "title": "동의 내역",
+        "description": "귀하는 {date}에서 약관 및 개인정보 보호정책의 {version} 버전을 수락했습니다."
+      },
+      "exportData": {
+        "title": "데이터 내보내기(이식성)",
+        "description": "LGPD Art에 따라 모든 개인 데이터(프로필, 생성 기록, 저장된 아트, 설정)를 다운로드합니다. 18, 뷔",
+        "button": "내 데이터 내보내기",
+        "exporting": "내보내기 준비 중...",
+        "success": "내보내기를 요청했습니다. 준비가 되면 다운로드 링크가 포함된 이메일을 받게 됩니다."
+      },
+      "deleteAccount": {
+        "title": "계정 삭제",
+        "description": "귀하의 계정 및 모든 관련 데이터를 영구적으로 삭제하십시오. 이 조치는 30일 유예 기간 후에는 취소할 수 없습니다(LGPD Art. 18, VI).",
+        "button": "계정 삭제 요청",
+        "confirmTitle": "계정 삭제 확인",
+        "confirmDescription": "확실합니까? 귀하의 계정은 비활성화되고 30일 후에 영구 삭제될 예정입니다. 해당 기간 동안 다시 로그인하시면 취소하실 수 있습니다.",
+        "cancel": "취소",
+        "confirm": "예, 삭제를 요청합니다"
+      }
+    },
+    "advanced": {
+      "title": "고급의",
+      "description": "개발자 및 유지 관리를 위한 옵션",
+      "developerMode": {
+        "label": "개발자 모드",
+        "description": "클라이언트에 디버그/검사 도구 노출(내부 ID, 요청 로그, API 페이로드)"
+      },
+      "clearCache": {
+        "label": "로컬 캐시 지우기",
+        "description": "서버 데이터에 영향을 주지 않고 로컬 캐시(localStorage/IndexedDB)를 지웁니다.",
+        "button": "캐시 지우기",
+        "success": "로컬 캐시가 지워졌습니다."
+      },
+      "exportData": {
+        "title": "내 데이터 내보내기",
+        "description": "데이터 내보내기 바로가기 (개인정보 탭과 동일한 기능)",
+        "button": "내 데이터 내보내기"
+      },
+      "resetAllSettings": {
+        "title": "모든 설정 재설정",
+        "description": "모든 탭의 모든 기본 설정을 기본값으로 재설정합니다.",
+        "button": "모든 것을 재설정",
+        "confirmTitle": "재설정 확인",
+        "confirmDescription": "확실합니까? 모든 설정이 기본값으로 돌아갑니다. 이 작업은 취소할 수 없습니다.",
+        "cancel": "취소",
+        "confirm": "예, 모두 재설정합니다"
+      }
+    }
+  }
+}

@@ -403,3 +403,23 @@ html.reduced-motion *::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+
+/* Font stacks for the 11 supported locales. Noto fonts cover CJK/Arabic;
+ * the Geist font remains the Latin fallback. */
+html[lang="ja"] body {
+  font-family: var(--font-noto-jp), var(--font-geist-sans), "Hiragino Sans",
+    "Yu Gothic", sans-serif;
+}
+html[lang="zh"] body {
+  font-family: var(--font-noto-sc), var(--font-geist-sans), "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+}
+html[lang="ko"] body {
+  font-family: var(--font-noto-kr), var(--font-geist-sans), "Apple SD Gothic Neo",
+    "Malgun Gothic", sans-serif;
+}
+html[lang="ar"] body {
+  font-family: var(--font-noto-arabic), var(--font-geist-sans), "Segoe UI",
+    Tahoma, sans-serif;
+}

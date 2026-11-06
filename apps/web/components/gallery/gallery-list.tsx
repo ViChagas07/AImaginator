@@ -39,7 +39,7 @@ export function GalleryList({
               loading="lazy"
               className="aspect-square w-full object-cover"
             />
-            <div className="p-3">
+            <div className="p-3 text-start">
               <p className="line-clamp-2 text-xs text-muted">{item.prompt}</p>
               {item.author && (
                 <p className="mt-1 text-xs text-foreground/70">

@@ -10,15 +10,17 @@ import {cn} from "@/lib/utils";
 type AppLocale = (typeof routing.locales)[number];
 
 const LANGUAGE_NAMES: Record<AppLocale, string> = {
-  "pt-BR": "Português (BR)",
+  "pt-BR": "Portugu\u00eas (BR)",
   en: "English",
-  es: "Español",
-  fr: "Français",
+  es: "Espa\u00f1ol",
+  fr: "Fran\u00e7ais",
   de: "Deutsch",
-  ja: "日本語",
-  zh: "中文",
-  ru: "Русский",
-  ar: "العربية",
+  it: "Italiano",
+  ja: "\u65e5\u672c\u8a9e",
+  zh: "\u4e2d\u6587",
+  ko: "\ud55c\uad6d\uc5b4",
+  ru: "\u0420\u0443\u0441\u0441\u043a\u0438\u0439",
+  ar: "\u0627\u0644\u0639\u0631\u0628\u064a\u0629",
 };
 
 const LOCALES: readonly AppLocale[] = routing.locales;
