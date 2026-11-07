@@ -143,18 +143,20 @@ do modo `IMAGE_ENGINE=sdcpp` (bucket criado automaticamente em desenvolvimento).
 
 ### 2. Backend (sem Docker, para desenvolvimento)
 
-```bash
-cp .env.development.example .env.development
+```powershell
+Copy-Item .env.development.example .env.development
+$env:ENV_FILE = ".env.development"   # faz o Settings ler o arquivo de dev
 poetry install --with dev
 poetry run alembic upgrade head
 poetry run uvicorn apps.api.main:app --reload --port 8001
 ```
 
-Em outro terminal, suba o worker apontando para o `.env.development`:
+Em outro terminal, repita `$env:ENV_FILE = ".env.development"` e suba o worker:
 
-```bash
-poetry run celery -A workers.celery_app.celery:celery_app worker \
-  --loglevel=info --queues=generation.standard \
+```powershell
+$env:ENV_FILE = ".env.development"
+poetry run celery -A workers.celery_app.celery:celery_app worker `
+  --loglevel=info --queues=generation.standard `
   --concurrency=1 --max-tasks-per-child=1
 ```
 

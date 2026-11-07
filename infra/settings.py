@@ -20,7 +20,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=os.environ.get("ENV_FILE", ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     secret_key: str = Field(min_length=32)
     api_base_url: str = "http://localhost:8000"
     frontend_base_url: str = "http://localhost:3000"
+    # Origens extras permitidas no CORS, separadas por virgula.
+    # frontend_base_url e sempre incluida; este campo adiciona origens.
+    frontend_origins: str = ""
     # Aplica migrations pendentes (alembic upgrade head) no boot da API.
     # Desative em ambientes de teste/CI (AUTO_MIGRATE=false).
     auto_migrate: bool = True
@@ -205,6 +208,11 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         return v
 
+    @field_validator("api_base_url", "frontend_base_url")
+    @classmethod
+    def _normalize_public_url(cls, v: str) -> str:
+        return v.strip().rstrip("/")
+
     @property
     def image_generation_enabled(self) -> bool:
         return self.feature_image_generation_enabled is True
@@ -309,6 +317,17 @@ class Settings(BaseSettings):
         return frozenset(
             d.strip().lower() for d in self.allowed_image_url_domains.split(",") if d.strip()
         )
+
+    @property
+    def allowed_frontend_origins(self) -> list[str]:
+        """Origens de CORS: FRONTEND_BASE_URL + extras de FRONTEND_ORIGINS."""
+        raw = ",".join(filter(None, (self.frontend_base_url, self.frontend_origins)))
+        origins: list[str] = []
+        for item in raw.split(","):
+            origin = item.strip().rstrip("/")
+            if origin and origin not in origins:
+                origins.append(origin)
+        return origins
 
 
 @lru_cache
