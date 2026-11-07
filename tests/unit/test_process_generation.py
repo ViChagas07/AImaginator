@@ -112,6 +112,25 @@ async def _execute(
 
 
 @pytest.mark.unit
+async def test_modo_worker_nao_levanta_depois_de_persistir_falha() -> None:
+    repo = InMemoryGenerationRepository()
+    generation = Generation(
+        user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo"
+    )
+    await repo.save(generation)
+    use_case = ProcessGeneration(
+        generations=repo,
+        image_agent=_FailingAgent(EngineTimeoutError()),
+        events=SpyEventPublisher(),
+    )
+    await use_case.execute(generation.id, raise_on_failure=False)
+    saved = await repo.get_by_id(generation.id)
+    assert saved is not None
+    assert saved.status == GenerationStatus.FAILED
+    assert saved.error_code == "engine_timeout"
+
+
+@pytest.mark.unit
 async def test_timeout_incrementa_metricas_de_motor_e_geracao() -> None:
     before_engine = REGISTRY.get_sample_value(
         "aimaginator_engine_failures_total",

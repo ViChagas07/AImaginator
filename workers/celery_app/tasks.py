@@ -86,7 +86,7 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                         redis_client, namespace="upscale-quota"
                     ),
                     c2pa_signer=gen_wiring.build_c2pa_signer(settings),
-                ).execute(UUID(generation_id))
+                ).execute(UUID(generation_id), raise_on_failure=False)
             return
         if settings.image_engine == "sdcpp":
             storage = gen_wiring.build_object_storage_required(settings)
@@ -121,7 +121,7 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                 moderation=moderation,
                 quota_refund=RefundPromptQuota(RedisPromptQuotaStore(redis_client)),
             )
-            await use_case.execute(UUID(generation_id))
+            await use_case.execute(UUID(generation_id), raise_on_failure=False)
     finally:
         if storage is not None and kind == "edit":
             # Limpeza oportunista: garante a retencao mesmo sem Celery beat.
