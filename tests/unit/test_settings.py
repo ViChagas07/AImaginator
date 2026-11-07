@@ -225,6 +225,18 @@ def test_sdcpp_com_caminhos_e_s3_completos_e_aceito() -> None:
     assert settings.s3_bucket == "aimaginator-dev"
 
 
+def test_sdcpp_aceita_aws_keys_com_endpoint_opcional() -> None:
+    settings = _settings(
+        image_engine="sdcpp",
+        **_sdcpp_paths(),
+        s3_bucket="meu-bucket",
+        aws_access_key_id="aws-id",
+        aws_secret_access_key="aws-secret",
+    )
+    assert settings.image_generation_enabled is True
+    assert settings.s3_endpoint_url == ""
+
+
 def test_sdcpp_sem_s3_falha_no_startup() -> None:
     with pytest.raises(ValidationError) as exc:
         _settings(image_engine="sdcpp", **_sdcpp_paths())

@@ -105,6 +105,9 @@ class Settings(BaseSettings):
     cooldown_seconds_between_jobs: float = Field(default=0.0, ge=0.0)
 
     # ---- Storage S3/MinIO ----
+    # Credenciais AWS padrao aceitas como fallback das S3_*.
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
     s3_endpoint_url: str = ""
     # Endpoint usado nas URLs assinadas (ex.: localhost:9002); vazio usa o interno.
     s3_public_endpoint_url: str = ""
@@ -290,14 +293,17 @@ class Settings(BaseSettings):
             msg = f"IMAGE_ENGINE=sdcpp exige os caminhos: {', '.join(missing)}."
             raise ValueError(msg)
 
-        required_storage = {
-            "S3_ENDPOINT_URL": self.s3_endpoint_url,
-            "S3_BUCKET": self.s3_bucket,
-            "S3_ACCESS_KEY": self.s3_access_key,
-            "S3_SECRET_KEY": self.s3_secret_key,
-        }
+        access_key = self.s3_access_key.strip() or self.aws_access_key_id.strip()
+        secret_key = self.s3_secret_key.strip() or self.aws_secret_access_key.strip()
+        # S3_ENDPOINT_URL e opcional: vazio usa o endpoint padrao da AWS.
         missing_storage = [
-            name for name, value in required_storage.items() if not value.strip()
+            name
+            for name, value in {
+                "S3_BUCKET": self.s3_bucket,
+                "S3_ACCESS_KEY (ou AWS_ACCESS_KEY_ID)": access_key,
+                "S3_SECRET_KEY (ou AWS_SECRET_ACCESS_KEY)": secret_key,
+            }.items()
+            if not value.strip()
         ]
         if missing_storage:
             msg = (
