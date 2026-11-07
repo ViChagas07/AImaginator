@@ -65,7 +65,9 @@ class ProcessGeneration:
         self._moderation = moderation
         self._quota_refund = quota_refund
 
-    async def execute(self, generation_id: UUID) -> None:
+    async def execute(
+        self, generation_id: UUID, *, raise_on_failure: bool = True
+    ) -> None:
         generation = await self._generations.get_by_id(generation_id)
         if generation is None:
             raise NotFoundError(f"Geracao {generation_id} nao encontrada.")
@@ -166,7 +168,8 @@ class ProcessGeneration:
                 warning_level=warning_level,
                 warning_message=warning_message,
             )
-            raise
+            if raise_on_failure:
+                raise
 
     async def _record_moderation(
         self, generation: Generation, exc, *, apply_penalty: bool = True

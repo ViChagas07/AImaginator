@@ -63,7 +63,9 @@ class ProcessUpscale:
         self._quota_store = quota_store
         self._c2pa = c2pa_signer
 
-    async def execute(self, generation_id: UUID) -> None:
+    async def execute(
+        self, generation_id: UUID, *, raise_on_failure: bool = True
+    ) -> None:
         generation = await self._generations.get_by_id(generation_id)
         if generation is None:
             raise NotFoundError("Geracao nao encontrada.")
@@ -203,7 +205,8 @@ class ProcessUpscale:
             await publish(
                 GenerationStatus.FAILED, 100, error=message, error_code=code
             )
-            raise
+            if raise_on_failure:
+                raise
 
     async def _release_slot(self, generation: Generation) -> None:
         if (
