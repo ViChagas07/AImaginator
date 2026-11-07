@@ -18,7 +18,7 @@ from apps.api.readiness import (
 router = APIRouter(tags=["ops"])
 
 
-@router.get("/healthz", include_in_schema=False)
+@router.api_route("/healthz", methods=["GET", "HEAD"], include_in_schema=False)
 async def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
