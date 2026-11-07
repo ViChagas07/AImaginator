@@ -55,6 +55,18 @@ async def test_relogio_local_divergente_nao_afeta_redis(
 
 
 @pytest.mark.unit
+async def test_nao_reutiliza_estado_legado_de_balde(fake_redis) -> None:
+    # Versoes antigas gravavam "tb:{chave}" com time.monotonic(). O namespace
+    # novo deve ignorar esse estado, que pode estar negativo apos um restart.
+    await fake_redis.hset(
+        "tb:ip:legacy", mapping={"tokens": -10_000_000, "ts": 1}
+    )
+    bucket = TokenBucket(fake_redis, capacity=1, window_seconds=60)
+
+    await bucket.consume("ip:legacy")
+
+
+@pytest.mark.unit
 def test_config_invalida_rejeitada() -> None:
     with pytest.raises(ValueError, match="positivos"):
         TokenBucket(object(), capacity=0, window_seconds=60)

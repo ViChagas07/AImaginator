@@ -10,6 +10,12 @@ from __future__ import annotations
 from modules.observability.metrics import RATE_LIMIT_REJECTIONS
 from shared_kernel.errors import RateLimitExceededError
 
+# Namespace versionado: isola baldes criados por versoes antigas que usavam
+# time.monotonic() (relogio relativo ao host) como timestamp no Redis.
+# Com multiplas replicas/reinicios esse estado fica corrompido e pode gerar
+# Retry-After de dias; a versao atual usa o relogio do proprio Redis.
+_KEY_PREFIX = "tb:v2"
+
 # Lua: recarrega tokens proporcionalmente ao tempo decorrido e consome 1.
 # KEYS[1] = chave do balde; ARGV = capacity, refill_per_sec; now = Redis TIME
 _LUA_TOKEN_BUCKET = """
@@ -51,7 +57,7 @@ class TokenBucket:
     async def consume(self, key: str) -> None:
         """Consome 1 token ou levanta RateLimitExceededError com Retry-After."""
         allowed, retry_after = await self._redis.eval(
-            _LUA_TOKEN_BUCKET, 1, f"tb:{key}", self.capacity, self.refill_per_sec
+            _LUA_TOKEN_BUCKET, 1, f"{_KEY_PREFIX}:{key}", self.capacity, self.refill_per_sec
         )
         if not allowed:
             RATE_LIMIT_REJECTIONS.labels(scope=key.split(":", 1)[0]).inc()
