@@ -1,5 +1,7 @@
 export const SITE_NAME = "AImaginator";
-export const SITE_URL = "https://aimaginator.vercel.app";
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://aimaginator.vercel.app"
+).replace(/\/+$/, "");
 export const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000"
 ).replace(/[./]+$/, "");

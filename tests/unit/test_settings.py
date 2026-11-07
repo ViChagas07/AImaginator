@@ -144,6 +144,30 @@ def test_env_sobrescreve_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.edit_timeout_seconds == 720
 
 
+def test_urls_publicas_sao_normalizadas() -> None:
+    settings = _settings(
+        api_base_url="https://api.example.com/",
+        frontend_base_url="https://app.example.com/",
+        frontend_origins="",
+    )
+
+    assert settings.api_base_url == "https://api.example.com"
+    assert settings.frontend_base_url == "https://app.example.com"
+    assert settings.allowed_frontend_origins == ["https://app.example.com"]
+
+
+def test_frontend_origins_inclui_base_e_normaliza_extras() -> None:
+    settings = _settings(
+        frontend_base_url="https://app.example.com/",
+        frontend_origins=" https://preview.example.com/ , https://preview.example.com ",
+    )
+
+    assert settings.allowed_frontend_origins == [
+        "https://app.example.com",
+        "https://preview.example.com",
+    ]
+
+
 def test_image_engine_invalido_falha_no_startup() -> None:
     with pytest.raises(ValidationError):
         _settings(image_engine="outro")
