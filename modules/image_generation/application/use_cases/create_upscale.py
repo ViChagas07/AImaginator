@@ -14,6 +14,9 @@ from modules.image_generation.application.schemas import (
     GenerationOutput,
     GenerationProgressEvent,
 )
+from modules.image_generation.application.services.queue_recovery import (
+    QueueRecoveryService,
+)
 from modules.image_generation.application.use_cases.generate_image import _to_output
 from modules.image_generation.domain.entities import (
     Generation,
@@ -23,10 +26,12 @@ from modules.image_generation.domain.entities import (
 from modules.observability.logging_config import get_logger
 from modules.observability.metrics import UPSCALE_LIMIT_HITS_TOTAL
 from modules.prompt_quota.application.ports import PromptQuotaStorePort
+from modules.prompt_quota.contracts import RefundPromptQuota
 from modules.users.contracts import User
 from shared_kernel.errors import DomainError, ForbiddenError, NotFoundError
 from shared_kernel.security_errors import (
     OriginalUnavailableError,
+    QueuePublishFailedError,
     UpscaleLimitExceededError,
 )
 
@@ -65,9 +70,7 @@ class CreateUpscale:
         if parent.status is not GenerationStatus.DONE:
             raise DomainError("A geracao ainda nao esta pronta para ampliacao.")
         if not parent.original_object_key:
-            raise OriginalUnavailableError(
-                message_for("original_unavailable", locale)
-            )
+            raise OriginalUnavailableError(message_for("original_unavailable", locale))
 
         try:
             quota = await self._quota_store.consume(
@@ -95,10 +98,23 @@ class CreateUpscale:
         )
         try:
             await self._generations.save(generation)
-            self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
         except Exception:
             await self._quota_store.release(principal_id=f"user:{user.id}")
             raise
+        try:
+            self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        except Exception as exc:
+            logger.warning(
+                "queue_publish_failed",
+                correlation_id=str(generation.id),
+                error_type=type(exc).__name__,
+            )
+            await QueueRecoveryService(
+                generations=self._generations,
+                events=self._events,
+                quota_refund=RefundPromptQuota(self._quota_store),
+            ).mark_publish_failed(generation)
+            raise QueuePublishFailedError(message_for("queue_publish_failed", locale)) from exc
 
         logger.info(
             "generation_created",

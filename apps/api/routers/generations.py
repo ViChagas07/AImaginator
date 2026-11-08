@@ -34,6 +34,7 @@ from apps.api.dependencies import (
     OptionalCurrentUserDep,
     PromptGuardDep,
     PromptQuotaStoreDep,
+    QueueReconcilerDep,
     SettingsDep,
     TaskQueueDep,
     UpscaleQuotaDep,
@@ -62,7 +63,7 @@ from modules.image_generation.contracts import (
 )
 from modules.image_generation.domain.entities import AspectRatio, StylePreset
 from modules.image_generation.domain.storage_errors import StorageUnavailableError
-from modules.prompt_quota.contracts import ConsumePromptQuota
+from modules.prompt_quota.contracts import ConsumePromptQuota, RefundPromptQuota
 from modules.rate_limiting.token_bucket import TokenBucket
 
 router = APIRouter(prefix="/api/v1", tags=["generations"])
@@ -104,9 +105,8 @@ async def create_generation(
             prompt_guard=guard,
             events=events,
             prompt_quota=ConsumePromptQuota(store, total=total),
-        ).execute(
-            user=current_user, data=data, locale=locale, ip_hash=ip_hash
-        )
+            quota_refund=RefundPromptQuota(store),
+        ).execute(user=current_user, data=data, locale=locale, ip_hash=ip_hash)
 
     anonymous_id, token = resolve_anonymous_session(request, settings)
     set_anonymous_session_cookie(response, settings, token)
@@ -125,6 +125,7 @@ async def create_generation(
         prompt_guard=guard,
         events=events,
         prompt_quota=ConsumePromptQuota(store, total=total),
+        quota_refund=RefundPromptQuota(store),
     ).execute(
         anonymous_session_id=anonymous_id,
         data=data,
@@ -208,6 +209,7 @@ async def create_variation(
             prompt_quota=ConsumePromptQuota(
                 store, total=settings.authenticated_prompt_chances_per_day
             ),
+            quota_refund=RefundPromptQuota(store),
         )
         return await CreateVariation(
             generations=generations, generate_authenticated=generate
@@ -234,13 +236,10 @@ async def create_variation(
         task_queue=queue,
         prompt_guard=guard,
         events=events,
-        prompt_quota=ConsumePromptQuota(
-            store, total=settings.anonymous_prompt_chances_per_day
-        ),
+        prompt_quota=ConsumePromptQuota(store, total=settings.anonymous_prompt_chances_per_day),
+        quota_refund=RefundPromptQuota(store),
     )
-    return await CreateVariation(
-        generations=generations, generate_anonymous=generate_anon
-    ).execute(
+    return await CreateVariation(generations=generations, generate_anonymous=generate_anon).execute(
         generation_id=generation_id,
         user=None,
         anonymous_session_id=anonymous_id,
@@ -289,18 +288,15 @@ async def create_edit(
         prompt_guard=guard,
         url_policy=url_policy,
         events=events,
-        prompt_quota=ConsumePromptQuota(
-            store, total=settings.authenticated_prompt_chances_per_day
-        ),
+        prompt_quota=ConsumePromptQuota(store, total=settings.authenticated_prompt_chances_per_day),
+        quota_refund=RefundPromptQuota(store),
         image_fetcher=image_fetcher,
         storage=storage,
         max_upload_bytes=settings.edit_upload_max_bytes,
         max_upload_dimension=settings.edit_upload_max_dimension,
         max_upload_pixels=settings.edit_upload_max_pixels,
     )
-    return await use_case.execute(
-        user=current_user, data=data, locale=locale, ip_hash=ip_hash
-    )
+    return await use_case.execute(user=current_user, data=data, locale=locale, ip_hash=ip_hash)
 
 
 @router.post(
@@ -359,9 +355,8 @@ async def create_edit_upload(
         prompt_guard=guard,
         storage=storage,
         events=events,
-        prompt_quota=ConsumePromptQuota(
-            store, total=settings.authenticated_prompt_chances_per_day
-        ),
+        prompt_quota=ConsumePromptQuota(store, total=settings.authenticated_prompt_chances_per_day),
+        quota_refund=RefundPromptQuota(store),
         max_upload_bytes=settings.edit_upload_max_bytes,
         max_upload_dimension=settings.edit_upload_max_dimension,
         max_upload_pixels=settings.edit_upload_max_pixels,
@@ -380,10 +375,11 @@ async def list_generations(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     storage: ObjectStorageDep,
+    reconciler: QueueReconcilerDep,
     cursor: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=50),
 ) -> GenerationPage:
-    return await ListUserGenerations(generations, storage=storage).execute(
+    return await ListUserGenerations(generations, storage=storage, reconciler=reconciler).execute(
         user_id=current_user.id, cursor=cursor, limit=limit
     )
 
@@ -394,7 +390,8 @@ async def get_generation(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     storage: ObjectStorageDep,
+    reconciler: QueueReconcilerDep,
 ) -> GenerationOutput:
-    return await GetGeneration(generations, storage=storage).execute(
+    return await GetGeneration(generations, storage=storage, reconciler=reconciler).execute(
         user_id=current_user.id, generation_id=generation_id
     )

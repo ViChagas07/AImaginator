@@ -82,17 +82,14 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                     watermarker=gen_wiring.build_watermarker(settings),
                     metadata_writer=gen_wiring.build_metadata_writer(settings),
                     events=RedisEventPublisher(redis_client),
-                    quota_store=RedisPromptQuotaStore(
-                        redis_client, namespace="upscale-quota"
-                    ),
+                    quota_store=RedisPromptQuotaStore(redis_client, namespace="upscale-quota"),
                     c2pa_signer=gen_wiring.build_c2pa_signer(settings),
+                    commit=session.commit,
                 ).execute(UUID(generation_id), raise_on_failure=False)
             return
         if settings.image_engine == "sdcpp":
             storage = gen_wiring.build_object_storage_required(settings)
-            assistant = gen_wiring.build_prompt_assistant(
-                settings, http_client=http_client
-            )
+            assistant = gen_wiring.build_prompt_assistant(settings, http_client=http_client)
             agent = gen_wiring.build_engine_image_agent(
                 settings=settings,
                 guard=guard,
@@ -120,6 +117,7 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                 users=users,
                 moderation=moderation,
                 quota_refund=RefundPromptQuota(RedisPromptQuotaStore(redis_client)),
+                commit=session.commit,
             )
             await use_case.execute(UUID(generation_id), raise_on_failure=False)
     finally:

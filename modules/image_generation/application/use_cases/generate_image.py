@@ -6,6 +6,7 @@ from modules.image_generation.application.guardrails import (
     check_scope_localized,
     validate_prompt_localized,
 )
+from modules.image_generation.application.localization import message_for
 from modules.image_generation.application.ports import (
     EventPublisherPort,
     GenerationRepositoryPort,
@@ -16,14 +17,21 @@ from modules.image_generation.application.schemas import (
     GenerationOutput,
     GenerationProgressEvent,
 )
+from modules.image_generation.application.services.queue_recovery import (
+    QueueRecoveryService,
+)
 from modules.image_generation.domain.entities import Generation, GenerationKind, GenerationStatus
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
 from modules.image_generation.domain.prompt_topic_guard import IPromptTopicGuard
 from modules.image_generation.domain.scope_guard import ScopeGuardrail
 from modules.observability.logging_config import get_logger
-from modules.prompt_quota.contracts import PromptQuotaConsumerPort
+from modules.prompt_quota.contracts import (
+    PromptQuotaConsumerPort,
+    PromptQuotaRefundPort,
+)
 from modules.users.contracts import User, UserRepositoryPort
 from shared_kernel.errors import QuotaExceededError
+from shared_kernel.security_errors import QueuePublishFailedError
 
 _STREAM_PATH = "/api/v1/generations/{id}/stream"
 
@@ -62,6 +70,7 @@ class GenerateImageFromPrompt:
         topic_guard: IPromptTopicGuard | None = None,
         events: EventPublisherPort | None = None,
         prompt_quota: PromptQuotaConsumerPort | None = None,
+        quota_refund: PromptQuotaRefundPort | None = None,
         scope_guardrail: ScopeGuardrail | None = None,
     ) -> None:
         self._generations = generations
@@ -71,7 +80,25 @@ class GenerateImageFromPrompt:
         self._topic_guard = topic_guard
         self._events = events
         self._prompt_quota = prompt_quota
+        self._quota_refund = quota_refund
         self._scope_guardrail = scope_guardrail or ScopeGuardrail()
+
+    async def _enqueue_or_fail(self, generation: Generation, *, locale: str) -> None:
+        try:
+            self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        except Exception as exc:
+            logger.warning(
+                "queue_publish_failed",
+                correlation_id=str(generation.id),
+                error_type=type(exc).__name__,
+            )
+            await QueueRecoveryService(
+                generations=self._generations,
+                events=self._events,
+                users=self._users,
+                quota_refund=self._quota_refund,
+            ).mark_publish_failed(generation)
+            raise QueuePublishFailedError(message_for("queue_publish_failed", locale)) from exc
 
     async def execute(
         self,
@@ -113,7 +140,7 @@ class GenerateImageFromPrompt:
             ip_hash=ip_hash,
         )
         await self._generations.save(generation)
-        self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        await self._enqueue_or_fail(generation, locale=locale)
         logger.info(
             "generation_created",
             correlation_id=str(generation.id),
@@ -144,6 +171,7 @@ class GenerateImageAnonymous:
         topic_guard: IPromptTopicGuard | None = None,
         events: EventPublisherPort | None = None,
         prompt_quota: PromptQuotaConsumerPort | None = None,
+        quota_refund: PromptQuotaRefundPort | None = None,
         scope_guardrail: ScopeGuardrail | None = None,
     ) -> None:
         self._generations = generations
@@ -152,7 +180,24 @@ class GenerateImageAnonymous:
         self._topic_guard = topic_guard
         self._events = events
         self._prompt_quota = prompt_quota
+        self._quota_refund = quota_refund
         self._scope_guardrail = scope_guardrail or ScopeGuardrail()
+
+    async def _enqueue_or_fail(self, generation: Generation, *, locale: str) -> None:
+        try:
+            self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        except Exception as exc:
+            logger.warning(
+                "queue_publish_failed",
+                correlation_id=str(generation.id),
+                error_type=type(exc).__name__,
+            )
+            await QueueRecoveryService(
+                generations=self._generations,
+                events=self._events,
+                quota_refund=self._quota_refund,
+            ).mark_publish_failed(generation)
+            raise QueuePublishFailedError(message_for("queue_publish_failed", locale)) from exc
 
     async def execute(
         self,
@@ -189,7 +234,7 @@ class GenerateImageAnonymous:
             ip_hash=ip_hash,
         )
         await self._generations.save(generation)
-        self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        await self._enqueue_or_fail(generation, locale=locale)
         logger.info(
             "generation_created",
             correlation_id=str(generation.id),

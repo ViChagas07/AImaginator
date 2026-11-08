@@ -41,6 +41,13 @@ class AssistantUnavailableError(DomainError):
     http_status = 503
 
 
+class QueuePublishFailedError(DomainError):
+    """Nao foi possivel publicar a task; a geracao foi marcada como falha."""
+
+    code = "queue_publish_failed"
+    http_status = 503
+
+
 class ContentBlockedError(DomainError):
     """Conteudo bloqueado pela moderacao (codigo especifico por categoria)."""
 

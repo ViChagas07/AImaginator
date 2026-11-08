@@ -38,11 +38,15 @@ from modules.image_generation.application.ports import (
 )
 from modules.image_generation.application.ports.task_queue import TaskQueuePort
 from modules.image_generation.application.services.moderation import ModerationService
+from modules.image_generation.application.services.queue_recovery import (
+    QueueRecoveryService,
+)
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
 from modules.image_generation.domain.prompt_topic_guard import PromptTopicGuard
 from modules.image_generation.domain.url_policy import UrlPolicy
 from modules.image_generation.infra import wiring as gen_wiring
 from modules.prompt_quota.adapters.redis_quota_store import RedisPromptQuotaStore
+from modules.prompt_quota.contracts import RefundPromptQuota
 from modules.rate_limiting.circuit_breaker import CircuitBreaker
 from modules.rate_limiting.token_bucket import TokenBucket
 from modules.users.adapters.repository import SQLAlchemyUserRepository
@@ -144,9 +148,7 @@ async def authenticate_user(
     return user
 
 
-async def get_current_user(
-    request: Request, jwt: JWTDep, users: UserRepoDep
-) -> User:
+async def get_current_user(request: Request, jwt: JWTDep, users: UserRepoDep) -> User:
     return await authenticate_user(request, jwt, users)
 
 
@@ -187,9 +189,7 @@ def resolve_anonymous_session(request: Request, settings: Settings) -> tuple[str
     return anonymous_id, new_token
 
 
-def set_anonymous_session_cookie(
-    response: Response, settings: Settings, token: str | None
-) -> None:
+def set_anonymous_session_cookie(response: Response, settings: Settings, token: str | None) -> None:
     """Grava a sessao anonima assinada no cliente (cookie httpOnly)."""
     if token is None:
         return
@@ -277,21 +277,15 @@ def get_object_storage(settings: SettingsDep) -> ObjectStoragePort | None:
 ObjectStorageDep = Annotated[ObjectStoragePort | None, Depends(get_object_storage)]
 
 
-def get_secure_image_fetcher(
-    settings: SettingsDep, http: HttpClientDep
-) -> ImageFetcherPort:
+def get_secure_image_fetcher(settings: SettingsDep, http: HttpClientDep) -> ImageFetcherPort:
     return gen_wiring.build_secure_image_fetcher(settings, http_client=http)
 
 
 ImageFetcherDep = Annotated[ImageFetcherPort, Depends(get_secure_image_fetcher)]
 
 
-def get_stream_ticket_store(
-    settings: SettingsDep, redis: RedisDep
-) -> RedisStreamTicketStore:
-    return RedisStreamTicketStore(
-        redis, ttl_seconds=settings.stream_ticket_ttl_seconds
-    )
+def get_stream_ticket_store(settings: SettingsDep, redis: RedisDep) -> RedisStreamTicketStore:
+    return RedisStreamTicketStore(redis, ttl_seconds=settings.stream_ticket_ttl_seconds)
 
 
 StreamTicketDep = Annotated[RedisStreamTicketStore, Depends(get_stream_ticket_store)]
@@ -367,9 +361,7 @@ EventPublisherDep = Annotated[RedisEventPublisher, Depends(get_event_publisher)]
 
 
 def get_generation_rate_limiter(settings: SettingsDep, redis: RedisDep) -> TokenBucket:
-    return TokenBucket(
-        redis, capacity=settings.rate_limit_generation_per_minute, window_seconds=60
-    )
+    return TokenBucket(redis, capacity=settings.rate_limit_generation_per_minute, window_seconds=60)
 
 
 def get_auth_rate_limiter(settings: SettingsDep, redis: RedisDep) -> TokenBucket:
@@ -390,3 +382,25 @@ def get_prompt_quota_rate_limiter(settings: SettingsDep, redis: RedisDep) -> Tok
     return TokenBucket(
         redis, capacity=settings.rate_limit_prompt_quota_per_minute, window_seconds=60
     )
+
+
+# ---- queue recovery ----
+
+
+def get_queue_reconciler(
+    generations: GenerationRepoDep,
+    users: UserRepoDep,
+    store: PromptQuotaStoreDep,
+    events: EventPublisherDep,
+    settings: SettingsDep,
+) -> QueueRecoveryService:
+    return QueueRecoveryService(
+        generations=generations,
+        events=events,
+        users=users,
+        quota_refund=RefundPromptQuota(store),
+        stale_seconds=settings.queue_stale_seconds,
+    )
+
+
+QueueReconcilerDep = Annotated[QueueRecoveryService, Depends(get_queue_reconciler)]

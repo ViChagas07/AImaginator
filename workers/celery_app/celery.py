@@ -17,6 +17,7 @@ from celery import Celery
 from celery.signals import worker_init
 from kombu import Exchange, Queue
 
+from infra.dev_guard import enforce_local_infra
 from infra.settings import get_settings
 from modules.observability.logging_config import configure_logging
 from modules.observability.prometheus_env import (
@@ -40,9 +41,11 @@ celery_app = Celery(
     include=["workers.celery_app.tasks"],
 )
 
+
 @worker_init.connect
 def _init_worker_observability(**_kwargs) -> None:
     configure_logging(app_env=settings.app_env)
+    enforce_local_infra(settings)
     if settings.prometheus_multiproc_dir:
         # Limpa ANTES de importar as metricas; com max-tasks-per-child o
         # processo filho recria os arquivos a cada job.
@@ -53,10 +56,12 @@ def _init_worker_observability(**_kwargs) -> None:
     )
 
     if settings.prometheus_multiproc_dir:
-        start_metrics_server(
-            settings.worker_metrics_port, settings.prometheus_multiproc_dir
-        )
+        start_metrics_server(settings.worker_metrics_port, settings.prometheus_multiproc_dir)
     start_queue_metrics_thread(settings.worker_metrics_interval_seconds)
+
+    from workers.celery_app.reconciler import reconcile_stale_generations_sync
+
+    reconcile_stale_generations_sync()
 
 
 celery_app.conf.update(
@@ -71,6 +76,9 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,  # fair dispatch (tasks longas)
     worker_concurrency=1,  # uma difusao por vez (VRAM/RAM)
     worker_max_tasks_per_child=1,  # recicla o processo apos cada task
+    # ack so depois de concluir: worker morto reentrega a task (idempotente).
+    task_acks_late=True,
+    task_reject_on_worker_lost=True,
     task_default_retry_delay=5,
     broker_connection_retry_on_startup=True,
     task_queues=(
