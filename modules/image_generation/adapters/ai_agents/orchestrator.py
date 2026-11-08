@@ -45,6 +45,7 @@ from modules.image_generation.application.ports.image_processing import (
     C2PASignerPort,
     ImageWatermarkerPort,
 )
+from modules.image_generation.application.ports.llm_unloader import LlmUnloaderPort
 from modules.image_generation.application.ports.object_storage import ObjectStoragePort
 from modules.image_generation.application.ports.prompt_assistant import (
     PromptAssistantPort,
@@ -105,6 +106,7 @@ class LangGraphImageAgent(ImageAgentPort):
         post_processors: Sequence[ImagePostProcessor] | None = None,
         scope_guardrail: ScopeGuardrail | None = None,
         prompt_assistant: PromptAssistantPort | None = None,
+        llm_unloader: LlmUnloaderPort | None = None,
         block_confidence: float = 0.5,
         image_moderator: ImageModeratorPort | None = None,
         image_moderation_enabled: bool = True,
@@ -122,6 +124,7 @@ class LangGraphImageAgent(ImageAgentPort):
         self._post_processors = list(post_processors or ())
         self._guard = prompt_guard
         self._prompt_assistant = prompt_assistant
+        self._llm_unloader = llm_unloader
         self._block_confidence = block_confidence
         self._image_moderator = image_moderator
         self._image_moderation_enabled = image_moderation_enabled
@@ -162,9 +165,7 @@ class LangGraphImageAgent(ImageAgentPort):
         if refusal is not None:
             if refusal == "out_of_scope":
                 raise OutOfScopeError(message_for("out_of_scope", generation.locale))
-            category = result.moderation_category(
-                block_confidence=self._block_confidence
-            )
+            category = result.moderation_category(block_confidence=self._block_confidence)
             raise ContentBlockedError(
                 code=refusal,
                 message=message_for(refusal, generation.locale),
@@ -173,6 +174,19 @@ class LangGraphImageAgent(ImageAgentPort):
                 confidence=result.confidence,
             )
         state["engine_prompt"] = result.engine_prompt(generation.kind)
+        # Libera a RAM/VRAM do LLM antes do FLUX. O engine tambem checa
+        # MIN_FREE_RAM_MB no inicio de _run_engine, portanto a guarda roda
+        # depois deste descarregamento.
+        if self._llm_unloader is not None:
+            with stage_timer("llm_unload", correlation_id=str(generation.id)):
+                try:
+                    await self._llm_unloader.unload_all()
+                except Exception:
+                    logger.warning(
+                        "llm_unload_failed",
+                        extra={"branch": "unexpected"},
+                        exc_info=True,
+                    )
         await progress_callback(10)
         return state
 
@@ -218,9 +232,7 @@ class LangGraphImageAgent(ImageAgentPort):
         try:
             self._scope_guardrail.check(generation.prompt)
         except OutOfScopeError as exc:
-            raise OutOfScopeError(
-                message_for("out_of_scope", generation.locale)
-            ) from exc
+            raise OutOfScopeError(message_for("out_of_scope", generation.locale)) from exc
         state["progress"] = 40
         return state
 
@@ -242,9 +254,7 @@ class LangGraphImageAgent(ImageAgentPort):
             return state
         source = await self._storage.get_object(source_key)
         try:
-            with stage_timer(
-                "input_image_moderation", correlation_id=str(generation.id)
-            ):
+            with stage_timer("input_image_moderation", correlation_id=str(generation.id)):
                 moderation = await self._image_moderator.moderate(source)
         except ImageModerationUnavailableError as exc:
             raise ImageModerationUnavailableError(
@@ -276,6 +286,7 @@ class LangGraphImageAgent(ImageAgentPort):
         logger.info("Iniciando %s de imagem (id=%s)", kind, generation.id)
 
         if self._provider is not None:
+
             async def noop_progress(_: int) -> None:
                 state["progress"] = 60
 
@@ -306,10 +317,10 @@ class LangGraphImageAgent(ImageAgentPort):
             with stage_timer("engine", correlation_id=str(generation.id)):
                 result = await self._editor.edit(
                     prompt=engine_prompt,
-                source_image=source_image,
-                width=width,
-                height=height,
-                seed=generation.seed,
+                    source_image=source_image,
+                    width=width,
+                    height=height,
+                    seed=generation.seed,
                     on_progress=on_progress,
                 )
         else:
@@ -318,8 +329,8 @@ class LangGraphImageAgent(ImageAgentPort):
             with stage_timer("engine", correlation_id=str(generation.id)):
                 result = await self._generator.generate(
                     prompt=engine_prompt,
-                width=width,
-                height=height,
+                    width=width,
+                    height=height,
                     seed=generation.seed,
                     on_progress=on_progress,
                 )
@@ -345,9 +356,7 @@ class LangGraphImageAgent(ImageAgentPort):
         image_bytes = state.get("image_bytes", b"")
         content_type = metadata.content_type if metadata is not None else "image/png"
 
-        validate_image_bytes(
-            image_bytes, expected_width=width, expected_height=height
-        )
+        validate_image_bytes(image_bytes, expected_width=width, expected_height=height)
         image = metadata or EngineImage(
             image_bytes=image_bytes,
             width=width,
@@ -367,12 +376,8 @@ class LangGraphImageAgent(ImageAgentPort):
 
         if self._image_moderation_enabled and self._image_moderator is not None:
             try:
-                with stage_timer(
-                    "output_image_moderation", correlation_id=str(generation.id)
-                ):
-                    moderation = await self._image_moderator.moderate(
-                        image.image_bytes
-                    )
+                with stage_timer("output_image_moderation", correlation_id=str(generation.id)):
+                    moderation = await self._image_moderator.moderate(image.image_bytes)
             except ImageModerationUnavailableError as exc:
                 raise ImageModerationUnavailableError(
                     message_for("image_moderation_unavailable", generation.locale)
@@ -394,9 +399,7 @@ class LangGraphImageAgent(ImageAgentPort):
                 )
         for processor in self._post_processors:
             image = processor.process(image, generation)
-        validate_image_bytes(
-            image.image_bytes, expected_width=width, expected_height=height
-        )
+        validate_image_bytes(image.image_bytes, expected_width=width, expected_height=height)
         original_bytes = image.image_bytes
         await progress_callback(94)
 
@@ -419,9 +422,7 @@ class LangGraphImageAgent(ImageAgentPort):
             public_bytes = original_bytes
             with stage_timer("watermark_metadata", correlation_id=str(generation.id)):
                 if self._watermarker is not None:
-                    public_bytes = await asyncio.to_thread(
-                        self._watermarker.apply, public_bytes
-                    )
+                    public_bytes = await asyncio.to_thread(self._watermarker.apply, public_bytes)
                 if self._metadata_writer is not None:
                     public_bytes = await asyncio.to_thread(
                         self._metadata_writer.apply,
@@ -429,9 +430,7 @@ class LangGraphImageAgent(ImageAgentPort):
                         model_name=_model_name(generation),
                     )
                 if self._c2pa_signer is not None:
-                    public_bytes = await asyncio.to_thread(
-                        self._c2pa_signer.sign, public_bytes
-                    )
+                    public_bytes = await asyncio.to_thread(self._c2pa_signer.sign, public_bytes)
             validate_image_bytes(public_bytes, expected_width=width, expected_height=height)
             await progress_callback(98)
             try:
@@ -486,9 +485,7 @@ class LangGraphImageAgent(ImageAgentPort):
 
     # ---- porta ----
 
-    async def run_generation(
-        self, generation: Generation, on_progress: ProgressCallback
-    ) -> str:
+    async def run_generation(self, generation: Generation, on_progress: ProgressCallback) -> str:
         initial: _PipelineState = {
             "generation": generation,
             "progress": 0,

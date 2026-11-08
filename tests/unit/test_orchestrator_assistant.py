@@ -171,13 +171,64 @@ async def test_progresso_do_assistente_acontece_antes_do_motor() -> None:
         progress.append(percent)
 
     agent = _agent(assistant)
-    generation = Generation(
-        user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo"
-    )
+    generation = Generation(user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo")
     await agent.run_generation(generation, collect)
 
     assert progress[:2] == [7, 10]
     assert 10 in progress
+
+
+@pytest.mark.unit
+async def test_unload_acontece_antes_do_motor() -> None:
+    order: list[str] = []
+
+    class _Unloader:
+        async def unload_all(self) -> bool:
+            order.append("unload")
+            return True
+
+    class _RecordingGenerator(FakeGenerator):
+        async def generate(self, *, prompt, width, height, seed, on_progress):
+            order.append("generate")
+            return await super().generate(
+                prompt=prompt,
+                width=width,
+                height=height,
+                seed=seed,
+                on_progress=on_progress,
+            )
+
+    agent = LangGraphImageAgent(
+        prompt_guard=PromptInjectionGuard(),
+        generator=_RecordingGenerator(),
+        editor=FakeEditor(),
+        storage=InMemoryObjectStorage(),
+        prompt_assistant=FakeAssistant(_result()),
+        llm_unloader=_Unloader(),
+    )
+    generation = Generation(user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo")
+    await agent.run_generation(generation, _noop)
+
+    assert order == ["unload", "generate"]
+
+
+@pytest.mark.unit
+async def test_falha_do_unload_nao_derruba_o_job() -> None:
+    class _FailingUnloader:
+        async def unload_all(self) -> bool:
+            raise RuntimeError("lms quebrou")
+
+    agent = LangGraphImageAgent(
+        prompt_guard=PromptInjectionGuard(),
+        generator=FakeGenerator(),
+        editor=FakeEditor(),
+        storage=InMemoryObjectStorage(),
+        prompt_assistant=FakeAssistant(_result()),
+        llm_unloader=_FailingUnloader(),
+    )
+    generation = Generation(user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo")
+    result = await agent.run_generation(generation, _noop)
+    assert result
 
 
 async def _noop(_: int) -> None:

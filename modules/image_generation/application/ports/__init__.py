@@ -29,7 +29,12 @@ from modules.image_generation.application.ports.image_processing import (
     C2PASignerPort,
     ImageWatermarkerPort,
 )
-from modules.image_generation.application.ports.llm_client import LlmClientPort
+from modules.image_generation.application.ports.llm_client import (
+    LlmClientPort,
+    LlmOutputTruncatedError,
+    LlmResponseInfo,
+)
+from modules.image_generation.application.ports.llm_unloader import LlmUnloaderPort
 from modules.image_generation.application.ports.moderation import (
     ModerationEventRepositoryPort,
     PenaltyStorePort,
@@ -60,6 +65,9 @@ __all__ = [
     "ImageGeneratorPort",
     "ImagePostProcessor",
     "LlmClientPort",
+    "LlmOutputTruncatedError",
+    "LlmResponseInfo",
+    "LlmUnloaderPort",
     "ModerationEventRepositoryPort",
     "ObjectStoragePort",
     "PenaltyStorePort",

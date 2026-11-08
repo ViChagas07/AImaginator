@@ -36,6 +36,7 @@ from modules.image_generation.adapters.image_processing import (
     C2PASigner,
     PillowWatermarker,
 )
+from modules.image_generation.adapters.lms_cli import LmsCliUnloader
 from modules.image_generation.adapters.redis_penalty_store import RedisPenaltyStore
 from modules.image_generation.adapters.repositories.moderation_repository import (
     SQLAlchemyModerationEventRepository,
@@ -87,8 +88,24 @@ def build_prompt_assistant(
         timeout_seconds=settings.llm_timeout_seconds,
         max_output_tokens=settings.llm_max_output_tokens,
         ttl_seconds=settings.llm_ttl_seconds,
+        reasoning_effort=settings.llm_reasoning_effort,
+        max_output_tokens_retry=settings.llm_max_output_tokens_retry,
+        debug_log_content=settings.llm_debug_log_content_enabled,
     )
-    return PromptAssistant(llm=llm, block_confidence=settings.llm_block_confidence)
+    return PromptAssistant(
+        llm=llm,
+        block_confidence=settings.llm_block_confidence,
+        debug_log_content=settings.llm_debug_log_content_enabled,
+    )
+
+
+def build_llm_unloader(settings: Settings) -> LmsCliUnloader | None:
+    if not settings.llm_unload_after_use:
+        return None
+    return LmsCliUnloader(
+        cli_path=settings.lms_cli_path,
+        timeout_seconds=settings.llm_unload_timeout_seconds,
+    )
 
 
 def build_moderation_service(
@@ -133,9 +150,7 @@ def build_topic_classifier(
     )
 
 
-def build_topic_guard(
-    settings: Settings, *, http_client: httpx.AsyncClient
-) -> PromptTopicGuard:
+def build_topic_guard(settings: Settings, *, http_client: httpx.AsyncClient) -> PromptTopicGuard:
     return PromptTopicGuard(
         classifier=build_topic_classifier(settings, http_client=http_client),
         timeout_seconds=settings.topic_classifier_timeout_seconds,
@@ -242,7 +257,9 @@ def build_image_provider(
     settings: Settings, *, redis_client: Any, http_client: httpx.AsyncClient
 ) -> ImageProvider:
     if settings.ai_image_provider == "stub":
-        return StubImageProvider(storage_base_url=settings.storage_bucket_url or "https://picsum.photos")
+        return StubImageProvider(
+            storage_base_url=settings.storage_bucket_url or "https://picsum.photos"
+        )
     circuit = CircuitBreaker(
         redis_client,
         name="ai_image_provider",
@@ -276,6 +293,7 @@ def build_engine_image_agent(
         editor=build_image_editor(settings),
         storage=storage,
         prompt_assistant=prompt_assistant,
+        llm_unloader=build_llm_unloader(settings),
         block_confidence=settings.llm_block_confidence,
         image_moderator=build_image_moderator(settings),
         image_moderation_enabled=settings.image_moderation_enabled,

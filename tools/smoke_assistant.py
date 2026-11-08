@@ -36,12 +36,27 @@ from shared_kernel.security_errors import PromptInjectionDetectedError  # noqa: 
 from specs.evals.prompt_assistant_eval import CASES  # noqa: E402
 
 
-def _print_warning() -> None:
+def _print_warning(*, reasoning_effort: str) -> None:
     print("=" * 72)
     print("SMOKE TEST MANUAL DO ASSISTENTE (LM Studio/Qwen real)")
     print("Feche programas pesados e monitore RAM/temperatura.")
     print("Uma etapa por vez; interrompa em caso de throttle ou desligamento.")
+    if not reasoning_effort.strip():
+        print(
+            "AVISO: LLM_REASONING_EFFORT vazio; o reasoning do modelo NAO sera "
+            "desligado e pode consumir todos os tokens."
+        )
     print("=" * 72)
+
+
+def _print_response_info(info) -> None:
+    print(
+        f"     llm: status={info.status_code} finish_reason={info.finish_reason}"
+        f" completion_tokens={info.completion_tokens}"
+        f" content_chars={info.content_chars}"
+        f" reasoning_chars={info.reasoning_chars}"
+        f" truncado={'sim' if info.truncated else 'nao'}"
+    )
 
 
 async def _run(limit: int) -> int:
@@ -56,9 +71,14 @@ async def _run(limit: int) -> int:
             timeout_seconds=settings.llm_timeout_seconds,
             max_output_tokens=settings.llm_max_output_tokens,
             ttl_seconds=settings.llm_ttl_seconds,
+            reasoning_effort=settings.llm_reasoning_effort,
+            max_output_tokens_retry=settings.llm_max_output_tokens_retry,
+            debug_log_content=settings.llm_debug_log_content_enabled,
         )
         assistant = PromptAssistant(
-            llm=llm, block_confidence=settings.llm_block_confidence
+            llm=llm,
+            block_confidence=settings.llm_block_confidence,
+            debug_log_content=settings.llm_debug_log_content_enabled,
         )
         latencies: list[float] = []
         for index, (locale, text, expected) in enumerate(CASES[:limit], start=1):
@@ -67,36 +87,47 @@ async def _run(limit: int) -> int:
                 guard.validate(text)
             except PromptInjectionDetectedError:
                 print(
-                    f"[{index:02d}] {locale} injection | esperado={expected} | "
-                    f"guard={time.perf_counter() - started:.2f}s"
+                    f"[{index:02d}] {locale} injection | esperado={expected} "
+                    f"obtido=injection | guard={time.perf_counter() - started:.2f}s"
                 )
                 continue
             try:
                 result = await assistant.analyze(
-                    AssistantInput(
-                        text=text, kind=GenerationKind.GENERATE, locale=locale
-                    )
+                    AssistantInput(text=text, kind=GenerationKind.GENERATE, locale=locale)
                 )
             except Exception as exc:
                 print(
                     f"[{index:02d}] {locale} ERRO {type(exc).__name__} | "
                     f"esperado={expected} | {time.perf_counter() - started:.2f}s"
                 )
+                _print_response_info(llm.last_response_info)
                 continue
             elapsed = time.perf_counter() - started
             latencies.append(elapsed)
             code = result.refusal_code(block_confidence=settings.llm_block_confidence)
+            final_category = result.moderation_category(
+                block_confidence=settings.llm_block_confidence
+            )
+            derived = result.moderation.derived_category()
+            divergence = derived != result.blocked_category
+            moderation = result.moderation
             rewrite = (
-                result.flux_prompt
-                or result.kontext_instruction
-                or result.corrected_text
-                or ""
+                result.flux_prompt or result.kontext_instruction or result.corrected_text or ""
             )
             print(
                 f"[{index:02d}] {locale} esperado={expected} obtido={code or 'pass'}"
                 f" conf={result.confidence:.2f} lang={result.detected_language}"
                 f" | {elapsed:.2f}s"
             )
+            print(
+                f"     moderation sexual={moderation.sexual} gore={moderation.gore}"
+                f" hate={moderation.hate} self_harm={moderation.self_harm}"
+                f" final={final_category.value if final_category else 'pass'}"
+                f" divergencia={'sim' if divergence else 'nao'}"
+                f" declarado={result.blocked_category.value if result.blocked_category else 'null'}"
+                f" derivado={derived.value if derived else 'null'}"
+            )
+            _print_response_info(llm.last_response_info)
             if rewrite:
                 print(f"     rewrite: {rewrite}")
         if latencies:
@@ -105,7 +136,8 @@ async def _run(limit: int) -> int:
             average = sum(rest) / len(rest) if rest else 0.0
             print(
                 f"\nLatencia: primeira={first:.2f}s "
-                f"media_seguintes={average:.2f}s ({len(rest)} chamadas)"
+                f"media_seguintes={average:.2f}s ({len(rest)} chamadas) "
+                f"total={sum(latencies):.2f}s"
             )
     return 0
 
@@ -114,7 +146,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Smoke manual do assistente")
     parser.add_argument("--limit", type=int, default=len(CASES))
     args = parser.parse_args()
-    _print_warning()
+    settings = get_settings()
+    _print_warning(reasoning_effort=settings.llm_reasoning_effort)
     return asyncio.run(_run(max(1, min(args.limit, len(CASES)))))
 
 
