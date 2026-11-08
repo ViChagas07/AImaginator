@@ -35,3 +35,46 @@
 - Definir host/modelo de produção; hoje a flag mantém a geração desligada.
 - Backfill de `original_object_key` para gerações antigas.
 - Exporter de VRAM/temperatura (HWiNFO/Adrenalin hoje).
+
+## Atualizacoes finais (Fases 7.5/7.6)
+
+- Cliente LLM com `reasoning_effort=none`, retry unico de truncamento e
+  `reasoning_content` fora do contrato publico.
+- Modelo recomendado para 8 GB de VRAM: `qwen3.5-4b@q4_k_m`; o 9B continua
+  suportado, mas e mais lento e pressiona RAM.
+- Descarregamento opcional do LM Studio via `lms unload --all` antes do FLUX.
+- Fila com ack tardio, `queue_publish_failed`, reconciliacao `queue_lost` e
+  heartbeat de `updated_at`.
+- Guarda de infraestrutura local em development; `.env.development` tem
+  precedencia.
+- Categoria de bloqueio derivada dos booleanos (sexual > hate > gore >
+  self_harm) e reescrita sem enfeites/negacoes, com reparo deterministico.
+- Logs sem conteudo de prompt/reescrita por padrao.
+
+## Resultado da Fase 8
+
+- Backend: `457` testes coletados, `453 passed`, `4 skipped`; evals `7`
+  coletados, `5 passed`, `2 skipped` (sem LLM real).
+- Frontend: `43` testes vitest, `14` Playwright, lint sem erros, `tsc` limpo e
+  `next build` concluido.
+- CI movido/validado em `.github/workflows/ci.yml`; roda sem segredos e sem o
+  grupo opcional de moderacao.
+- E2E de infraestrutura em `tests/integration/test_e2e_infra.py`, pulado por
+  padrao (`RUN_E2E_INFRA=1`), com caminhos opcionais de moderacao.
+- Revisao de seguranca em `docs/agent/SECURITY_REVIEW.md`: ticket SSE,
+  IDOR, argv sanitizado, upload, SSRF, presign, TokenBucket, CORS/CSP e
+  auditoria de dependencias (44 vulnerabilidades conhecidas restantes em 7
+  pacotes; npm producao 0).
+- Varredura de segredos: nenhum `.env` real/modelo/imagem de teste/arquivo
+  >5 MB; apenas placeholders de exemplo.
+- `crewai`/`langchain` diretos removidos; `langgraph` permanece lazy/opcional.
+
+### Pendencias antes de producao
+
+- Rodar os smoke tests e evals reais e calibrar limiares.
+- Revisar traducoes com falantes nativos.
+- Emitir certificado C2PA confiavel se desejado.
+- Definir host/modelo de producao e manter `FEATURE_IMAGE_GENERATION_ENABLED`
+  desligada ate a validacao.
+- Planejar upgrade major de `starlette`/FastAPI e da cadeia `langgraph` para
+  eliminar as CVEs restantes.

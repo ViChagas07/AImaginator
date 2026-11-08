@@ -81,3 +81,27 @@ RUN_E2E_INFRA=1 E2E_API_URL=http://localhost:8001 E2E_ACCESS_TOKEN=... pytest te
 ```
 
 Sem `RUN_E2E_INFRA=1` o teste é pulado.
+
+## Notas das Fases 7.5/7.6
+
+- Confirme `LLM_REASONING_EFFORT=none` e, se quiser liberar RAM antes do FLUX,
+  `LLM_UNLOAD_AFTER_USE=true` com `LMS_CLI_PATH` valido (ou `lms` no PATH).
+- Se o modelo responder truncado, o cliente tenta uma vez com
+  `LLM_MAX_OUTPUT_TOKENS_RETRY`; se persistir, o job falha de forma segura.
+- Para geracoes antigas sem original, refino/upscale retornam
+  `original_unavailable`; regenere a imagem antes de testar.
+- O reconciliador de fila roda no startup do worker e ao abrir
+  stream/historico; `QUEUE_STALE_SECONDS` controla a idade considerada perda.
+
+Caminhos opcionais de moderacao no E2E (quando o worker estiver com o fake
+configurado para bloquear):
+
+```bash
+E2E_TEXT_MODERATION=1 E2E_TEXT_MODERATION_PROMPT="..." \
+E2E_IMAGE_MODERATION=1 E2E_BLOCKED_IMAGE=C:/caminho/bloqueada.png \
+RUN_E2E_INFRA=1 E2E_API_URL=http://localhost:8001 E2E_ACCESS_TOKEN=... \
+pytest tests/integration/test_e2e_infra.py -s
+```
+
+O bloqueio de texto chega como `content_blocked_*` no SSE; o de imagem de
+origem chega como `source_image_blocked_*`.

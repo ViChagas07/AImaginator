@@ -471,6 +471,217 @@
   vitest **43 passed**; Playwright **14 passed**; ruff/tsc/lint/build verdes.
 - [x] `docs/agent/{SECURITY_REVIEW,FINAL_REPORT,MANUAL_VALIDATION}.md`.
 
+## Fase 7.5 - correcao do LLM local, fila orfa, dev e logs
+
+### Bloco 1 - cliente LLM
+
+- [x] `chat_template_kwargs` removido; `reasoning_effort` no topo, configuravel
+  por `LLM_REASONING_EFFORT` (default `none`, vazio = nao envia).
+- [x] Fallback 400/422 remove `response_format`, depois `reasoning_effort` e,
+  por fim, todos os campos opcionais.
+- [x] Saida `finish_reason=length` sem `content` vira `llm_output_truncated`
+  (metrica `outcome=truncated`) e tenta UMA vez com `reasoning_effort=none` e
+  `LLM_MAX_OUTPUT_TOKENS_RETRY` (default 1024). `reasoning_content` nunca e
+  usado como resposta.
+- [x] Defaults: `LLM_MAX_OUTPUT_TOKENS=512`, `LLM_TIMEOUT_SECONDS=120`.
+- [x] `.env.example` e `.env.development.example` atualizados; `LLM_MODEL`
+  comentado com o exemplo `qwen3.5-4b@q4_k_m`.
+- [x] Alerta Prometheus `AImaginatorLlmUnavailable` inclui `truncated`.
+
+### Bloco 2 - unload do LM Studio
+
+- [x] `LmsCliUnloader` roda `lms unload --all` sem shell, timeout default 20 s.
+- [x] `LLM_UNLOAD_AFTER_USE` (default true em development) e `LMS_CLI_PATH`.
+- [x] Executado ao final do `assistant_llm`, antes de `_run_engine`; falha,
+  timeout ou CLI ausente apenas logam e incrementam
+  `aimaginator_llm_unload_total`.
+- [x] Testes com executavel falso: sucesso, falha, timeout e ausente. A guarda
+  `MIN_FREE_RAM_MB` continua no inicio do engine, depois do unload.
+- [x] README documenta o fluxo.
+
+### Bloco 3 - fila
+
+- [x] `task_acks_late=True` e `task_reject_on_worker_lost=True`.
+- [x] Falha de enqueue marca a Generation `FAILED` com `queue_publish_failed`,
+  devolve credito/cota (idempotente), publica SSE e responde erro localizado.
+- [x] Reconciliador `queue_lost` para `queued`/`processing` sem heartbeat por
+  `QUEUE_STALE_SECONDS` (default 900), com relogio injetavel, refunds
+  idempotentes e evento SSE.
+- [x] Reconciliador roda no startup do worker e ao abrir stream/historico.
+- [x] Heartbeat: PROCESSING e cada progresso fazem save+commit de `updated_at`
+  em transacao curta (worker passa `commit=session.commit`).
+- [x] Task reentregue com estado terminal sai sem trabalho.
+- [x] Mensagens `queue_publish_failed`/`queue_lost` nos 11 locales e no
+  catalogo do frontend.
+
+### Bloco 4 - seguranca do ambiente de dev
+
+- [x] Guarda `enforce_local_infra` na API e no worker: em development, hosts
+  remotos em DB/Redis/RabbitMQ/Celery/S3 falham o boot sem imprimir
+  credenciais, salvo `ALLOW_REMOTE_INFRA_IN_DEV=true`.
+- [x] `.env.development` tem precedencia em development; `.env` de producao
+  nao e carregado nesse modo. `ENV_FILE` explicito vence.
+- [x] README mostra como conferir o broker efetivo sem segredos.
+
+### Bloco 5 - logs sem conteudo do usuario
+
+- [x] `content_preview`/`raw_preview` removidos por padrao.
+- [x] `LLM_DEBUG_LOG_CONTENT=true` so libera preview em development, truncado
+  e passado pelo scrubber; `ValidationError` nao vaza `input_value`.
+- [x] Logs mantem tentativa/status/tempo/finish_reason/tokens/tamanhos/branch/
+  tipo/mensagem, com ASCII-safe no console Windows.
+
+### Bloco 6 - scripts e documentacao
+
+- [x] `tools/smoke_assistant.py` imprime finish_reason, tokens de saida,
+  truncamento, latencia da primeira/seguintes e avisa se
+  `LLM_REASONING_EFFORT` estiver vazio. Nao executado.
+- [x] README: escolha do modelo, unload, filas orfas e infra de dev.
+
+### Bloco 7 - validacao
+
+- [x] `pytest tests`: **435 coletados, 431 passed, 4 skipped**.
+- [x] `pytest specs/evals`: **4 passed, 1 skipped** (sem LLM real).
+- [x] `vitest`: **43 passed**.
+- [x] Playwright: **14 passed**.
+- [x] `tsc --noEmit`: limpo.
+- [x] `npm run lint`: 0 erros (2 warnings pre-existentes em `auth-ui.tsx`).
+- [x] `ruff check`: limpo nos arquivos alterados.
+- [x] Nenhum modelo real, FLUX/Kontext ou script manual executado.
+- [x] Nenhum commit/push.
+
+## Fase 7.6 - categoria de bloqueio e qualidade da reescrita
+
+### Bloco 1 - categoria decidida em codigo
+
+- [x] Categoria final derivada dos booleanos de `moderation`; prioridade
+  sexual > hate > gore > self_harm.
+- [x] `blocked_category` do modelo nao vence booleanos; divergencias viram a
+  metrica `aimaginator_llm_category_mismatch_total` (declarado/derivado, sem
+  texto).
+- [x] Sem booleanos, `blocked_category` so e aplicado com confianca
+  `>= LLM_BLOCK_CONFIDENCE`; abaixo disso segue a politica de escopo
+  existente (documentado no README).
+- [x] Testes de categoria isolada, combinacoes sexual+self_harm e gore+hate,
+  divergencia, fallback por confianca e mensagem localizada correta.
+
+### Bloco 2 - system prompt e validacao da reescrita
+
+- [x] Definicoes exclusivas por categoria, prioridade, exemplos abstratos e
+  casos-limitrofes permitidos (anatomia educativa, cena historica).
+- [x] Regras (a)-(f): fidelidade, sem enfeites de qualidade/resolucao, sem
+  negacoes, preservar nomes/marcas, ~60 palavras, edicao com a frase padrao.
+- [x] Validacao deterministica de `flux_prompt`/`kontext_instruction`:
+  UMA tentativa de reparo; se persistir/invalido/indisponivel, sanitiza por
+  substituicao e segue sem falhar o job.
+- [x] "Keep everything else the same" permitido; nenhum texto de prompt ou
+  reescrita em log.
+- [x] Testes com LLM falso para cada termo proibido, cada negacao, reparo
+  limpo, reparo persistente, reparo invalido e reparo indisponivel.
+
+### Bloco 3 - smoke e evals
+
+- [x] `tools/smoke_assistant.py` imprime booleanos de moderation, categoria
+  final, divergencia e `obtido=injection` nos casos de injecao. Nao executado.
+- [x] `specs/evals`: 33 casos de regressao (11 locales x 3 grupos):
+  sexual-nao-self_harm, self_harm-nao-sexual e pedido-vago-sem-enfeites.
+  Eval real marcada e ignorada sem `RUN_LLM_EVALS=1`; teste de dados roda
+  sem LLM.
+
+### Bloco 4 - validacao
+
+- [x] `pytest tests`: **457 coletados, 453 passed, 4 skipped**.
+- [x] `pytest specs/evals`: **7 coletados, 5 passed, 2 skipped** (sem LLM real).
+- [x] `ruff check .`: limpo.
+- [x] `npm run lint`: 0 erros (2 warnings pre-existentes em `auth-ui.tsx`).
+- [x] `tsc --noEmit`: limpo.
+- [x] Nenhum LLM/FLUX/Kontext ou `tools/smoke_*.py` executado.
+- [x] Branch atual `main`: regra de commit/push nao se aplica; nada commitado.
+
+## Fase 8 - seguranca, E2E, limpeza, documentacao e entrega
+
+### Bloco 1 - revisao de seguranca
+
+- [x] IDOR/dono/sessao anonima cobertos por testes A/B; `original_object_key`
+  nunca aparece em API/SSE/galeria/historico.
+- [x] SSE usa ticket efemero single-use no Redis (TTL 60s); JWT nao vai na URL.
+- [x] `sd-cli` recebe argv em lista, sem shell; prompt sanitizado (controle,
+  quebras, limite 2000, prefixo para `-`); testes com `--help`, aspas, unicode
+  e string longa.
+- [x] Upload: pixels/assinatura real, reencode PNG sem metadados, temp dir
+  aleatorio e sem path traversal; SSRF via `SecureImageFetcher`.
+- [x] `S3_PRESIGN_EXPIRES_SECONDS` configuravel; URLs assinadas nao vao para log.
+- [x] TokenBucket usa `redis.call('TIME')`; teste com relogio local divergente.
+- [x] CORS/CSP/headers revisados; rate limit por rota sensivel.
+- [x] `pip-audit`: 279/30 -> 44/7 apos remover `crewai`/`langchain` diretos e
+  164 pacotes; restantes em `starlette`, cadeia `langgraph` (lazy) e `pytest`
+  (dev). `npm audit --omit=dev`: 0; completo: 8 moderadas de dev.
+- [x] `docs/agent/SECURITY_REVIEW.md` atualizado.
+
+### Bloco 2 - feature flag e producao
+
+- [x] `FEATURE_IMAGE_GENERATION_ENABLED` (false em producao, true em dev),
+  `feature_disabled` 503 localizado nos 11 locales e `/api/v1/config` para o
+  frontend (aviso "em breve" e envio desabilitado).
+- [x] Validacao de sdcpp/S3/LLM condicional a flag + `IMAGE_ENGINE=sdcpp`.
+- [x] Migrations aditivas/idempotentes com downgrade; geracoes antigas sem
+  original retornam `original_unavailable` em refino/upscale (backfill
+  documentado, sem erro 500).
+
+### Bloco 3 - E2E com infra local
+
+- [x] `tests/integration/test_e2e_infra.py` cobre geracao, edicao por upload,
+  refino, variacao, upscale Lanczos, SSE, URL assinada, marca d'agua e
+  metadados; caminhos opcionais de moderacao de texto/imagem e limite.
+- [x] Pulado por padrao (`RUN_E2E_INFRA=1`); README e MANUAL_VALIDATION
+  documentam como rodar.
+
+### Bloco 4 - CI
+
+- [x] `.github/workflows/ci.yml` executa ruff, pytest tests/specs/evals,
+  lint/tsc/vitest/build do frontend, Playwright mockado, paridade via vitest e
+  auditorias informativas, sem segredos.
+- [x] `lupa` passou para o grupo dev; CI nao instala mais manualmente.
+
+### Bloco 5 - limpeza e consistencia
+
+- [x] `crewai`/`langchain` diretos removidos (nao usados); `langgraph`
+  permanece lazy/opcional com fallback sequencial; `IMAGE_ENGINE=stub` intacto.
+- [x] `.gitignore` revisado (envs, modelos, saidas, imagens de teste, logs,
+  caches).
+- [x] README, PROGRESS, FINAL_REPORT, MANUAL_VALIDATION e ADRs atualizados.
+- [x] Politica de categoria/reescrita documentada; licencas FLUX/Kontext e
+  modelos de moderacao registradas; backfill documentado.
+
+### Bloco 6 - varredura de segredos e arquivos grandes
+
+- [x] Nenhum `.env` real rastreado ou no historico; apenas `*.example`.
+- [x] Nenhuma chave `sk-`, `AIza`, `AKIA`, `Bearer`, chave privada ou DSN com
+  credenciais; unico `SECRET_KEY` e placeholder de exemplo.
+- [x] Nenhum blob versionado > 5 MB; nenhum modelo/peso ou imagem de teste
+  nova. Logo do backend e o unico asset de imagem novo.
+
+### Bloco 7 - testes finais
+
+- [x] `pytest tests`: **457 coletados, 453 passed, 4 skipped**.
+- [x] `pytest specs/evals`: **7 coletados, 5 passed, 2 skipped** (sem LLM real).
+- [x] Vitest: **43 passed** (11 arquivos).
+- [x] Playwright: **14 passed**.
+- [x] `npm run lint`: 0 erros (2 warnings preexistentes em `auth-ui.tsx`).
+- [x] `npx tsc --noEmit`: limpo.
+- [x] `npm run build`: sucesso (Next.js 16.4.5).
+- [x] `ruff check .`: limpo.
+
+### Bloco 8 - validacao manual
+
+- [x] `docs/agent/MANUAL_VALIDATION.md` com a ordem dos smoke tests, cuidados
+  termicos, `LLM_REASONING_EFFORT`, unload, limiares e flags do E2E.
+
+### Bloco 9 - entrega
+
+- [ ] Branch `feat/local-flux-engine`, commits organizados e push.
+  (Executado ao final; a `main` nao recebe commits.)
+
 ## Entrega
 
 Branch: `feat/local-flux-engine`. Commits organizados e push conforme Bloco 9.

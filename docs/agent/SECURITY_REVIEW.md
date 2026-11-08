@@ -34,7 +34,13 @@ dependências. Nenhum modelo real foi executado.
 
 ## Auditorias
 
-- `pip-audit --local`: **0 vulnerabilidades conhecidas** após upgrades.
+- `pip-audit --local` (2026-11-08): **44 vulnerabilidades conhecidas em 7
+  pacotes**: `starlette` 14 (FastAPI 0.115 limita `<0.47`), cadeia
+  `langgraph`/`langchain-core`/`langsmith` 28 (import lazy opcional; upgrade
+  major exige validação), `pytest` 2 (dev). Foram removidos `crewai` e
+  `langchain` diretos e 164 pacotes transitórios; o total caiu de 279/30 para
+  44/7. `python-multipart` subiu 0.0.9 -> 0.0.33; `urllib3`, `pyjwt` e
+  `multidict` foram atualizados.
 - `npm audit --omit=dev`: **0 vulnerabilidades de produção**.
 - `npm audit` completo: 8 moderadas de ferramentas de desenvolvimento
   (`typescript-eslint`/`vite` transitivos); correção exigiria upgrade major
@@ -47,3 +53,40 @@ dependências. Nenhum modelo real foi executado.
 - Pesos FLUX/Kontext não são versionados; licença FLUX dev é não comercial.
 - Revisão das traduções por falantes nativos e calibração de limiares com
   modelos reais continuam manuais.
+
+## Revisao Fase 7.5/7.6 (assistente, fila e ambiente)
+
+Data: 2026-11-08. Escopo adicional: cliente LLM, fila Celery, reconciliacao,
+ambiente de desenvolvimento e qualidade da reescrita.
+
+| Severidade | Achado | Correcao |
+|---|---|---|
+| Alta | Reasoning do Qwen consumia `max_tokens` e devolvia `content` vazio, virando `assistant_unavailable` sem causa visivel | `reasoning_effort=none` no topo do payload; retry unico com `max_tokens` maior; `reasoning_content` nunca e usado como resposta nem exposto; logs guardam apenas tamanhos |
+| Alta | Broker/Redis remotos podiam ser usados silenciosamente em `APP_ENV=development` | Guarda de infra local no startup da API/worker; hosts remotos falham salvo `ALLOW_REMOTE_INFRA_IN_DEV=true`; `.env.development` tem precedencia e o `.env` de producao nao e carregado nesse modo |
+| Alta | Falha de publish deixava a Generation em `queued` para sempre; worker perdido podia perder a task | `task_acks_late`/`task_reject_on_worker_lost`; enqueue que falha marca `queue_publish_failed` com refund; reconciliador `queue_lost` por inatividade; heartbeat commitado por etapa |
+| Media | Categoria de bloqueio vinha do campo do modelo e podia trocar sexual por self_harm | Categoria derivada dos booleanos com prioridade sexual > hate > gore > self_harm; divergencia registrada em metrica sem texto; self_harm so aparece quando e a categoria final |
+| Media | Reescrita adicionava enfeites/negacoes e podia induzir o FLUX a desenhar o conteudo negado | Regras no system prompt + reparo unico deterministico + sanitizacao sem falhar o job; "Keep everything else the same" permitido |
+| Media | Preview de conteudo do LLM em log podia expor prompt/reescrita | `content_preview`/`raw_preview` removidos por padrao; somente com `LLM_DEBUG_LOG_CONTENT=true` em development, truncados e com scrubber |
+| Baixa | Modelo do LM Studio permanecia carregado durante o FLUX, pressionando RAM | `lms unload --all` opcional antes do motor, sem shell, com timeout; falha apenas gera aviso/metrica |
+
+Verificacoes adicionais: logs de categoria/reescrita sem texto; nenhum
+`reasoning_content` no contrato publico; testes com LLM falso e fila falsa;
+`pytest tests`, `pytest specs/evals`, vitest, Playwright, ruff, lint e tsc
+verdes. Riscos aceitos continuam os da secao anterior (LM Studio sem auth
+forte, C2PA desligado, calibracao/traducao manuais).
+
+## Varredura de segredos e arquivos grandes (2026-11-08)
+
+- Nenhum `.env`, `.env.local` ou `.env.development` real esta rastreado ou no
+  historico local; apenas os `*.example`.
+- Nenhuma chave `sk-`, `AIza`, `AKIA`, `Bearer`, chave privada ou DSN com
+  credenciais foi encontrada no working tree ou no historico.
+- O unico match de `SECRET_KEY` e um placeholder de exemplo em `.env.example`
+  (sem valor real); o teste `test_dev_guard.py` usa uma URL ficticia com
+  senha apenas para validar o mascaramento.
+- Nenhum blob versionado maior que 5 MB; nenhum modelo/peso ou imagem de teste
+  novo. A logo em `modules/image_generation/assets/` e o unico asset de imagem
+  de backend versionado.
+- `crewai` e `langchain` diretos foram removidos do `pyproject.toml`; o
+  `poetry.lock` tambem removeu 164 pacotes transitivos. `langgraph` permanece
+  opcional/lazy, com fallback sequencial.
