@@ -14,7 +14,7 @@ fastapi = "^0.115.0"
 uvicorn = { extras = ["standard"], version = "^0.30.0" }
 pydantic = "^2.9.0"
 pydantic-settings = "^2.5.0"
-python-multipart = "^0.0.9"   # uploads (edicao de imagem)
+python-multipart = ">=0.0.20,<0.1"   # uploads (edicao de imagem; CVEs antigas)
 sse-starlette = "^2.1.3"      # Server-Sent Events
 
 # --- Persistencia / storage ---
@@ -45,9 +45,7 @@ itsdangerous = "^2.2.0"       # cookies de sessao assinados
 httpx = "^0.27.2"             # client HTTP async (OIDC, provedores)
 
 # --- Agentes de IA ---
-crewai = "^0.70.0"
-langchain = "^0.2.16"
-langchain-core = "^0.2.0"
+# langgraph e lazy/opcional; o pipeline tem fallback sequencial.
 langgraph = "^0.2.0"
 
 # --- Observabilidade ---
@@ -70,6 +68,7 @@ pytest-cov = "^5.0.0"
 hypothesis = "^6.112.0"       # property-based testing (inputs adversariais)
 respx = "^0.21.1"             # mock de httpx
 fakeredis = "^2.24.0"         # redis em memoria para testes
+lupa = ">=2.0,<3"             # Lua no fakeredis (TokenBucket)
 ruff = "^0.6.0"
 mypy = "^1.11.0"
 
@@ -106,6 +105,7 @@ ignore = ["S101"]  # asserts em testes sao esperados
     "E501",
     "RUF001",
 ]  # token especial de raciocínio do Qwen
+"specs/evals/prompt_assistant_eval.py" = ["E501", "RUF001"]  # casos multilíngues
 
 [tool.mypy]
 python_version = "3.11"
