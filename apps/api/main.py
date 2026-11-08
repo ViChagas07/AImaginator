@@ -39,6 +39,7 @@ from apps.api.routers import (
     config as config_router,
 )
 from infra.database import dispose_engine
+from infra.dev_guard import enforce_local_infra
 from infra.redis_client import close_redis
 from infra.settings import get_settings
 from modules.image_generation.application.localization import (
@@ -89,6 +90,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     app.state.settings = settings
     configure_logging(app_env=settings.app_env)
+    enforce_local_infra(settings)
     init_sentry(dsn=settings.sentry_dsn_backend, environment=settings.sentry_environment)
     if settings.auto_migrate:
         await asyncio.to_thread(_run_pending_migrations)

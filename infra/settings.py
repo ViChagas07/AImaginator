@@ -12,15 +12,58 @@ from __future__ import annotations
 
 import os
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _read_env_value(path: Path, key: str) -> str | None:
+    """Le uma chave simples de um arquivo .env sem carregar segredos."""
+    if not path.is_file():
+        return None
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        name, value = stripped.split("=", 1)
+        if name.strip().lower() == key.lower():
+            return value.strip().strip('"').strip("'")
+    return None
+
+
+def resolve_env_files() -> tuple[str, ...]:
+    """Escolhe o arquivo de ambiente com precedencia segura.
+
+    - ENV_FILE explicito sempre vence.
+    - Em development, .env.development (se existir) substitui o .env:
+      o arquivo de producao nunca e carregado nesse modo.
+    - Em qualquer outro modo, apenas .env.
+    """
+    explicit = os.environ.get("ENV_FILE")
+    if explicit:
+        return (explicit,)
+
+    app_env = (
+        os.environ.get("APP_ENV")
+        or _read_env_value(Path(".env"), "APP_ENV")
+        or _read_env_value(Path(".env.development"), "APP_ENV")
+        or "development"
+    ).lower()
+    dev_file = Path(".env.development")
+    if app_env == "development" and dev_file.is_file():
+        return (str(dev_file),)
+    return (".env",)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=os.environ.get("ENV_FILE", ".env"),
+        env_file=resolve_env_files(),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
@@ -123,11 +166,21 @@ class Settings(BaseSettings):
     llm_base_url: str = "http://localhost:1235/v1"
     llm_model: str = "qwen/qwen3.5-9b"
     llm_api_key: str = Field(default="lm-studio", min_length=1)
-    llm_timeout_seconds: float = Field(default=90.0, gt=0)
-    llm_max_output_tokens: int = Field(default=400, gt=0)
+    llm_timeout_seconds: float = Field(default=120.0, gt=0)
+    llm_max_output_tokens: int = Field(default=512, gt=0)
+    # Tentativa unica extra quando a saida vem truncada sem content.
+    llm_max_output_tokens_retry: int = Field(default=1024, gt=0)
+    # "none" desliga o reasoning; vazio nao envia o campo.
+    llm_reasoning_effort: str = "none"
     llm_ttl_seconds: int = Field(default=60, ge=0)
     # Confianca minima para aceitar uma categoria moderada como bloqueio.
     llm_block_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+    # Descarrega o modelo do LM Studio entre o assistente e o FLUX.
+    llm_unload_after_use: bool | None = None
+    llm_unload_timeout_seconds: float = Field(default=20.0, gt=0)
+    lms_cli_path: str = ""
+    # Conteudo do LLM em log so em desenvolvimento e com opt-in explicito.
+    llm_debug_log_content: bool = False
 
     # ---- Classificador de topico legado (nao usado no fluxo principal) ----
     # "stub" (default, sem LLM) | "http" (OpenAI Chat Completions) | "gemini" (API nativa do Gemini)
@@ -157,9 +210,7 @@ class Settings(BaseSettings):
     image_self_harm_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
 
     # ---- Marca d'agua ----
-    watermark_logo_path: str = (
-        "modules/image_generation/assets/AImaginator_pic_transparent.png"
-    )
+    watermark_logo_path: str = "modules/image_generation/assets/AImaginator_pic_transparent.png"
     watermark_width_ratio: float = Field(default=0.20, gt=0.0, lt=1.0)
     watermark_min_width_px: int = Field(default=96, ge=1)
     watermark_margin_ratio: float = Field(default=0.025, ge=0.0, lt=0.5)
@@ -192,6 +243,12 @@ class Settings(BaseSettings):
     anonymous_session_cookie_name: str = "aimaginator_anon"
     anonymous_session_max_age_days: int = 7
 
+    # ---- Fila / reconciliacao ----
+    # Geracoes paradas ha mais que isso sao marcadas como queue_lost.
+    queue_stale_seconds: int = Field(default=900, ge=1)
+    # Em dev, exige infra local salvo opt-in explicito.
+    allow_remote_infra_in_dev: bool = False
+
     # ---- Rate limiting / resiliencia ----
     rate_limit_generation_per_minute: int = 10
     rate_limit_auth_per_minute: int = 5
@@ -216,14 +273,34 @@ class Settings(BaseSettings):
     def _normalize_public_url(cls, v: str) -> str:
         return v.strip().rstrip("/")
 
+    @field_validator("llm_reasoning_effort")
+    @classmethod
+    def _normalize_reasoning_effort(cls, v: str) -> str:
+        return v.strip()
+
     @property
     def image_generation_enabled(self) -> bool:
         return self.feature_image_generation_enabled is True
+
+    @property
+    def is_development(self) -> bool:
+        return self.app_env.lower() == "development"
+
+    @property
+    def llm_debug_log_content_enabled(self) -> bool:
+        """Conteudo do prompt so em desenvolvimento com opt-in."""
+        return self.llm_debug_log_content and self.is_development
 
     @model_validator(mode="after")
     def _resolve_feature_flag(self) -> Settings:
         if self.feature_image_generation_enabled is None:
             self.feature_image_generation_enabled = self.app_env != "production"
+        return self
+
+    @model_validator(mode="after")
+    def _resolve_llm_unload(self) -> Settings:
+        if self.llm_unload_after_use is None:
+            self.llm_unload_after_use = self.is_development
         return self
 
     @model_validator(mode="after")
@@ -306,10 +383,7 @@ class Settings(BaseSettings):
             if not value.strip()
         ]
         if missing_storage:
-            msg = (
-                "IMAGE_ENGINE=sdcpp exige o storage S3: "
-                f"{', '.join(missing_storage)}."
-            )
+            msg = "IMAGE_ENGINE=sdcpp exige o storage S3: " f"{', '.join(missing_storage)}."
             raise ValueError(msg)
         return self
 
