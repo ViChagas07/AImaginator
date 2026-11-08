@@ -245,7 +245,9 @@
     "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     "generationHttp": "Fehler {status}: Die Generierung konnte nicht gestartet werden. Bitte erneut versuchen.",
     "generationFailed": "Die Generierung ist fehlgeschlagen. Bitte erneut versuchen.",
-    "generationNetwork": "Netzwerkfehler bei der Verbindung zur API. Bitte Verbindung prüfen und erneut versuchen."
+    "generationNetwork": "Netzwerkfehler bei der Verbindung zur API. Bitte Verbindung prüfen und erneut versuchen.",
+    "queuePublishFailed": "Die Generierung konnte gerade nicht gestartet werden. Dein Guthaben wurde erstattet; bitte versuche es erneut.",
+    "queueLost": "Die vorherige Generierung ging in der Warteschlange verloren. Dein Guthaben wurde erstattet; bitte versuche es erneut."
   },
   "language": {
     "selectorLabel": "Sprache auswählen"

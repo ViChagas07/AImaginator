@@ -245,7 +245,9 @@
     "generic": "出了点问题。请重试。",
     "generationHttp": "错误 {status}：无法开始生成。请重试。",
     "generationFailed": "生成失败。请重试。",
-    "generationNetwork": "连接 API 时发生网络错误。请检查连接后重试。"
+    "generationNetwork": "连接 API 时发生网络错误。请检查连接后重试。",
+    "queuePublishFailed": "现在无法启动生成。积分已退还，请重试。",
+    "queueLost": "之前的生成在队列中丢失。积分已退还，请重试。"
   },
   "language": {
     "selectorLabel": "选择语言"

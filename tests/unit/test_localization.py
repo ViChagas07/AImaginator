@@ -37,6 +37,8 @@ _EXPECTED_KEYS = {
     "upscale_limit_reached",
     "feature_disabled",
     "original_unavailable",
+    "queue_publish_failed",
+    "queue_lost",
 }
 
 
@@ -57,9 +59,9 @@ def test_locales_nao_sao_copias_do_pt_br() -> None:
         if locale in allowed:
             continue
         for key in _EXPECTED_KEYS:
-            assert message_for(key, locale) != message_for(key, DEFAULT_LOCALE), (
-                f"{locale}/{key} identico ao pt-BR"
-            )
+            assert message_for(key, locale) != message_for(
+                key, DEFAULT_LOCALE
+            ), f"{locale}/{key} identico ao pt-BR"
 
 
 @pytest.mark.unit

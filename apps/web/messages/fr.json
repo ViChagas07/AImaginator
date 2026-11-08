@@ -245,7 +245,9 @@
     "generic": "Une erreur est survenue. Veuillez réessayer.",
     "generationHttp": "Erreur {status} : impossible de démarrer la génération. Réessayez.",
     "generationFailed": "La génération a échoué. Réessayez.",
-    "generationNetwork": "Erreur réseau lors de la connexion à l'API. Vérifiez votre connexion et réessayez."
+    "generationNetwork": "Erreur réseau lors de la connexion à l'API. Vérifiez votre connexion et réessayez.",
+    "queuePublishFailed": "Impossible de démarrer la génération pour le moment. Votre crédit a été remboursé ; réessayez.",
+    "queueLost": "La génération précédente a été perdue dans la file. Votre crédit a été remboursé ; réessayez."
   },
   "language": {
     "selectorLabel": "Sélectionner la langue"

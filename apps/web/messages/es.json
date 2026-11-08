@@ -245,7 +245,9 @@
     "generic": "Algo salió mal. Inténtalo de nuevo.",
     "generationHttp": "Error {status}: no se pudo iniciar la generación. Inténtalo de nuevo.",
     "generationFailed": "La generación falló. Inténtalo de nuevo.",
-    "generationNetwork": "Error de red al contactar la API. Revisa tu conexión e inténtalo de nuevo."
+    "generationNetwork": "Error de red al contactar la API. Revisa tu conexión e inténtalo de nuevo.",
+    "queuePublishFailed": "No pudimos iniciar la generación ahora. Tu crédito fue devuelto; inténtalo de nuevo.",
+    "queueLost": "La generación anterior se perdió en la cola. Tu crédito fue devuelto; inténtalo de nuevo."
   },
   "language": {
     "selectorLabel": "Seleccionar idioma"

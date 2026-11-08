@@ -615,6 +615,108 @@ _FEATURE_MESSAGES = {
 for _locale, _messages in _FEATURE_MESSAGES.items():
     _MESSAGES[_locale].update(_messages)
 
+_QUEUE_MESSAGES: dict[str, dict[str, str]] = {
+    "pt-BR": {
+        "queue_publish_failed": (
+            "Nao foi possivel iniciar a geracao agora. Seu credito foi "
+            "devolvido; tente novamente."
+        ),
+        "queue_lost": (
+            "A geracao anterior foi perdida na fila. Seu credito foi devolvido; " "tente novamente."
+        ),
+    },
+    "en": {
+        "queue_publish_failed": (
+            "We couldn't start the generation right now. Your credit was "
+            "refunded; please try again."
+        ),
+        "queue_lost": (
+            "The previous generation was lost in the queue. Your credit was "
+            "refunded; please try again."
+        ),
+    },
+    "es": {
+        "queue_publish_failed": (
+            "No pudimos iniciar la generacion ahora. Tu credito fue devuelto; "
+            "intentalo de nuevo."
+        ),
+        "queue_lost": (
+            "La generacion anterior se perdio en la cola. Tu credito fue "
+            "devuelto; intentalo de nuevo."
+        ),
+    },
+    "fr": {
+        "queue_publish_failed": (
+            "Impossible de demarrer la generation pour le moment. Votre credit "
+            "a ete rembourse ; reessayez."
+        ),
+        "queue_lost": (
+            "La generation precedente a ete perdue dans la file. Votre credit a "
+            "ete rembourse ; reessayez."
+        ),
+    },
+    "de": {
+        "queue_publish_failed": (
+            "Die Generierung konnte gerade nicht gestartet werden. Dein "
+            "Guthaben wurde erstattet; bitte versuche es erneut."
+        ),
+        "queue_lost": (
+            "Die vorherige Generierung ging in der Warteschlange verloren. Dein "
+            "Guthaben wurde erstattet; bitte versuche es erneut."
+        ),
+    },
+    "it": {
+        "queue_publish_failed": (
+            "Non e stato possibile avviare la generazione ora. Il credito e "
+            "stato rimborsato; riprova."
+        ),
+        "queue_lost": (
+            "La generazione precedente e andata persa in coda. Il credito e "
+            "stato rimborsato; riprova."
+        ),
+    },
+    "ja": {
+        "queue_publish_failed": (
+            "現在、生成を開始できませんでした。クレジットは返金されました。"
+            "もう一度お試しください。"
+        ),
+        "queue_lost": (
+            "前回の生成はキューで失われました。クレジットは返金されました。"
+            "もう一度お試しください。"
+        ),
+    },
+    "zh": {
+        "queue_publish_failed": "现在无法启动生成。积分已退还，请重试。",
+        "queue_lost": "之前的生成在队列中丢失。积分已退还，请重试。",
+    },
+    "ko": {
+        "queue_publish_failed": (
+            "지금은 생성을 시작할 수 없습니다. 크레딧이 환불되었습니다. " "다시 시도해 주세요."
+        ),
+        "queue_lost": (
+            "이전 생성이 대기열에서 손실되었습니다. 크레딧이 환불되었습니다. " "다시 시도해 주세요."
+        ),
+    },
+    "ru": {
+        "queue_publish_failed": (
+            "Не удалось запустить генерацию сейчас. Кредит возвращён; " "попробуйте ещё раз."
+        ),
+        "queue_lost": (
+            "Предыдущая генерация потерялась в очереди. Кредит возвращён; " "попробуйте ещё раз."
+        ),
+    },
+    "ar": {
+        "queue_publish_failed": ("تعذر بدء الإنشاء الآن. تم استرداد رصيدك؛ حاول مرة أخرى."),
+        "queue_lost": (
+            "فقدت عملية الإنشاء السابقة في قائمة الانتظار. تم استرداد رصيدك؛ " "حاول مرة أخرى."
+        ),
+    },
+}
+
+for _locale, _messages in _QUEUE_MESSAGES.items():
+    _MESSAGES[_locale].update(_messages)
+
+
 WARNING_LEVEL_MESSAGES = {
     1: "warning_level_1",
     2: "temporarily_blocked",

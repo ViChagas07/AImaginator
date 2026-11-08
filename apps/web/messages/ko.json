@@ -245,7 +245,9 @@
     "generic": "문제가 발생했습니다. 다시 시도해 보세요.",
     "generationHttp": "오류 {status}: 생성을 시작할 수 없습니다. 다시 시도해 보세요.",
     "generationFailed": "생성에 실패했습니다. 다시 시도해 보세요.",
-    "generationNetwork": "API에 접속하는 중 네트워크 오류가 발생했습니다. 연결을 확인하고 다시 시도하세요."
+    "generationNetwork": "API에 접속하는 중 네트워크 오류가 발생했습니다. 연결을 확인하고 다시 시도하세요.",
+    "queuePublishFailed": "지금은 생성을 시작할 수 없습니다. 크레딧이 환불되었습니다. 다시 시도해 주세요.",
+    "queueLost": "이전 생성이 대기열에서 손실되었습니다. 크레딧이 환불되었습니다. 다시 시도해 주세요."
   },
   "language": {
     "selectorLabel": "언어 선택"

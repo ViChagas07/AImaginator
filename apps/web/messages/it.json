@@ -245,7 +245,9 @@
     "generic": "Qualcosa è andato storto. Riprova.",
     "generationHttp": "Errore {status}: impossibile avviare la generazione. Riprova.",
     "generationFailed": "La generazione è fallita. Riprova.",
-    "generationNetwork": "Errore di rete durante il contatto con l'API. Controlla la connessione e riprova."
+    "generationNetwork": "Errore di rete durante il contatto con l'API. Controlla la connessione e riprova.",
+    "queuePublishFailed": "Non è stato possibile avviare la generazione ora. Il credito è stato rimborsato; riprova.",
+    "queueLost": "La generazione precedente è andata persa in coda. Il credito è stato rimborsato; riprova."
   },
   "language": {
     "selectorLabel": "Seleziona la lingua"

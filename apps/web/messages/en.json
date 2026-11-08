@@ -245,7 +245,9 @@
     "generic": "Something went wrong. Try again.",
     "generationHttp": "Error {status}: could not start the generation. Try again.",
     "generationFailed": "Generation failed. Try again.",
-    "generationNetwork": "Network error while contacting the API. Check your connection and try again."
+    "generationNetwork": "Network error while contacting the API. Check your connection and try again.",
+    "queuePublishFailed": "We couldn't start the generation right now. Your credit was refunded; please try again.",
+    "queueLost": "The previous generation was lost in the queue. Your credit was refunded; please try again."
   },
   "language": {
     "selectorLabel": "Select language"
