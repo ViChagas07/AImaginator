@@ -10,7 +10,7 @@ package-mode = false
 python = ">=3.11,<=3.13"
 
 # --- API ---
-fastapi = "^0.115.0"
+fastapi = "^0.162.2"
 uvicorn = { extras = ["standard"], version = "^0.30.0" }
 pydantic = "^2.9.0"
 pydantic-settings = "^2.5.0"
@@ -46,12 +46,13 @@ httpx = "^0.27.2"             # client HTTP async (OIDC, provedores)
 
 # --- Agentes de IA ---
 # langgraph e lazy/opcional; o pipeline tem fallback sequencial.
-langgraph = "^0.2.0"
+langgraph = "^1.2.20"
 
 # --- Observabilidade ---
 prometheus-client = "^0.20.0"
 sentry-sdk = { extras = ["fastapi", "celery"], version = "^2.14.0" }
 structlog = "^24.4.0"
+starlette = "^1.10.0"
 
 [tool.poetry.group.moderation]
 optional = true
