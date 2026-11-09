@@ -175,8 +175,14 @@ npm install
 npm run dev            # http://localhost:3000
 ```
 
-> O `apps/web/.env.local` atual aponta para o Render (produção). Para
-> desenvolvimento, aponte para a API local em `http://localhost:8001`.
+> Se a porta 3000 estiver ocupada (ex.: Grafana do host), o `next dev` cai
+> automaticamente para **3001**. Nesse caso, inclua a origem real em
+> `FRONTEND_ORIGINS` no `.env.development`, por exemplo:
+> `http://localhost:3001,http://127.0.0.1:3001` (além de 3000).
+
+> O `apps/web/.env.local` é ignorado pelo Git. Em desenvolvimento, use
+> `NEXT_PUBLIC_API_BASE_URL=http://localhost:8001` e
+> `NEXT_PUBLIC_STORAGE_ORIGIN=http://localhost:9002`.
 
 ## Assistente de prompts, moderação e penalidades
 
