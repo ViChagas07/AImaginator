@@ -2,7 +2,7 @@ import {create} from "zustand";
 import {API_BASE_URL} from "@/lib/constants";
 import {authedFetch} from "@/lib/api";
 import {getAccessToken} from "@/lib/auth-token";
-import {getAnonymousToken} from "@/lib/anonymous-session";
+import {getAnonymousToken, saveAnonymousToken} from "@/lib/anonymous-session";
 import {
   buildEditImageUploadForm,
   ApiGenerationItem,
@@ -110,6 +110,22 @@ export function parseSeedInput(seed: string): number | undefined {
     return undefined;
   }
   return parsed;
+}
+
+async function ensureAnonymousToken(): Promise<void> {
+  if (getAccessToken() || getAnonymousToken()) return;
+  try {
+    const response = await authedFetch(`${API_BASE_URL}/api/v1/prompt-quota`, {
+      cache: "no-store",
+    });
+    if (!response.ok) return;
+    const data = (await response.json()) as {anonymous_token?: unknown};
+    if (typeof data.anonymous_token === "string" && data.anonymous_token) {
+      saveAnonymousToken(data.anonymous_token);
+    }
+  } catch {
+    // Sem token o POST ainda pode criar a sessao; se falhar, o erro real aparece.
+  }
 }
 
 let source: EventSource | null = null;
@@ -294,6 +310,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   },
 
   async startGeneration(prompt, errors, locale) {
+    await ensureAnonymousToken();
     closeSource();
     set({
       prompt,

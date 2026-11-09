@@ -23,7 +23,6 @@ import {
 } from "@/stores/generation";
 import type {GenerationRecord} from "@/lib/generation-contract";
 import {AIGeneratingLoader} from "@/components/ui/ai-generating-loader";
-import {LoginGateModal} from "@/components/studio/login-gate-modal";
 import {
   ASPECT_RATIOS,
   STYLE_PRESETS,
@@ -54,6 +53,12 @@ function formatDate(value: string, locale: string): string | null {
   return date.toLocaleString(locale, {dateStyle: "medium", timeStyle: "short"});
 }
 
+function downloadHref(url: string, id: string): string {
+  if (!/^https?:\/\//i.test(url)) return url;
+  const filename = encodeURIComponent(`aimaginator-${id}.png`);
+  return `/api/download?url=${encodeURIComponent(url)}&filename=${filename}`;
+}
+
 export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const t = useTranslations("studio");
   const tErrors = useTranslations("errors");
@@ -62,7 +67,6 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const gen = useGenerationStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const refinePanelRef = useRef<HTMLElement>(null);
-  const [dismissedResultUrl, setDismissedResultUrl] = useState<string | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<UploadErrorCode | null>(null);
   const [refineTarget, setRefineTarget] = useState<GenerationRecord | null>(null);
@@ -118,11 +122,6 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
       if (uploadPreview) URL.revokeObjectURL(uploadPreview);
     };
   }, [uploadPreview]);
-
-  const showLoginGate =
-    gen.status === "done" &&
-    auth.status === "unauthenticated" &&
-    gen.resultUrl !== dismissedResultUrl;
 
   async function acceptFile(file: File | null) {
     if (!file) return;
@@ -588,7 +587,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
               className="flex flex-wrap gap-2"
             >
               <a
-                href={gen.resultUrl}
+                href={downloadHref(gen.resultUrl, result.id)}
                 download
                 target="_blank"
                 rel="noreferrer"
@@ -782,7 +781,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
                         )}
                         {item.imageUrl && (
                           <a
-                            href={item.imageUrl}
+                            href={downloadHref(item.imageUrl, item.id)}
                             download
                             target="_blank"
                             rel="noreferrer"
@@ -815,11 +814,6 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
           </>
         )}
       </section>
-
-      <LoginGateModal
-        open={showLoginGate}
-        onDismiss={() => setDismissedResultUrl(gen.resultUrl)}
-      />
     </div>
   );
 }
