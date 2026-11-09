@@ -60,6 +60,11 @@ optional = true
 [tool.poetry.group.moderation.dependencies]
 torch = ">=2.2,<3"
 transformers = ">=4.40,<5"
+
+[tool.poetry.group.provenance]
+optional = true
+
+[tool.poetry.group.provenance.dependencies]
 c2pa-python = ">=0.6,<1"
 
 [tool.poetry.group.dev.dependencies]
