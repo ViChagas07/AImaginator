@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     DateTime,
     Float,
@@ -50,7 +51,7 @@ class GenerationModel(Base):
     warning_level: Mapped[int | None] = mapped_column(Integer, nullable=True)
     warning_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     title: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    seed: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     locale: Mapped[str | None] = mapped_column(String(16), nullable=True)
     ip_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     quota_refunded: Mapped[bool] = mapped_column(Boolean, default=False)
