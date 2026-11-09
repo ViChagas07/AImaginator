@@ -75,7 +75,7 @@ hypothesis = "^6.112.0"       # property-based testing (inputs adversariais)
 respx = "^0.21.1"             # mock de httpx
 fakeredis = "^2.24.0"         # redis em memoria para testes
 lupa = ">=2.0,<3"             # Lua no fakeredis (TokenBucket)
-ruff = "^0.6.0"
+ruff = ">=0.6,<0.18"
 mypy = "^1.11.0"
 
 [tool.pytest.ini_options]
