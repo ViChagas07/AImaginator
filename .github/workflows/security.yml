@@ -33,7 +33,7 @@ jobs:
         run: |
           poetry run pip-audit --local -f json --output pip-audit.json || true
           python tools/security/audit_gate.py pip pip-audit.json .github/security-exceptions.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
