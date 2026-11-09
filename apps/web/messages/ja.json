@@ -642,5 +642,23 @@
         "confirm": "はい、すべてをリセットします"
       }
     }
+  },
+  "status": {
+    "title": "Service status",
+    "maintenance": "AImaginator is under maintenance. We will be back soon.",
+    "offline": "The image engine is offline right now."
+  },
+  "admin": {
+    "title": "Administration",
+    "unauthorized": "Administrator access only.",
+    "flaggedUsers": "Flagged users",
+    "noUsers": "No flagged users."
+  },
+  "usage": {
+    "title": "Your usage",
+    "balance": "Credits",
+    "plan": "Plan",
+    "daily": "Prompts today",
+    "upscale": "Upscale today"
   }
 }

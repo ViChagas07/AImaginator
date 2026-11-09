@@ -10,8 +10,8 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b border-foreground/10 bg-canvas">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
-        <div className="flex items-center gap-3">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-3 sm:gap-4 sm:px-6">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/"
             className="flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground"
@@ -37,17 +37,17 @@ export async function SiteHeader() {
         </div>
         <nav
           aria-label={tCommon("brand")}
-          className="ms-auto flex items-center gap-2"
+          className="ms-auto flex items-center gap-1 sm:gap-2"
         >
           <Link
             href="/gallery"
-            className="rounded-md px-3 py-2 text-sm text-muted hover:text-foreground"
+            className="hidden rounded-md px-2 py-2 text-sm text-muted hover:text-foreground sm:inline-block sm:px-3"
           >
             {t("gallery")}
           </Link>
           <Link
             href="/studio"
-            className="rounded-md px-3 py-2 text-sm text-muted hover:text-foreground"
+            className="rounded-md px-2 py-2 text-sm text-muted hover:text-foreground sm:px-3"
           >
             {t("studio")}
           </Link>

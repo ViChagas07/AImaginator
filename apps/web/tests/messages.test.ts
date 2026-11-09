@@ -10,6 +10,7 @@ import zh from "../messages/zh.json";
 import koMessages from "../messages/ko.json";
 import ru from "../messages/ru.json";
 import ar from "../messages/ar.json";
+import review from "../messages/_review.json";
 
 const ALL = {"pt-BR": pt, en, es, fr, de, it: itMessages, ja, zh, ko: koMessages, ru, ar} as const;
 
@@ -42,6 +43,16 @@ describe("i18n messages", () => {
         expect(value.trim().length, `${locale}/${key}`).toBeGreaterThan(0);
         expect(placeholders(value), `${locale}/${key}`).toEqual(placeholders(reference[key]));
       }
+    }
+  });
+
+  it("has a review status file for all 11 locales", () => {
+    const locales = Object.keys(ALL).sort();
+    expect(Object.keys(review).sort()).toEqual(locales);
+    for (const [locale, entry] of Object.entries(review)) {
+      expect(["pending", "reviewed"], locale).toContain(entry.status);
+      expect(entry).toHaveProperty("reviewer");
+      expect(entry).toHaveProperty("date");
     }
   });
 

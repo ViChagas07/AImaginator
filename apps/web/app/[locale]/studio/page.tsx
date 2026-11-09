@@ -1,5 +1,6 @@
 import type {Metadata} from "next";
 import {getTranslations} from "next-intl/server";
+import {StatusBanner} from "@/components/status-banner";
 import {StudioApp} from "@/components/studio/studio-app";
 import {SITE_URL} from "@/lib/constants";
 import {languageAlternates} from "@/lib/i18n";
@@ -39,6 +40,7 @@ export default async function StudioPage({
       <h1 className="mb-8 text-3xl font-semibold tracking-tight text-foreground">
         {t("title")}
       </h1>
+      <StatusBanner />
       <StudioApp initialPrompt={initialPrompt} />
     </div>
   );

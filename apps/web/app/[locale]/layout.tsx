@@ -110,7 +110,7 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} ${notoJp.variable} ${notoSc.variable} ${notoKr.variable} ${notoArabic.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-canvas text-foreground">
+      <body className="flex min-h-full flex-col overflow-x-hidden bg-canvas text-foreground">
         <NextIntlClientProvider>
           <a
             href="#main"

@@ -25,6 +25,7 @@ import {routing} from "@/i18n/routing";
 import {useSettingsStore, type UserSettings} from "@/stores/settings";
 import {useToast} from "@/components/ui/toast";
 import {cn} from "@/lib/utils";
+import {UsagePanel} from "@/components/settings/usage-panel";
 
 type AppLocale = (typeof routing.locales)[number];
 
@@ -273,6 +274,8 @@ export function SettingsPage() {
           <p className="mt-1 text-muted">{t("subtitle")}</p>
         </div>
       </div>
+
+      <UsagePanel />
 
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Sidebar / mobile dropdown */}

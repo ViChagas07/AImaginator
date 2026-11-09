@@ -642,5 +642,23 @@
         "confirm": "Sim, Redefinir Tudo"
       }
     }
+  },
+  "status": {
+    "title": "Status do serviço",
+    "maintenance": "AImaginator está em manutenção. Voltamos em breve.",
+    "offline": "O motor de imagem está offline no momento."
+  },
+  "admin": {
+    "title": "Administração",
+    "unauthorized": "Acesso restrito a administradores.",
+    "flaggedUsers": "Usuários sinalizados",
+    "noUsers": "Nenhum usuário sinalizado."
+  },
+  "usage": {
+    "title": "Seu uso",
+    "balance": "Créditos",
+    "plan": "Plano",
+    "daily": "Prompts hoje",
+    "upscale": "Upscale hoje"
   }
 }
