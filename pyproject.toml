@@ -15,7 +15,7 @@ uvicorn = { extras = ["standard"], version = "^0.30.0" }
 pydantic = "^2.9.0"
 pydantic-settings = "^2.5.0"
 python-multipart = ">=0.0.20,<0.1"   # uploads (edicao de imagem; CVEs antigas)
-sse-starlette = "^2.1.3"      # Server-Sent Events
+sse-starlette = ">=2.1.3,<4.0.0"      # Server-Sent Events
 
 # --- Persistencia / storage ---
 sqlalchemy = { extras = ["asyncio"], version = "^2.0.35" }
