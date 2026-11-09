@@ -120,6 +120,14 @@ services:
       minio:
         condition: service_started
 
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    profiles: ["observability"]
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+
   prometheus:
     image: prom/prometheus:v2.54.0
     ports:

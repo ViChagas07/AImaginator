@@ -1,0 +1,13 @@
+route:
+  receiver: example-webhook
+  group_by: ["alertname"]
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 4h
+
+receivers:
+  - name: example-webhook
+    webhook_configs:
+      # Exemplo: troque pelo seu endpoint de incidentes.
+      - url: "http://host.docker.internal:5001/alerts"
+        send_resolved: true
