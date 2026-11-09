@@ -68,6 +68,8 @@ class SQLAlchemyGenerationRepository(GenerationRepositoryPort):
         model.updated_at = generation.updated_at
         model.completed_at = generation.completed_at
         model.deleted_at = generation.deleted_at
+        model.is_favorite = generation.is_favorite
+        model.hidden_at = generation.hidden_at
         await self._session.flush()
         return generation
 
@@ -212,4 +214,6 @@ class SQLAlchemyGenerationRepository(GenerationRepositoryPort):
             updated_at=model.updated_at,
             completed_at=model.completed_at,
             deleted_at=model.deleted_at,
+            is_favorite=model.is_favorite,
+            hidden_at=model.hidden_at,
         )

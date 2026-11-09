@@ -31,8 +31,11 @@ from apps.api.routers import (
     gallery,
     generations,
     health,
+    library,
     metrics,
     prompt_quota,
+    reports,
+    sharing,
     stream,
     users,
 )
@@ -165,6 +168,9 @@ def create_app() -> FastAPI:
     app.include_router(users.router)
     app.include_router(status_router.router)
     app.include_router(admin.router)
+    app.include_router(library.router)
+    app.include_router(sharing.router)
+    app.include_router(reports.router)
 
     @app.exception_handler(AImaginatorError)
     async def domain_error_handler(request: Request, exc: AImaginatorError) -> JSONResponse:

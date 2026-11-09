@@ -11,6 +11,7 @@ from apps.api.dependencies import (
     AdminServiceDep,
     AdminUserDep,
     EngineAvailabilityDep,
+    LibraryRepoDep,
     RedisDep,
     SettingsDep,
 )
@@ -29,6 +30,10 @@ class CreditsInput(BaseModel):
 
 class MaintenanceInput(BaseModel):
     enabled: bool
+
+
+class ReportActionInput(BaseModel):
+    action: str = Field(pattern="^(hide|remove_link|penalty|discard)$")
 
 
 @router.get("/users/flagged")
@@ -112,5 +117,30 @@ async def maintenance(
 
 
 @router.get("/reports")
-async def reports_queue(admin: AdminUserDep, service: AdminServiceDep) -> list[dict]:
-    return await service.reports_queue()
+async def reports_queue(admin: AdminUserDep, library: LibraryRepoDep) -> list[dict]:
+    return await library.list_reports()
+
+
+@router.post("/reports/{report_id}/action")
+async def review_report(
+    report_id: UUID,
+    data: ReportActionInput,
+    admin: AdminUserDep,
+    service: AdminServiceDep,
+    library: LibraryRepoDep,
+) -> dict:
+    owner_id = await library.report_owner(report_id)
+    if data.action == "penalty" and owner_id is not None:
+        await service.block_user(actor=admin, user_id=owner_id, minutes=60)
+    result = await library.review_report(
+        report_id, action=data.action, reviewer_id=admin.id
+    )
+    await service.record(
+        actor=admin,
+        action="report.review",
+        target_type="report",
+        target_id=str(report_id),
+        result="ok",
+        detail={"action": data.action},
+    )
+    return result

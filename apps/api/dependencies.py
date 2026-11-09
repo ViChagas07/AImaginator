@@ -33,6 +33,9 @@ from modules.image_generation.adapters.redis_stream_tickets import RedisStreamTi
 from modules.image_generation.adapters.repositories.generation_repository import (
     SQLAlchemyGenerationRepository,
 )
+from modules.image_generation.adapters.repositories.library_repository import (
+    LibraryRepository,
+)
 from modules.image_generation.adapters.repositories.moderation_repository import (
     SQLAlchemyModerationEventRepository,
 )
@@ -493,3 +496,17 @@ async def require_admin(current_user: CurrentUserDep) -> User:
 
 
 AdminUserDep = Annotated[User, Depends(require_admin)]
+
+
+def get_library_repository(session: SessionDep) -> LibraryRepository:
+    return LibraryRepository(session)
+
+
+LibraryRepoDep = Annotated[LibraryRepository, Depends(get_library_repository)]
+
+
+def get_report_rate_limiter(redis: RedisDep) -> TokenBucket:
+    return TokenBucket(redis, capacity=5, window_seconds=60)
+
+
+ReportLimiterDep = Annotated[TokenBucket, Depends(get_report_rate_limiter)]
