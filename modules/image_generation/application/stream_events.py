@@ -25,6 +25,7 @@ _EVENT_NAMES: dict[GenerationStatus, str] = {
     GenerationStatus.PROCESSING: "progress",
     GenerationStatus.DONE: "result",
     GenerationStatus.FAILED: "error",
+    GenerationStatus.CANCELED: "canceled",
 }
 
 _INITIAL_PROGRESS: dict[GenerationStatus, int] = {
@@ -32,6 +33,15 @@ _INITIAL_PROGRESS: dict[GenerationStatus, int] = {
     GenerationStatus.PROCESSING: 5,
     GenerationStatus.DONE: 100,
     GenerationStatus.FAILED: 100,
+    GenerationStatus.CANCELED: 100,
+}
+
+_INITIAL_STAGE: dict[GenerationStatus, str] = {
+    GenerationStatus.QUEUED: "queued",
+    GenerationStatus.PROCESSING: "processing",
+    GenerationStatus.DONE: "done",
+    GenerationStatus.FAILED: "failed",
+    GenerationStatus.CANCELED: "canceled",
 }
 
 
@@ -45,25 +55,30 @@ def event_for_generation(generation: Generation) -> GenerationProgressEvent:
         generation_id=generation.id,
         status=generation.status,
         progress=_INITIAL_PROGRESS[generation.status],
+        stage=_INITIAL_STAGE[generation.status],
         result_image_url=(
             generation.result_image_url if generation.status == GenerationStatus.DONE else None
         ),
         seed=generation.seed,
         parent_generation_id=generation.parent_generation_id,
         error=(
-            generation.error_message if generation.status == GenerationStatus.FAILED else None
+            generation.error_message
+            if generation.status in (GenerationStatus.FAILED, GenerationStatus.CANCELED)
+            else None
         ),
         error_code=(
-            generation.error_code if generation.status == GenerationStatus.FAILED else None
+            generation.error_code
+            if generation.status in (GenerationStatus.FAILED, GenerationStatus.CANCELED)
+            else None
         ),
         warning_level=(
             generation.warning_level
-            if generation.status == GenerationStatus.FAILED
+            if generation.status in (GenerationStatus.FAILED, GenerationStatus.CANCELED)
             else None
         ),
         warning_message=(
             generation.warning_message
-            if generation.status == GenerationStatus.FAILED
+            if generation.status in (GenerationStatus.FAILED, GenerationStatus.CANCELED)
             else None
         ),
     )
@@ -135,7 +150,11 @@ async def _stream_generation_events(
                 generation.result_object_key
             )
         yield sse_event(initial)
-        if initial.status in (GenerationStatus.DONE, GenerationStatus.FAILED):
+        if initial.status in (
+            GenerationStatus.DONE,
+            GenerationStatus.FAILED,
+            GenerationStatus.CANCELED,
+        ):
             return
 
         deadline = asyncio.get_running_loop().time() + max_seconds
@@ -159,7 +178,7 @@ async def _stream_generation_events(
 
             event_name = _EVENT_NAMES.get(payload.get("status"), "status_update")
             yield {"event": event_name, "data": json.dumps(payload)}
-            if event_name in ("result", "error"):
+            if event_name in ("result", "error", "canceled"):
                 return
     finally:
         await pubsub.unsubscribe(stream_channel(generation_id))

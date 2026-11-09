@@ -102,6 +102,7 @@ class GenerationProgressEvent(BaseModel):
     generation_id: UUID
     status: GenerationStatus
     progress: int = Field(ge=0, le=100, default=0)
+    stage: str | None = None
     result_image_url: str | None = None
     seed: int | None = None
     parent_generation_id: UUID | None = None

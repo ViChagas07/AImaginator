@@ -23,6 +23,7 @@ import {
 } from "@/stores/generation";
 import type {GenerationRecord} from "@/lib/generation-contract";
 import {AIGeneratingLoader} from "@/components/ui/ai-generating-loader";
+import {CancelGenerationModal} from "@/components/studio/cancel-generation-modal";
 import {LoginGateModal} from "@/components/studio/login-gate-modal";
 import {
   ASPECT_RATIOS,
@@ -69,6 +70,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const fileRef = useRef<HTMLInputElement>(null);
   const refinePanelRef = useRef<HTMLElement>(null);
   const [dismissedResultUrl, setDismissedResultUrl] = useState<string | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<UploadErrorCode | null>(null);
   const [refineTarget, setRefineTarget] = useState<GenerationRecord | null>(null);
@@ -79,11 +81,20 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const isAuthenticated = auth.status === "authenticated";
   const isGenerating = isGeneratingStatus(gen.status);
   const isEditMode = gen.mode === "edit";
+  const indeterminateProgress =
+    isGenerating && (gen.progress <= 0 || gen.streamDegraded);
+  const stageLabel =
+    gen.status === "processing" && gen.stage ? t(`stage.${gen.stage}`) : null;
+  const cancelModalOpen =
+    cancelTargetId !== null &&
+    cancelTargetId === gen.result?.id &&
+    isGenerating;
   const errorMessages: GenerationErrorMessages = useMemo(
     () => ({
       http: (status: number) => tErrors("generationHttp", {status}),
       failed: tErrors("generationFailed"),
       network: tErrors("generationNetwork"),
+      alreadyFinished: tErrors("generationAlreadyFinished"),
     }),
     [tErrors],
   );
@@ -525,6 +536,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
         )}
         <p className="text-sm text-muted" role="status" aria-live="polite">
           {t(`status.${gen.status}`)}
+          {stageLabel ? ` · ${stageLabel}` : ""}
         </p>
         {isGenerating && (
           <p className="text-xs text-muted">
@@ -534,29 +546,34 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
         {(isGenerating || gen.status === "done") && (
           <div
             role="progressbar"
-            aria-valuenow={gen.progress}
+            aria-valuenow={indeterminateProgress ? undefined : gen.progress}
             aria-valuemin={0}
             aria-valuemax={100}
+            aria-valuetext={stageLabel ?? undefined}
             aria-label={t("progressLabel")}
             className="h-2 w-full overflow-hidden rounded-full bg-surface"
           >
             <div
-              className="bg-accent-gradient h-full rounded-full transition-[width] duration-300"
-              style={{width: `${gen.progress}%`}}
+              className={cn(
+                "bg-accent-gradient h-full rounded-full transition-[width] duration-300",
+                indeterminateProgress && "w-full animate-pulse",
+              )}
+              style={
+                indeterminateProgress
+                  ? undefined
+                  : {width: `${gen.progress}%`}
+              }
             />
           </div>
         )}
         {isGenerating && gen.result ? (
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm(t("cancelConfirm"))) {
-                void gen.cancelGeneration(errorMessages);
-              }
-            }}
-            className="rounded-md border border-foreground/10 px-3 py-1.5 text-xs text-muted hover:text-foreground"
+            onClick={() => setCancelTargetId(gen.result?.id ?? null)}
+            disabled={gen.canceling}
+            className="rounded-md border border-foreground/10 px-3 py-1.5 text-xs text-muted hover:text-foreground disabled:opacity-50"
           >
-            {t("cancel")}
+            {gen.canceling ? t("canceling") : t("cancel")}
           </button>
         ) : null}
         {gen.status === "failed" && gen.error && (
@@ -830,6 +847,13 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
       <LoginGateModal
         open={showLoginGate}
         onDismiss={() => setDismissedResultUrl(gen.resultUrl)}
+      />
+      <CancelGenerationModal
+        open={cancelModalOpen}
+        canceling={gen.canceling}
+        error={gen.error}
+        onConfirm={() => void gen.cancelGeneration(errorMessages)}
+        onClose={() => setCancelTargetId(null)}
       />
     </div>
   );

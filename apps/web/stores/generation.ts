@@ -15,6 +15,8 @@ import {
   readProgress,
   readResultUrl,
   readSeed,
+  readStage,
+  readStatus,
   readUpscaleRemaining,
   readWarningMessage,
   toHistoryItem,
@@ -37,6 +39,7 @@ export type GenerationErrorMessages = {
   http: (status: number) => string;
   failed: string;
   network: string;
+  alreadyFinished?: string;
 };
 
 type GenerationState = {
@@ -49,6 +52,9 @@ type GenerationState = {
   imageBase64: string | undefined;
   status: GenerationStatus;
   progress: number;
+  stage: string | null;
+  streamDegraded: boolean;
+  canceling: boolean;
   result: GenerationRecord | null;
   resultUrl: string | null;
   error: string | null;
@@ -129,10 +135,12 @@ async function ensureAnonymousToken(): Promise<void> {
 }
 
 let source: EventSource | null = null;
+let polledGenerationId: string | null = null;
 
 function closeSource() {
   source?.close();
   source = null;
+  polledGenerationId = null;
 }
 
 type SetState = (
@@ -142,6 +150,105 @@ type SetState = (
 ) => void;
 
 type GetState = () => GenerationState;
+
+const POLL_DELAYS_MS = [1000, 2000, 4000, 8000, 10000];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function pollGeneration(
+  generationId: string,
+  locale: string | undefined,
+  errors: GenerationErrorMessages,
+  set: SetState,
+  get: GetState,
+) {
+  polledGenerationId = generationId;
+  set({streamDegraded: true});
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    if (polledGenerationId !== generationId) return;
+    await sleep(POLL_DELAYS_MS[Math.min(attempt, POLL_DELAYS_MS.length - 1)]);
+    if (polledGenerationId !== generationId) return;
+    try {
+      const headers = new Headers();
+      if (locale) headers.set("X-Locale", locale);
+      const anon = getAnonymousToken();
+      if (anon) headers.set("X-Anonymous-Session", anon);
+      const response = await authedFetch(
+        `${API_BASE_URL}/api/v1/generations/${encodeURIComponent(generationId)}`,
+        {headers, cache: "no-store"},
+      );
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          set({
+            status: "failed",
+            error: errors.failed,
+            streamDegraded: false,
+          });
+          polledGenerationId = null;
+          return;
+        }
+        continue;
+      }
+      const payload = (await response.json()) as unknown;
+      const status = readStatus(payload);
+      if (status === "done") {
+        const url = readResultUrl(payload);
+        const current = get().result;
+        set({
+          status: "done",
+          progress: 100,
+          stage: "done",
+          resultUrl: url,
+          result: current
+            ? {
+                ...current,
+                status: "done",
+                imageUrl: url ?? current.imageUrl,
+                seed: readSeed(payload) ?? current.seed,
+                parentGenerationId:
+                  readParentGenerationId(payload) ?? current.parentGenerationId,
+              }
+            : current,
+          streamDegraded: false,
+          canceling: false,
+          error: null,
+        });
+        polledGenerationId = null;
+        if (getAccessToken()) void get().loadHistory(true);
+        return;
+      }
+      if (status === "failed" || status === "canceled") {
+        set({
+          status,
+          progress: 100,
+          stage: status,
+          error: status === "failed" ? readErrorMessage(payload) ?? errors.failed : null,
+          streamDegraded: false,
+          canceling: false,
+        });
+        polledGenerationId = null;
+        if (getAccessToken()) void get().loadHistory(true);
+        return;
+      }
+      if (status === "queued" || status === "processing") {
+        const stage = readStage(payload);
+        set({
+          status,
+          streamDegraded: true,
+          ...(stage ? {stage} : {}),
+        });
+      }
+    } catch {
+      // mantem o backoff; o stream pode ter caido por rede
+    }
+  }
+  if (polledGenerationId === generationId) {
+    polledGenerationId = null;
+    set({status: "failed", error: errors.network, streamDegraded: false});
+  }
+}
 
 async function connectStream(
   streamPath: string,
@@ -162,7 +269,12 @@ async function connectStream(
       {method: "POST", headers},
     );
     if (!ticketResponse.ok) {
-      set({status: "failed", error: await readFailure(ticketResponse, errors)});
+      const message = await readFailure(ticketResponse, errors);
+      if (ticketResponse.status === 401 || ticketResponse.status === 403) {
+        set({status: "failed", error: message, streamDegraded: false});
+        return;
+      }
+      void pollGeneration(generationId, locale, errors, set, get);
       return;
     }
     const ticketData = (await ticketResponse.json()) as {
@@ -173,7 +285,7 @@ async function connectStream(
       typeof ticketData.ticket !== "string" ||
       typeof ticketData.stream_url !== "string"
     ) {
-      set({status: "failed", error: errors.failed});
+      void pollGeneration(generationId, locale, errors, set, get);
       return;
     }
     const absolute = ticketData.stream_url.startsWith("http")
@@ -183,20 +295,48 @@ async function connectStream(
     if (locale) params.set("locale", locale);
     source = new EventSource(`${absolute}?${params.toString()}`);
   } catch {
-    set({status: "failed", error: errors.network});
+    void pollGeneration(generationId, locale, errors, set, get);
     return;
   }
-  source.addEventListener("status_update", (event) => {
-    const payload = JSON.parse((event as MessageEvent).data) as {
-      status: GenerationStatus;
-    };
-    set({status: payload.status});
-  });
-  source.addEventListener("progress", (event) => {
+
+  const currentSource = source;
+  if (!currentSource) {
+    void pollGeneration(generationId, locale, errors, set, get);
+    return;
+  }
+  currentSource.addEventListener("status_update", (event) => {
     const payload = JSON.parse((event as MessageEvent).data) as unknown;
-    set({status: "processing", progress: readProgress(payload) ?? 0});
+    const status = readStatus(payload);
+    if (!status) return;
+    if (status === "canceled") {
+      closeSource();
+      set({
+        status: "canceled",
+        progress: 100,
+        stage: "canceled",
+        canceling: false,
+        streamDegraded: false,
+        error: null,
+      });
+      if (getAccessToken()) void get().loadHistory(true);
+      return;
+    }
+    set({
+      status: status as GenerationStatus,
+      stage: readStage(payload),
+      streamDegraded: false,
+    });
   });
-  source.addEventListener("result", (event) => {
+  currentSource.addEventListener("progress", (event) => {
+    const payload = JSON.parse((event as MessageEvent).data) as unknown;
+    set({
+      status: "processing",
+      progress: readProgress(payload) ?? 0,
+      stage: readStage(payload),
+      streamDegraded: false,
+    });
+  });
+  currentSource.addEventListener("result", (event) => {
     const payload = JSON.parse((event as MessageEvent).data) as unknown;
     closeSource();
     const current = get().result;
@@ -204,6 +344,10 @@ async function connectStream(
     set({
       status: "done",
       progress: 100,
+      stage: "done",
+      streamDegraded: false,
+      canceling: false,
+      error: null,
       resultUrl: url,
       result: current
         ? {
@@ -218,19 +362,62 @@ async function connectStream(
     });
     if (getAccessToken()) void get().loadHistory(true);
   });
-  source.addEventListener("error", (event) => {
+  currentSource.addEventListener("canceled", (event) => {
     closeSource();
-    let message = errors.failed;
-    let warning: string | null = null;
+    let message: string | null = null;
     try {
       const payload = JSON.parse((event as MessageEvent).data) as unknown;
-      message = readErrorMessage(payload) ?? message;
-      warning = readWarningMessage(payload);
+      message = readErrorMessage(payload);
     } catch {
-      // evento nativo de rede do EventSource: manter fallback localizado
+      // evento sem payload: usar o estado localizado de cancelamento
     }
-    set({status: "failed", error: message, warning});
+    set({
+      status: "canceled",
+      progress: 100,
+      stage: "canceled",
+      canceling: false,
+      streamDegraded: false,
+      error: message,
+    });
     if (getAccessToken()) void get().loadHistory(true);
+  });
+  currentSource.addEventListener("error", (event) => {
+    closeSource();
+    let payload: unknown = null;
+    try {
+      const data = (event as MessageEvent).data;
+      if (typeof data === "string" && data.length > 0) {
+        payload = JSON.parse(data) as unknown;
+      }
+    } catch {
+      payload = null;
+    }
+
+    const status = readStatus(payload);
+    if (status === "failed" || status === "canceled") {
+      const message =
+        status === "failed" ? readErrorMessage(payload) ?? errors.failed : null;
+      set({
+        status,
+        progress: 100,
+        stage: status,
+        canceling: false,
+        streamDegraded: false,
+        error: message,
+        warning: readWarningMessage(payload),
+      });
+      if (getAccessToken()) void get().loadHistory(true);
+      return;
+    }
+
+    const streamError = readErrorMessage(payload);
+    if (streamError === "not_found") {
+      set({status: "failed", error: errors.failed, streamDegraded: false});
+      return;
+    }
+
+    // Queda de rede, stream_timeout ou ticket consumido: polling assume.
+    void pollGeneration(generationId, locale, errors, set, get);
   });
 }
 
@@ -256,6 +443,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   imageBase64: undefined,
   status: "idle",
   progress: 0,
+  stage: null,
+  streamDegraded: false,
+  canceling: false,
   result: null,
   resultUrl: null,
   error: null,
@@ -281,11 +471,16 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       status:
         item.status === "failed"
           ? "failed"
-          : item.status === "queued"
-            ? "queued"
-            : item.status === "processing"
-              ? "processing"
-              : "done",
+          : item.status === "canceled"
+            ? "canceled"
+            : item.status === "queued"
+              ? "queued"
+              : item.status === "processing"
+                ? "processing"
+                : "done",
+      stage: null,
+      streamDegraded: false,
+      canceling: false,
       error: null,
       warning: null,
     }),
@@ -301,6 +496,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       imageBase64: undefined,
       status: "idle",
       progress: 0,
+      stage: null,
+      streamDegraded: false,
+      canceling: false,
       result: null,
       resultUrl: null,
       error: null,
@@ -316,6 +514,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       prompt,
       status: "queued",
       progress: 0,
+      stage: null,
+      streamDegraded: false,
+      canceling: false,
       result: null,
       resultUrl: null,
       error: null,
@@ -374,6 +575,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       mode: "edit",
       status: "queued",
       progress: 0,
+      stage: null,
+      streamDegraded: false,
+      canceling: false,
       result: null,
       resultUrl: null,
       error: null,
@@ -422,6 +626,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     set({
       status: "queued",
       progress: 0,
+      stage: null,
+      streamDegraded: false,
+      canceling: false,
       error: null,
       warning: null,
     });
@@ -462,16 +669,65 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
   async cancelGeneration(errors) {
     const current = get().result;
-    if (!current || !isGeneratingStatus(get().status)) return;
-    const res = await authedFetch(
-      `${API_BASE_URL}/api/v1/generations/${encodeURIComponent(current.id)}/cancel`,
-      {method: "POST"},
-    );
-    if (!res.ok) {
-      set({error: await readFailure(res, errors)});
-      return;
+    if (!current || !isGeneratingStatus(get().status) || get().canceling) return;
+    set({canceling: true, error: null});
+    try {
+      const headers = new Headers();
+      const anon = getAnonymousToken();
+      if (anon) headers.set("X-Anonymous-Session", anon);
+      const res = await authedFetch(
+        `${API_BASE_URL}/api/v1/generations/${encodeURIComponent(current.id)}/cancel`,
+        {method: "POST", headers},
+      );
+      let payload: unknown = null;
+      try {
+        payload = await res.json();
+      } catch {
+        payload = null;
+      }
+      const status = readStatus(payload);
+      if (res.status === 202 || status === "cancel_requested") {
+        // O worker precisa confirmar; a UI continua em "Cancelando...".
+        set({canceling: true});
+        return;
+      }
+      if (status === "canceled") {
+        closeSource();
+        set({
+          status: "canceled",
+          progress: 100,
+          stage: "canceled",
+          canceling: false,
+          streamDegraded: false,
+          error: null,
+        });
+        if (getAccessToken()) void get().loadHistory(true);
+        return;
+      }
+      if (
+        res.status === 409 ||
+        (payload !== null &&
+          (payload as {already_finished?: unknown}).already_finished === true)
+      ) {
+        set({
+          canceling: false,
+          error: errors.alreadyFinished ?? errors.failed,
+        });
+        void pollGeneration(current.id, undefined, errors, set, get);
+        return;
+      }
+      if (!res.ok) {
+        const apiError = readApiError(payload);
+        set({
+          canceling: false,
+          error: apiError.message ?? apiError.code ?? errors.http(res.status),
+        });
+        return;
+      }
+      set({canceling: false});
+    } catch {
+      set({canceling: false, error: errors.network});
     }
-    set({status: "canceled", error: null});
   },
 
   async startVariation(generationId, errors, locale) {
@@ -479,6 +735,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     set({
       status: "queued",
       progress: 0,
+      stage: null,
+      streamDegraded: false,
+      canceling: false,
       error: null,
       warning: null,
     });
@@ -522,6 +781,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       mode: "edit",
       status: "queued",
       progress: 0,
+      stage: null,
+      streamDegraded: false,
+      canceling: false,
       error: null,
       warning: null,
     });

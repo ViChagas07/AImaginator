@@ -53,6 +53,24 @@ from shared_kernel.security_errors import (
 logger = logging.getLogger(__name__)
 
 
+def _stage_for_progress(status: GenerationStatus, progress: int) -> str:
+    if status is GenerationStatus.PROCESSING:
+        if progress <= 10:
+            return "assistant"
+        if progress < 90:
+            return "engine"
+        if progress < 99:
+            return "finalizing"
+        return "upload"
+    if status is GenerationStatus.DONE:
+        return "done"
+    if status is GenerationStatus.CANCELED:
+        return "canceled"
+    if status is GenerationStatus.FAILED:
+        return "failed"
+    return "queued"
+
+
 class ProcessGeneration:
     def __init__(
         self,
@@ -167,11 +185,25 @@ class ProcessGeneration:
             return
 
         async def publish(status: GenerationStatus, progress: int, **kwargs) -> None:
+            stage = kwargs.pop("stage", None) or _stage_for_progress(
+                status, progress
+            )
+            logger.info(
+                "generation_progress_published",
+                extra={
+                    "generation_id": str(generation.id),
+                    "status": status.value,
+                    "stage": stage,
+                    "progress": progress,
+                    "ts": time.time(),
+                },
+            )
             await self._events.publish_progress(
                 GenerationProgressEvent(
                     generation_id=generation.id,
                     status=status,
                     progress=progress,
+                    stage=stage,
                     **kwargs,
                 )
             )

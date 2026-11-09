@@ -110,5 +110,8 @@ async def stream_generation(
             keepalive_seconds=_KEEPALIVE_SECONDS,
             storage=storage,
         ),
-        headers={"Cache-Control": "no-store"},
+        headers={
+            "Cache-Control": "no-store, no-transform",
+            "X-Accel-Buffering": "no",
+        },
     )
