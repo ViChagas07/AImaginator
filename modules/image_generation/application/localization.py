@@ -615,6 +615,207 @@ _FEATURE_MESSAGES = {
 for _locale, _messages in _FEATURE_MESSAGES.items():
     _MESSAGES[_locale].update(_messages)
 
+_QUEUE_MESSAGES: dict[str, dict[str, str]] = {
+    "pt-BR": {
+        "queue_publish_failed": (
+            "Nao foi possivel iniciar a geracao agora. Seu credito foi "
+            "devolvido; tente novamente."
+        ),
+        "queue_lost": (
+            "A geracao anterior foi perdida na fila. Seu credito foi devolvido; " "tente novamente."
+        ),
+    },
+    "en": {
+        "queue_publish_failed": (
+            "We couldn't start the generation right now. Your credit was "
+            "refunded; please try again."
+        ),
+        "queue_lost": (
+            "The previous generation was lost in the queue. Your credit was "
+            "refunded; please try again."
+        ),
+    },
+    "es": {
+        "queue_publish_failed": (
+            "No pudimos iniciar la generacion ahora. Tu credito fue devuelto; "
+            "intentalo de nuevo."
+        ),
+        "queue_lost": (
+            "La generacion anterior se perdio en la cola. Tu credito fue "
+            "devuelto; intentalo de nuevo."
+        ),
+    },
+    "fr": {
+        "queue_publish_failed": (
+            "Impossible de demarrer la generation pour le moment. Votre credit "
+            "a ete rembourse ; reessayez."
+        ),
+        "queue_lost": (
+            "La generation precedente a ete perdue dans la file. Votre credit a "
+            "ete rembourse ; reessayez."
+        ),
+    },
+    "de": {
+        "queue_publish_failed": (
+            "Die Generierung konnte gerade nicht gestartet werden. Dein "
+            "Guthaben wurde erstattet; bitte versuche es erneut."
+        ),
+        "queue_lost": (
+            "Die vorherige Generierung ging in der Warteschlange verloren. Dein "
+            "Guthaben wurde erstattet; bitte versuche es erneut."
+        ),
+    },
+    "it": {
+        "queue_publish_failed": (
+            "Non e stato possibile avviare la generazione ora. Il credito e "
+            "stato rimborsato; riprova."
+        ),
+        "queue_lost": (
+            "La generazione precedente e andata persa in coda. Il credito e "
+            "stato rimborsato; riprova."
+        ),
+    },
+    "ja": {
+        "queue_publish_failed": (
+            "現在、生成を開始できませんでした。クレジットは返金されました。"
+            "もう一度お試しください。"
+        ),
+        "queue_lost": (
+            "前回の生成はキューで失われました。クレジットは返金されました。"
+            "もう一度お試しください。"
+        ),
+    },
+    "zh": {
+        "queue_publish_failed": "现在无法启动生成。积分已退还，请重试。",
+        "queue_lost": "之前的生成在队列中丢失。积分已退还，请重试。",
+    },
+    "ko": {
+        "queue_publish_failed": (
+            "지금은 생성을 시작할 수 없습니다. 크레딧이 환불되었습니다. " "다시 시도해 주세요."
+        ),
+        "queue_lost": (
+            "이전 생성이 대기열에서 손실되었습니다. 크레딧이 환불되었습니다. " "다시 시도해 주세요."
+        ),
+    },
+    "ru": {
+        "queue_publish_failed": (
+            "Не удалось запустить генерацию сейчас. Кредит возвращён; " "попробуйте ещё раз."
+        ),
+        "queue_lost": (
+            "Предыдущая генерация потерялась в очереди. Кредит возвращён; " "попробуйте ещё раз."
+        ),
+    },
+    "ar": {
+        "queue_publish_failed": ("تعذر بدء الإنشاء الآن. تم استرداد رصيدك؛ حاول مرة أخرى."),
+        "queue_lost": (
+            "فقدت عملية الإنشاء السابقة في قائمة الانتظار. تم استرداد رصيدك؛ " "حاول مرة أخرى."
+        ),
+    },
+}
+
+for _locale, _messages in _QUEUE_MESSAGES.items():
+    _MESSAGES[_locale].update(_messages)
+
+
+_PLATFORM_MESSAGES: dict[str, dict[str, str]] = {
+    "pt-BR": {
+        "engine_offline": "O motor de imagem esta offline no momento. Tente novamente em instantes.",
+        "maintenance": "O AImaginator esta em manutencao. Volte em breve.",
+        "hardware_busy": "O hardware esta ocupado ou quente demais. Aguarde alguns minutos.",
+        "thermal_abort": "A geracao foi interrompida por protecao termica. Tente novamente mais tarde.",
+        "resource_abort": "A geracao foi interrompida por falta de memoria. Tente novamente mais tarde.",
+    },
+    "en": {
+        "engine_offline": "The image engine is offline right now. Please try again shortly.",
+        "maintenance": "AImaginator is under maintenance. Please come back soon.",
+        "hardware_busy": "The hardware is busy or too hot. Please wait a few minutes.",
+        "thermal_abort": "Generation stopped for thermal protection. Please try again later.",
+        "resource_abort": "Generation stopped due to low memory. Please try again later.",
+    },
+    "es": {
+        "engine_offline": "El motor de imagenes esta desconectado. Intentalo de nuevo en breve.",
+        "maintenance": "AImaginator esta en mantenimiento. Vuelve pronto.",
+        "hardware_busy": "El hardware esta ocupado o demasiado caliente. Espera unos minutos.",
+        "thermal_abort": "La generacion se detuvo por proteccion termica. Intentalo mas tarde.",
+        "resource_abort": "La generacion se detuvo por falta de memoria. Intentalo mas tarde.",
+    },
+    "fr": {
+        "engine_offline": "Le moteur d'images est hors ligne. Reessayez dans un instant.",
+        "maintenance": "AImaginator est en maintenance. Revenez bientot.",
+        "hardware_busy": "Le materiel est occupe ou trop chaud. Patientez quelques minutes.",
+        "thermal_abort": "La generation a ete arretee pour protection thermique. Reessayez plus tard.",
+        "resource_abort": "La generation a ete arretee faute de memoire. Reessayez plus tard.",
+    },
+    "de": {
+        "engine_offline": "Die Bild-Engine ist derzeit offline. Bitte versuche es gleich erneut.",
+        "maintenance": "AImaginator wird gewartet. Bitte komm bald wieder.",
+        "hardware_busy": "Die Hardware ist besetzt oder zu heiss. Bitte warte einige Minuten.",
+        "thermal_abort": "Die Generierung wurde aus Hitzeschutz gestoppt. Bitte spaeter erneut versuchen.",
+        "resource_abort": "Die Generierung wurde wegen Speichermangel gestoppt. Bitte spaeter erneut versuchen.",
+    },
+    "it": {
+        "engine_offline": "Il motore immagini e offline. Riprova tra poco.",
+        "maintenance": "AImaginator e in manutenzione. Torna presto.",
+        "hardware_busy": "L'hardware e occupato o troppo caldo. Attendi qualche minuto.",
+        "thermal_abort": "La generazione e stata interrotta per protezione termica. Riprova piu tardi.",
+        "resource_abort": "La generazione e stata interrotta per memoria insufficiente. Riprova piu tardi.",
+    },
+    "ja": {
+        "engine_offline": "画像エンジンは現在オフラインです。しばらくしてから再試行してください。",
+        "maintenance": "AImaginator はメンテナンス中です。後でもう一度お越しください。",
+        "hardware_busy": "ハードウェアが使用中か高温です。数分お待ちください。",
+        "thermal_abort": "熱保護のため生成を中止しました。後で再試行してください。",
+        "resource_abort": "メモリ不足のため生成を中止しました。後で再試行してください。",
+    },
+    "zh": {
+        "engine_offline": "图像引擎当前离线。请稍后重试。",
+        "maintenance": "AImaginator 正在维护中。请稍后再来。",
+        "hardware_busy": "硬件忙碌或过热。请等待几分钟。",
+        "thermal_abort": "生成因热保护而停止。请稍后重试。",
+        "resource_abort": "生成因内存不足而停止。请稍后重试。",
+    },
+    "ko": {
+        "engine_offline": "이미지 엔진이 현재 오프라인입니다. 잠시 후 다시 시도해 주세요.",
+        "maintenance": "AImaginator가 점검 중입니다. 잠시 후 다시 방문해 주세요.",
+        "hardware_busy": "하드웨어가 사용 중이거나 너무 뜨겁습니다. 몇 분 기다려 주세요.",
+        "thermal_abort": "열 보호로 생성이 중단되었습니다. 나중에 다시 시도해 주세요.",
+        "resource_abort": "메모리 부족으로 생성이 중단되었습니다. 나중에 다시 시도해 주세요.",
+    },
+    "ru": {
+        "engine_offline": "Движок изображений сейчас офлайн. Попробуйте чуть позже.",
+        "maintenance": "AImaginator на обслуживании. Загляните позже.",
+        "hardware_busy": "Оборудование занято или перегрето. Подождите несколько минут.",
+        "thermal_abort": "Генерация остановлена из-за тепловой защиты. Попробуйте позже.",
+        "resource_abort": "Генерация остановлена из-за нехватки памяти. Попробуйте позже.",
+    },
+    "ar": {
+        "engine_offline": "محرك الصور غير متصل حاليا. حاول مرة أخرى بعد قليل.",
+        "maintenance": "AImaginator قيد الصيانة. عد قريبا.",
+        "hardware_busy": "الجهاز مشغول أو ساخن جدا. انتظر بضع دقائق.",
+        "thermal_abort": "توقف الإنشاء للحماية الحرارية. حاول لاحقا.",
+        "resource_abort": "توقف الإنشاء بسبب نقص الذاكرة. حاول لاحقا.",
+    },
+}
+
+for _locale, _messages in _PLATFORM_MESSAGES.items():
+    _MESSAGES[_locale].update(_messages)
+
+_CANCEL_MESSAGES: dict[str, str] = {
+    "pt-BR": "Geracao cancelada.",
+    "en": "Generation canceled.",
+    "es": "Generacion cancelada.",
+    "fr": "Generation annulee.",
+    "de": "Generierung abgebrochen.",
+    "it": "Generazione annullata.",
+    "ja": "生成をキャンセルしました。",
+    "zh": "生成已取消。",
+    "ko": "생성이 취소되었습니다.",
+    "ru": "Генерация отменена.",
+    "ar": "تم إلغاء الإنشاء.",
+}
+for _locale, _message in _CANCEL_MESSAGES.items():
+    _MESSAGES[_locale]["canceled"] = _message
+
 WARNING_LEVEL_MESSAGES = {
     1: "warning_level_1",
     2: "temporarily_blocked",

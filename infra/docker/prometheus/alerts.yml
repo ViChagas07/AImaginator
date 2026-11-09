@@ -43,7 +43,7 @@ groups:
 
       - alert: AImaginatorLlmUnavailable
         expr: |
-          sum(rate(aimaginator_llm_requests_total{outcome=~"timeout|unavailable"}[5m]))
+          sum(rate(aimaginator_llm_requests_total{outcome=~"timeout|unavailable|truncated"}[5m]))
           /
           clamp_min(sum(rate(aimaginator_llm_requests_total[5m])), 0.001)
           > 0.2

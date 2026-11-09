@@ -59,9 +59,7 @@ class FakeModerationService:
         self.calls.append(kwargs)
         if not kwargs.get("apply_penalty", True):
             return PenaltyOutcome(level=0, warning_level=None, warning_message=None)
-        return PenaltyOutcome(
-            level=1, warning_level=1, warning_message="warning localized"
-        )
+        return PenaltyOutcome(level=1, warning_level=1, warning_message="warning localized")
 
 
 class FakeQuotaRefund:
@@ -132,23 +130,35 @@ async def test_modo_worker_nao_levanta_depois_de_persistir_falha() -> None:
 
 @pytest.mark.unit
 async def test_timeout_incrementa_metricas_de_motor_e_geracao() -> None:
-    before_engine = REGISTRY.get_sample_value(
-        "aimaginator_engine_failures_total",
-        {"kind": "generate", "reason": "timeout"},
-    ) or 0
-    before_failed = REGISTRY.get_sample_value(
-        "aimaginator_generations_total",
-        {"kind": "generate", "status": "failed"},
-    ) or 0
+    before_engine = (
+        REGISTRY.get_sample_value(
+            "aimaginator_engine_failures_total",
+            {"kind": "generate", "reason": "timeout"},
+        )
+        or 0
+    )
+    before_failed = (
+        REGISTRY.get_sample_value(
+            "aimaginator_generations_total",
+            {"kind": "generate", "status": "failed"},
+        )
+        or 0
+    )
     await _execute(_FailingAgent(EngineTimeoutError()))
-    after_engine = REGISTRY.get_sample_value(
-        "aimaginator_engine_failures_total",
-        {"kind": "generate", "reason": "timeout"},
-    ) or 0
-    after_failed = REGISTRY.get_sample_value(
-        "aimaginator_generations_total",
-        {"kind": "generate", "status": "failed"},
-    ) or 0
+    after_engine = (
+        REGISTRY.get_sample_value(
+            "aimaginator_engine_failures_total",
+            {"kind": "generate", "reason": "timeout"},
+        )
+        or 0
+    )
+    after_failed = (
+        REGISTRY.get_sample_value(
+            "aimaginator_generations_total",
+            {"kind": "generate", "status": "failed"},
+        )
+        or 0
+    )
     assert after_engine == before_engine + 1
     assert after_failed == before_failed + 1
 
@@ -167,9 +177,7 @@ async def test_timeout_vira_failed_com_codigo_estavel() -> None:
 
 @pytest.mark.unit
 async def test_erro_desconhecido_nao_vaza_detalhes() -> None:
-    saved, events = await _execute(
-        _FailingAgent(RuntimeError("falhou em C:\\caminho\\secreto"))
-    )
+    saved, events = await _execute(_FailingAgent(RuntimeError("falhou em C:\\caminho\\secreto")))
 
     assert saved is not None
     assert saved.error_code == "engine_failed"
@@ -183,9 +191,7 @@ async def test_done_usa_url_assinada_do_storage() -> None:
     repo_agent = _SuccessfulAgent()
 
     repo = InMemoryGenerationRepository()
-    generation = Generation(
-        user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo"
-    )
+    generation = Generation(user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo")
     object_key = f"generations/{generation.id}/result.png"
     await storage.put_object(object_key, b"png")
     await repo.save(generation)
@@ -282,9 +288,7 @@ async def test_bloqueio_de_entrada_conta_penalidade() -> None:
         layer="image_input",
         confidence=0.9,
     )
-    saved, events = await _execute(
-        _FailingAgent(exc), moderation=moderation
-    )
+    saved, events = await _execute(_FailingAgent(exc), moderation=moderation)
     assert saved is not None and saved.error_code == "source_image_blocked_gore"
     assert moderation.calls[0]["apply_penalty"] is True
     assert events.events[-1].warning_level == 1
@@ -351,9 +355,7 @@ async def test_moderacao_tambem_devolve_credito(sample_user) -> None:
         confidence=0.9,
     )
     users = InMemoryUserRepository(sample_user)
-    saved, _ = await _execute(
-        _FailingAgent(exc), user_id=sample_user.id, users_repo=users
-    )
+    saved, _ = await _execute(_FailingAgent(exc), user_id=sample_user.id, users_repo=users)
     assert saved is not None
     assert saved.credits_refunded is True
     assert sample_user.generation_credits == 6
@@ -364,3 +366,81 @@ async def test_progresso_do_motor_nao_e_reescalado() -> None:
     _, events = await _execute(_SuccessfulAgent())
     progress = [e.progress for e in events.events if e.status == GenerationStatus.PROCESSING]
     assert progress == [5, 10, 50, 90]
+
+
+class _RecordingRepository(InMemoryGenerationRepository):
+    def __init__(self) -> None:
+        super().__init__()
+        self.saves: list = []
+        self.commits = 0
+
+    async def save(self, generation):
+        self.saves.append((generation.status, generation.updated_at))
+        return await super().save(generation)
+
+    async def commit(self) -> None:
+        self.commits += 1
+
+
+class _ExplodingAgent:
+    def __init__(self) -> None:
+        self.called = False
+
+    async def run_generation(self, generation, on_progress):
+        self.called = True
+        raise AssertionError("nao deveria rodar")
+
+
+@pytest.mark.unit
+async def test_heartbeat_persiste_updated_at_em_cada_etapa() -> None:
+    repo = _RecordingRepository()
+    generation = Generation(user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo")
+    await repo.save(generation)
+    before = generation.updated_at
+    await ProcessGeneration(
+        generations=repo,
+        image_agent=_SuccessfulAgent(),
+        events=SpyEventPublisher(),
+        commit=repo.commit,
+    ).execute(generation.id)
+
+    assert repo.commits >= 4  # processing + 3 progressos + done
+    assert len(repo.saves) >= 5
+    assert repo.saves[-1][1] >= before
+
+
+@pytest.mark.unit
+async def test_task_reentregue_em_processing_retoma_sem_transicao_invalida() -> None:
+    repo = InMemoryGenerationRepository()
+    generation = Generation(user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo")
+    generation.transition_to(GenerationStatus.PROCESSING)
+    await repo.save(generation)
+
+    await ProcessGeneration(
+        generations=repo,
+        image_agent=_SuccessfulAgent(),
+        events=SpyEventPublisher(),
+    ).execute(generation.id)
+
+    saved = await repo.get_by_id(generation.id)
+    assert saved is not None and saved.status == GenerationStatus.DONE
+
+
+@pytest.mark.unit
+async def test_task_reentregue_com_estado_terminal_sai_sem_trabalho() -> None:
+    repo = InMemoryGenerationRepository()
+    agent = _ExplodingAgent()
+    generation = Generation(user_id=uuid4(), kind=GenerationKind.GENERATE, prompt="um castelo")
+    generation.transition_to(GenerationStatus.PROCESSING)
+    generation.attach_result("https://cdn.example/done.png")
+    await repo.save(generation)
+
+    await ProcessGeneration(
+        generations=repo,
+        image_agent=agent,
+        events=SpyEventPublisher(),
+    ).execute(generation.id)
+
+    saved = await repo.get_by_id(generation.id)
+    assert agent.called is False
+    assert saved is not None and saved.status == GenerationStatus.DONE

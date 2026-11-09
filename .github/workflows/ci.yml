@@ -61,11 +61,11 @@ jobs:
           version: "2.1.1"
           virtualenvs-create: true
           virtualenvs-in-project: false
-      - run: |
-          poetry install --with dev --no-interaction --no-ansi
-          poetry run pip install lupa
+      - run: poetry install --with dev --no-interaction --no-ansi
       - run: poetry run pytest tests -q --tb=short
-      - run: poetry run pytest specs/evals -m eval -q --tb=short
+      # Inclui o teste de dados/paridade dos evals; evals reais ficam skipadas
+      # sem RUN_LLM_EVALS=1.
+      - run: poetry run pytest specs/evals -q --tb=short
       - name: Python dependency audit (informativo)
         continue-on-error: true
         run: |

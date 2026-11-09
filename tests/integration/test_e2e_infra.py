@@ -81,9 +81,7 @@ def _wait(client: httpx.Client, generation: dict, timeout: float = 180.0) -> dic
 
 
 def _create(client: httpx.Client, payload: dict) -> dict:
-    response = client.post(
-        f"{API}/api/v1/generations", json=payload, headers=_headers()
-    )
+    response = client.post(f"{API}/api/v1/generations", json=payload, headers=_headers())
     assert response.status_code == 202, response.text
     return response.json()
 
@@ -166,6 +164,34 @@ def test_caminhos_de_recusa() -> None:
             headers=_headers(),
         )
         assert injection.status_code == 422
+
+        # Opcional: o assistente do worker bloqueia o texto; o erro chega no SSE.
+        if os.environ.get("E2E_TEXT_MODERATION") == "1":
+            blocked_text = os.environ.get(
+                "E2E_TEXT_MODERATION_PROMPT",
+                "explicit sexual scene between adults",
+            )
+            blocked = _create(client, {"prompt": blocked_text})
+            result = _wait(client, blocked)
+            assert result["event"] == "error", result
+            assert str(result.get("error_code", "")).startswith("content_blocked_"), result
+
+        # Opcional: imagem de origem que o moderador falso/configurado bloqueia.
+        if os.environ.get("E2E_IMAGE_MODERATION") == "1":
+            blocked_path = os.environ.get("E2E_BLOCKED_IMAGE", "")
+            assert blocked_path, "defina E2E_BLOCKED_IMAGE"
+            with open(blocked_path, "rb") as handle:
+                blocked_image = handle.read()
+            blocked_upload = client.post(
+                f"{API}/api/v1/generations/edits/upload",
+                data={"prompt": "make the sky orange", "aspect_ratio": "1:1"},
+                files={"file": ("blocked.png", blocked_image, "image/png")},
+                headers=_headers(),
+            )
+            assert blocked_upload.status_code == 202, blocked_upload.text
+            result = _wait(client, blocked_upload.json())
+            assert result["event"] == "error", result
+            assert str(result.get("error_code", "")).startswith("source_image_blocked_"), result
 
         if not TOKEN:
             pytest.skip("E2E_ACCESS_TOKEN ausente: limite de upscale nao testado")

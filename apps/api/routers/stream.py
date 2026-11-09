@@ -18,6 +18,7 @@ from apps.api.dependencies import (
     GenerationRepoDep,
     ObjectStorageDep,
     OptionalCurrentUserDep,
+    QueueReconcilerDep,
     RedisDep,
     SettingsDep,
     StreamTicketDep,
@@ -44,6 +45,7 @@ async def issue_stream_ticket(
     generations: GenerationRepoDep,
     settings: SettingsDep,
     tickets: StreamTicketDep,
+    reconciler: QueueReconcilerDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> dict:
     generation = await generations.get_by_id(generation_id)
@@ -59,15 +61,13 @@ async def issue_stream_ticket(
     else:
         anonymous_id, token = resolve_anonymous_session(request, settings)
         set_anonymous_session_cookie(response, settings, token)
-        if (
-            generation.user_id is not None
-            or generation.anonymous_session_id != anonymous_id
-        ):
+        if generation.user_id is not None or generation.anonymous_session_id != anonymous_id:
             raise ForbiddenError("Acesso negado a esta geracao.")
         principal = f"anon:{anonymous_id}"
         user_id = None
 
     await limiter.consume(f"stream-ticket:{principal}")
+    await reconciler.reconcile_generation(generation.id)
     ticket = await tickets.issue(
         generation_id=generation.id,
         user_id=user_id,
@@ -89,6 +89,7 @@ async def stream_generation(
     settings: SettingsDep,
     storage: ObjectStorageDep,
     tickets: StreamTicketDep,
+    reconciler: QueueReconcilerDep,
     ticket: str = Query(..., min_length=16, max_length=256),
 ) -> EventSourceResponse:
     principal = await tickets.redeem(ticket)
@@ -98,6 +99,7 @@ async def stream_generation(
         raise ForbiddenError("Ticket nao pertence a esta geracao.")
     if await generations.get_by_id(generation_id) is None:
         raise NotFoundError("Geracao nao encontrada.")
+    await reconciler.reconcile_generation(generation_id)
 
     return EventSourceResponse(
         stream_generation_events(

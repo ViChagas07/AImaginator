@@ -58,7 +58,7 @@ SSE.
 | ORM                        | SQLAlchemy 2.x assíncrono + Pydantic v2 + Alembic                  |
 | Cache                      | Redis (Stale-While-Revalidate)                                    |
 | Mensageria                 | RabbitMQ + Celery                                                  |
-| Agentes de IA              | CrewAI + LangChain + LangGraph (atrás de uma porta)                |
+| Agentes de IA              | LangGraph opcional (lazy) + fallback sequencial (atrás de uma porta)                |
 | Auth                       | OAuth 2.0 + OpenID Connect via Authlib (Google), PKCE, JWT         |
 | Tempo real                 | SSE (Redis Pub/Sub como bridge)                                   |
 | Observabilidade            | Prometheus + Grafana + Sentry + structlog                         |
@@ -112,8 +112,8 @@ Client ──POST /generations──▶ FastAPI ──valida prompt (anti-inject
                                       └──enfileira──▶ RabbitMQ ──▶ Celery worker
                                                                         │
                                       ┌─────────────────────────────────┘
-                                      │ LangGraph: interpret → safety → generate/edit → post
-                                      │   (CrewAI roles / LangChain parsing, atrás de porta)
+                                      │ Pipeline: interpret → safety → generate/edit → post
+                                      │   (LangGraph opcional; fallback sequencial, atrás de porta)
                                       ▼
                               Redis Pub/Sub ──▶ FastAPI (SSE bridge) ──▶ Client (EventSource)
 ```
@@ -195,13 +195,105 @@ Variáveis principais:
 | `LLM_BASE_URL` | `http://localhost:1235/v1` | LM Studio |
 | `LLM_MODEL` | `qwen/qwen3.5-9b` | modelo local |
 | `LLM_API_KEY` | `lm-studio` | chave não vazia exigida pelo cliente |
-| `LLM_TIMEOUT_SECONDS` | `90` | primeira chamada carrega o modelo |
-| `LLM_MAX_OUTPUT_TOKENS` | `400` | tamanho do JSON |
+| `LLM_TIMEOUT_SECONDS` | `120` | primeira chamada carrega o modelo |
+| `LLM_MAX_OUTPUT_TOKENS` | `512` | tamanho do JSON |
+| `LLM_MAX_OUTPUT_TOKENS_RETRY` | `1024` | retentativa unica se vier `finish_reason=length` sem `content` |
+| `LLM_REASONING_EFFORT` | `none` | desliga o reasoning no LM Studio; vazio = nao envia o campo |
+| `LLM_UNLOAD_AFTER_USE` | `true` em dev | executa `lms unload --all` antes do FLUX |
+| `LMS_CLI_PATH` | vazio (`lms` do PATH) | caminho do executavel do LM Studio |
+| `LLM_UNLOAD_TIMEOUT_SECONDS` | `20` | timeout do `lms unload` |
+| `LLM_DEBUG_LOG_CONTENT` | `false` | loga preview de conteudo SO em development |
 | `LLM_TTL_SECONDS` | `60` | descarrega o modelo após o uso quando aceito |
 | `LLM_BLOCK_CONFIDENCE` | `0.5` | confiança mínima para bloqueio |
 | `MOD_WARN_AT` / `MOD_BLOCK_AT` / `MOD_REVIEW_AT` | `3` / `5` / `10` | níveis na janela de 24h |
 | `MOD_BLOCK_MINUTES` / `MOD_REVIEW_BLOCK_HOURS` | `60` / `24` | bloqueios |
 | `MODERATION_STORE_PROMPT_TEXT` | `false` | não guarda texto; se true, trunca em 200 |
+
+### Escolha do modelo do assistente
+
+Para maquinas com **4 GB de VRAM** (ex.: Radeon RX 6500 XT), use
+`qwen3.5-4b@q4_k_m`. O `qwen/qwen3.5-9b` Q4_K_M ocupa ~5,3 GB e transborda
+para a memoria compartilhada, derrubando a geracao para ~3-10 tok/s e
+pressionando a RAM do sistema. O 4B Q4_K_M cabe melhor na VRAM, responde mais
+rapido e deixa RAM livre para o FLUX/Kontext.
+
+Para trocar, no `.env.development`:
+
+```dotenv
+LLM_MODEL=qwen3.5-4b@q4_k_m
+LLM_REASONING_EFFORT=none
+LLM_MAX_OUTPUT_TOKENS=512
+LLM_TIMEOUT_SECONDS=120
+```
+
+Se o modelo nao estiver carregado no LM Studio, a primeira chamada inclui o
+carregamento e pode levar dezenas de segundos. `LLM_REASONING_EFFORT=none`
+e obrigatorio para Qwen3.x no LM Studio: `chat_template_kwargs.enable_thinking`
+nao e propagado pela API OpenAI-compatible.
+
+### Descarregar o LLM antes do FLUX
+
+`LLM_UNLOAD_AFTER_USE=true` (padrao em development) executa
+`lms unload --all` em subprocesso **sem shell**, com timeout de 20 s, ao final
+da etapa `assistant_llm` e antes do motor de imagem. Se `LMS_CLI_PATH` estiver
+vazio, o worker tenta `lms` do PATH. Falha, timeout ou CLI ausente apenas
+geram `llm_unload_failed` e a metrica `aimaginator_llm_unload_total`; o job
+continua. A guarda `MIN_FREE_RAM_MB` do sd-cli e avaliada no inicio de
+`_run_engine`, portanto **depois** do descarregamento.
+
+### Filas orfas e infraestrutura de dev
+
+O worker usa `task_acks_late=True` e `task_reject_on_worker_lost=True`; uma
+task reentregue com a Generation ja terminal sai sem trabalho. Se o publish
+no broker falhar, a geracao vira `queue_publish_failed` e o credito/cota sao
+devolvidos. Geracoes `queued` (ou `processing` sem heartbeat) por mais de
+`QUEUE_STALE_SECONDS` viram `queue_lost`; o reconciliador roda no startup do
+worker e ao abrir o stream/historico.
+
+Em `APP_ENV=development`, a API e o worker falham no boot se
+`DATABASE_URL`, `REDIS_URL`, `RABBITMQ_URL`, `CELERY_BROKER_URL`,
+`CELERY_RESULT_BACKEND` ou `S3_ENDPOINT_URL` apontarem para um host remoto.
+Use `ALLOW_REMOTE_INFRA_IN_DEV=true` apenas conscientemente. O arquivo
+`.env.development` tem precedencia em development (e o `.env` de producao nao
+e carregado nesse modo). Para conferir o broker efetivo sem imprimir
+credenciais:
+
+```powershell
+poetry run python -c "from urllib.parse import urlsplit; from infra.settings import get_settings; s=get_settings(); print('broker=', urlsplit(s.celery_broker_url).hostname, urlsplit(s.celery_broker_url).port); print('redis=', urlsplit(s.redis_url).hostname, urlsplit(s.redis_url).port)"
+```
+
+### Politica de moderacao do assistente
+
+A categoria final e decidida em codigo a partir dos booleanos
+`moderation.sexual`, `moderation.gore`, `moderation.hate` e
+`moderation.self_harm`; o campo `blocked_category` do modelo nao decide
+sozinho. Quando mais de um booleano e true, a prioridade e:
+**sexual > hate > gore > self_harm**. Se o campo declarado divergir dos
+booleanos, os booleanos vencem e a divergencia e registrada apenas na metrica
+`aimaginator_llm_category_mismatch_total` (rotulos declarado/derivado, sem
+texto do prompt).
+
+Se nenhum booleano for true e `blocked_category` vier preenchida, o campo e
+tratado como inconsistencia: ele so bloqueia quando a confianca for
+`>= LLM_BLOCK_CONFIDENCE`. Abaixo disso a decisao segue a politica existente
+de escopo (pedido dentro de escopo e permitido; fora de escopo recebe a
+recusa localizada), sem confiar no campo isolado.
+
+### Regras de reescrita do assistente
+
+`flux_prompt` e `kontext_instruction` devem ser fieis ao pedido e ao estilo
+solicitado. Nao podem acrescentar enfeites de qualidade/resolucao ("8k",
+"4k", "ultra detailed", "hyper-realistic", "masterpiece", "highly detailed")
+nem estilo/iluminacao nao pedidos (no maximo uma frase curta neutra quando o
+pedido for muito vago). Devem descrever apenas o que deve aparecer, sem
+negacoes em ingles ("without", "no", "avoid", "not", "free of"), preservar
+nomes de personagens/marcas exatamente e ficar em ~60 palavras. Para edicao,
+a instrucao padrao e "Change only X to Y. Keep everything else the same.".
+
+Se a saida contiver termos proibidos, o assistente faz UMA tentativa de
+reparo. Se o reparo persistir, invalido ou indisponivel, a lista e removida
+por substituicao deterministica e o job continua. As metricas
+`aimaginator_llm_rewrite_repairs_total` registram o desfecho sem texto.
 
 Relação entre as duas cotas: `generation_credits` é o saldo de gerações da
 conta; a cota diária é uma janela deslizante de 24 horas por prompt. Ambas são
@@ -290,6 +382,13 @@ Não usa o assistente, não repete moderação e não consome cota de prompts.
 Limite próprio `UPSCALE_DAILY_LIMIT` (5/24h). `UPSCALE_ENGINE=lanczos` usa
 Pillow; `esrgan` usa o sd-cli com `SDCPP_UPSCALE_MODEL_PATH` e
 `UPSCALE_TIMEOUT_SECONDS`. A suíte roda sem o grupo `moderation`.
+
+### Backfill de originais
+
+Geracoes antigas podem nao ter `original_object_key` (antes da Fase 6). Refinar
+ou ampliar essas geracoes retorna `original_unavailable` (409) com mensagem
+localizada, sem erro 500; nao ha backfill automatico. O campo
+`original_object_key` nunca aparece em API, SSE, historico ou galeria.
 
 ## Modo FLUX/Kontext local (`IMAGE_ENGINE=sdcpp`)
 
@@ -497,7 +596,7 @@ no repositório do modelo antes de uso comercial).
 
 - **ADR-002 — Agentes de IA atrás de uma porta.** `ImageAgentPort` é a única
   superfície que o resto do sistema conhece; só `adapters/ai_agents/` conhece
-  CrewAI/LangChain/LangGraph (imports lazy). Isso permite trocar o framework
+  LangGraph (import lazy, opcional). O restante da app nao depende de CrewAI/LangChain; o pipeline tem fallback sequencial.
   de orquestração sem tocar em regra de negócio, e mantém testes/API leves
   sem as deps pesadas.
 
@@ -518,9 +617,9 @@ no repositório do modelo antes de uso comercial).
   deprecado em favor de `joserfc` — migração prevista sem impacto funcional.
 
 - **ADR-007 — Faixa de Python e versões das libs de IA.** `python = "^3.11"`
-  foi apertado para `>=3.11,<=3.13`, e a família LangChain foi alinhada à era
+  foi mantido em `>=3.11,<=3.13`; a família LangChain foi alinhada à era
   0.2.x (`langchain`, `langchain-core`, `langgraph`), porque `crewai ^0.70`
-  exige `langchain >=0.2.16,<0.3.0` e Python `<=3.13`. Isso garante um
+  permanece apenas como dependencia transitiva do LangGraph opcional. CrewAI/LangChain diretos foram removidos. Isso garante um
   `poetry.lock` resolvível e reproduzível no runtime `python:3.11-slim`.
 
 ADRs detalhados: `docs/agent/adr/`.
@@ -535,3 +634,69 @@ consideradas comprometidas e **rotacionadas**:
   novas no [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
   (OAuth 2.0 Client IDs → **Reset secret**) e preencha o `.env`. Enquanto
   vazias, o SSO Google fica desabilitado (a API sobe normalmente).
+
+## Plataforma (Fase 9)
+
+### Status e disponibilidade
+`GET /api/v1/status` e publico e informa `feature_enabled`, `maintenance` e
+disponibilidade por kind (`generate`, `edit`, `upscale`). Sem worker vivo para
+o kind, a criacao responde 503 `engine_offline` sem consumir credito/cota.
+Cada worker publica heartbeat no Redis (id, capacidades, engine, estado,
+last_seen) com TTL curto. `MAINTENANCE_MODE` ou a chave Redis
+`system:maintenance` colocam a plataforma em manutencao.
+
+### Worker remoto e motor hospedado
+`WORKER_MODE=remote` permite GPU em casa falando com broker/Redis/Postgres/S3
+na nuvem, exigindo TLS (`amqps`, `rediss`, `sslmode=require`) e credenciais de
+menor privilegio. Ver `docs/deploy/REMOTE_WORKER.md`. `IMAGE_ENGINE=hosted`
+usa um contrato HTTP simples (POST + polling) e `IMAGE_ENGINE_FALLBACK=hosted`
+permite fallback quando nao ha worker local vivo.
+
+### Guarda termica e de RAM
+Com `THERMAL_GUARD_ENABLED=true`, o worker consulta `HW_SENSOR_URL`
+(LibreHardwareMonitor) antes e durante o job. Acima de `START_TEMP_MAX_C`
+espera resfriar; acima de `ABORT_TEMP_C` ou abaixo de `MIN_FREE_RAM_ABORT_MB`
+mata a arvore do sd-cli, devolve credito/cota e fica em `cooling` por
+`COOLDOWN_AFTER_ABORT_SECONDS`. Sensor ausente apenas avisa. O exporter manual
+fica em `tools/hw_exporter.py`.
+
+### Creditos, planos e uso
+Todo consumo/refund/adjust passa pelo ledger `credit_ledger` com chave
+idempotente e `SELECT ... FOR UPDATE`; `users.generation_credits` e o saldo
+materializado. Planos `free`/`pro` configuram creditos mensais, prompts diarios
+e upscale diario. O reset mensal e preguicoso e idempotente. O frontend mostra
+o consumo em Configuracoes.
+
+### Admin
+`ADMIN_EMAILS` promove administradores no startup. O console em
+`/[locale]/admin` permite ver usuarios sinalizados, estatisticas agregadas,
+bloquear/desbloquear, ajustar creditos, ver workers, alternar manutencao e
+consultar a fila de denuncias (placeholder). Toda acao grava
+`admin_audit_log`; respostas nao incluem prompt, email ou IP.
+
+### C2PA, avatar e backfill
+C2PA fica no grupo opcional `provenance` (`poetry install --with provenance`).
+`C2PA_REQUIRED=true` falha fechado; `false` publica sem assinatura. O avatar e
+reencodado para PNG 256px, sem EXIF, gravado em `avatars/{user_id}` e servido
+por proxy (sem bucket publico). Geracoes antigas sem original retornam
+`original_unavailable`; o backfill manual fica em
+`tools/backfill_originals.py --dry-run|--apply`.
+
+### CI/CD e supply chain
+`.github/workflows/` contem CI, CodeQL, gitleaks e auditorias com gates
+High/Critical; Dependabot e build Docker (sem push) tambem estao configurados.
+Excecoes de auditoria ficam em `.github/security-exceptions.json` com validade.
+
+
+## Produto (Fase 10, parcial)
+
+- Biblioteca pessoal: colecoes, favoritos, tags, busca full-text, soft delete
+  em lote e export ZIP (somente marca d'agua, limite 50).
+- Compartilhamento: links com token de 256 bits, expiracao/revogacao, prompt
+  opt-in, pagina publica `/s/{token}` e OpenGraph sem dados pessoais.
+- Denuncias: motivos de moderacao, anti-spam e fila admin auditada.
+- Presets deterministicos de estilo aplicados em codigo depois do assistente.
+- Cancelamento com status CANCELED, refunds e SSE; retry de geracao.
+- UI entregue nesta fase: chips de estilo, botao cancelar e pagina publica.
+- Pendente: UI completa de colecoes/filtros/selecao, retry de edicao/upscale,
+  notificacoes do navegador e sugestao automatica de proporcao.

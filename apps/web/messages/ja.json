@@ -223,7 +223,17 @@
     "uploadRequired": "続行するにはソース画像を選択してください。",
     "upscale": "高級感のある",
     "upscaling": "アップスケーリング中...",
-    "upscaleRemaining": "本日の高級品の出発: {count}"
+    "upscaleRemaining": "本日の高級品の出発: {count}",
+    "styleLabel": "Style",
+    "styleNone": "No style",
+    "stylePhotorealistic": "Photographic",
+    "styleAnime": "Anime",
+    "styleOilPainting": "Oil painting",
+    "styleCyberpunk": "Cyberpunk",
+    "styleWatercolor": "Watercolor",
+    "styleIsometric3d": "3D isometric",
+    "cancel": "Cancel generation",
+    "cancelConfirm": "Cancel this generation? Credits will be refunded."
   },
   "gallery": {
     "title": "公開ギャラリー",
@@ -245,7 +255,9 @@
     "generic": "何か問題が発生しました。もう一度お試しください。",
     "generationHttp": "エラー {status}: 生成を開始できませんでした。もう一度お試しください。",
     "generationFailed": "生成に失敗しました。もう一度お試しください。",
-    "generationNetwork": "APIへの接続でネットワークエラーが発生しました。接続を確認してもう一度お試しください。"
+    "generationNetwork": "APIへの接続でネットワークエラーが発生しました。接続を確認してもう一度お試しください。",
+    "queuePublishFailed": "現在、生成を開始できませんでした。クレジットは返金されました。もう一度お試しください。",
+    "queueLost": "前回の生成はキューで失われました。クレジットは返金されました。もう一度お試しください。"
   },
   "language": {
     "selectorLabel": "言語を選択"
@@ -639,6 +651,37 @@
         "cancel": "キャンセル",
         "confirm": "はい、すべてをリセットします"
       }
+    }
+  },
+  "status": {
+    "title": "Service status",
+    "maintenance": "AImaginator is under maintenance. We will be back soon.",
+    "offline": "The image engine is offline right now.",
+    "canceled": "キャンセル済み"
+  },
+  "admin": {
+    "title": "Administration",
+    "unauthorized": "Administrator access only.",
+    "flaggedUsers": "Flagged users",
+    "noUsers": "No flagged users."
+  },
+  "usage": {
+    "title": "Your usage",
+    "balance": "Credits",
+    "plan": "Plan",
+    "daily": "Prompts today",
+    "upscale": "Upscale today"
+  },
+  "share": {
+    "report": "Report",
+    "reportReason": "Reason",
+    "reportSent": "Report sent.",
+    "reasons": {
+      "nsfw": "Sexual content",
+      "gore": "Graphic violence",
+      "hate": "Hate",
+      "self_harm": "Self-harm",
+      "other": "Other"
     }
   }
 }

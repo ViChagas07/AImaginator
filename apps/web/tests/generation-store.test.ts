@@ -115,6 +115,7 @@ describe("generation store", () => {
     expect(JSON.parse(String(init?.body ?? "{}"))).toEqual({
       prompt: "um castelo",
       aspect_ratio: "4:3",
+      style_preset: "none",
       seed: 42,
     });
     await vi.waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));

@@ -223,7 +223,17 @@
     "uploadRequired": "Wählen Sie ein Quellbild aus, um fortzufahren.",
     "upscale": "Gehoben",
     "upscaling": "Hochskalierung...",
-    "upscaleRemaining": "Gehobene Angebote heute noch übrig: {count}"
+    "upscaleRemaining": "Gehobene Angebote heute noch übrig: {count}",
+    "styleLabel": "Style",
+    "styleNone": "No style",
+    "stylePhotorealistic": "Photographic",
+    "styleAnime": "Anime",
+    "styleOilPainting": "Oil painting",
+    "styleCyberpunk": "Cyberpunk",
+    "styleWatercolor": "Watercolor",
+    "styleIsometric3d": "3D isometric",
+    "cancel": "Cancel generation",
+    "cancelConfirm": "Cancel this generation? Credits will be refunded."
   },
   "gallery": {
     "title": "Öffentliche Galerie",
@@ -245,7 +255,9 @@
     "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
     "generationHttp": "Fehler {status}: Die Generierung konnte nicht gestartet werden. Bitte erneut versuchen.",
     "generationFailed": "Die Generierung ist fehlgeschlagen. Bitte erneut versuchen.",
-    "generationNetwork": "Netzwerkfehler bei der Verbindung zur API. Bitte Verbindung prüfen und erneut versuchen."
+    "generationNetwork": "Netzwerkfehler bei der Verbindung zur API. Bitte Verbindung prüfen und erneut versuchen.",
+    "queuePublishFailed": "Die Generierung konnte gerade nicht gestartet werden. Dein Guthaben wurde erstattet; bitte versuche es erneut.",
+    "queueLost": "Die vorherige Generierung ging in der Warteschlange verloren. Dein Guthaben wurde erstattet; bitte versuche es erneut."
   },
   "language": {
     "selectorLabel": "Sprache auswählen"
@@ -639,6 +651,37 @@
         "cancel": "Stornieren",
         "confirm": "Ja, alles zurücksetzen"
       }
+    }
+  },
+  "status": {
+    "title": "Service status",
+    "maintenance": "AImaginator is under maintenance. We will be back soon.",
+    "offline": "The image engine is offline right now.",
+    "canceled": "Abgebrochen"
+  },
+  "admin": {
+    "title": "Administration",
+    "unauthorized": "Administrator access only.",
+    "flaggedUsers": "Flagged users",
+    "noUsers": "No flagged users."
+  },
+  "usage": {
+    "title": "Your usage",
+    "balance": "Credits",
+    "plan": "Plan",
+    "daily": "Prompts today",
+    "upscale": "Upscale today"
+  },
+  "share": {
+    "report": "Report",
+    "reportReason": "Reason",
+    "reportSent": "Report sent.",
+    "reasons": {
+      "nsfw": "Sexual content",
+      "gore": "Graphic violence",
+      "hate": "Hate",
+      "self_harm": "Self-harm",
+      "other": "Other"
     }
   }
 }

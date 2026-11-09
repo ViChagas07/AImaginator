@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from uuid import UUID
 
+from modules.image_generation.application.localization import message_for
 from modules.image_generation.application.ports import (
     EventPublisherPort,
     GenerationRepositoryPort,
@@ -38,6 +41,7 @@ from modules.observability.metrics import (
     REFUSALS_TOTAL,
 )
 from modules.prompt_quota.contracts import PromptQuotaRefundPort
+from modules.users.application.credits import CreditLedgerService
 from modules.users.contracts import User, UserRepositoryPort
 from shared_kernel.errors import AImaginatorError, NotFoundError
 from shared_kernel.security_errors import ContentBlockedError, ImageBlockedError
@@ -56,6 +60,8 @@ class ProcessGeneration:
         users: UserRepositoryPort | None = None,
         moderation: ModerationService | None = None,
         quota_refund: PromptQuotaRefundPort | None = None,
+        credits: CreditLedgerService | None = None,
+        commit: Callable[[], Awaitable[None]] | None = None,
     ) -> None:
         self._generations = generations
         self._agent = image_agent
@@ -64,6 +70,18 @@ class ProcessGeneration:
         self._users = users
         self._moderation = moderation
         self._quota_refund = quota_refund
+        self._credits = credits
+        self._commit = commit
+
+    async def _commit_if_available(self) -> None:
+        if self._commit is not None:
+            await self._commit()
+
+    async def _heartbeat(self, generation: Generation) -> None:
+        """Persiste updated_at em transacao curta (visivel ao reconciliador)."""
+        generation.updated_at = datetime.now(UTC)
+        await self._generations.save(generation)
+        await self._commit_if_available()
 
     async def execute(
         self, generation_id: UUID, *, raise_on_failure: bool = True
@@ -71,6 +89,16 @@ class ProcessGeneration:
         generation = await self._generations.get_by_id(generation_id)
         if generation is None:
             raise NotFoundError(f"Geracao {generation_id} nao encontrada.")
+        if generation.status in (GenerationStatus.DONE, GenerationStatus.FAILED):
+            # Reentrega idempotente (acks_late): estado terminal sai sem trabalho.
+            logger.info(
+                "generation_already_terminal",
+                extra={
+                    "generation_id": str(generation.id),
+                    "status": generation.status.value,
+                },
+            )
+            return
 
         async def publish(status: GenerationStatus, progress: int, **kwargs) -> None:
             await self._events.publish_progress(
@@ -84,26 +112,28 @@ class ProcessGeneration:
 
         started = time.monotonic()
         try:
-            generation.transition_to(GenerationStatus.PROCESSING)
-            await self._generations.save(generation)
+            if generation.status is GenerationStatus.PROCESSING:
+                # Reentrega apos perda do worker: retoma em vez de transicionar
+                # PROCESSING -> PROCESSING (transicao invalida).
+                await self._heartbeat(generation)
+            else:
+                generation.transition_to(GenerationStatus.PROCESSING)
+                await self._generations.save(generation)
+                await self._commit_if_available()
             await publish(GenerationStatus.PROCESSING, 5)
 
             async def on_progress(percent: int) -> None:
+                await self._heartbeat(generation)
                 await publish(GenerationStatus.PROCESSING, min(max(percent, 5), 99))
 
             result_url = await self._agent.run_generation(generation, on_progress)
             if self._storage is not None and generation.result_object_key:
-                result_url = await self._storage.presigned_get_url(
-                    generation.result_object_key
-                )
+                result_url = await self._storage.presigned_get_url(generation.result_object_key)
 
-            generation.attach_result(
-                result_url, object_key=generation.result_object_key
-            )
+            generation.attach_result(result_url, object_key=generation.result_object_key)
             await self._generations.save(generation)
-            GENERATIONS_TOTAL.labels(
-                kind=generation.kind.value, status="done"
-            ).inc()
+            await self._commit_if_available()
+            GENERATIONS_TOTAL.labels(kind=generation.kind.value, status="done").inc()
             GENERATION_DURATION.labels(kind=generation.kind.value).observe(
                 max(0.0, time.monotonic() - started)
             )
@@ -118,6 +148,15 @@ class ProcessGeneration:
             if isinstance(exc, AImaginatorError):
                 error_code = exc.code
                 safe_message = exc.message
+                if error_code in {
+                    "engine_offline",
+                    "maintenance",
+                    "hardware_busy",
+                    "thermal_abort",
+                    "resource_abort",
+                    "canceled",
+                }:
+                    safe_message = message_for(error_code, generation.locale)
             else:
                 error_code = "engine_failed"
                 safe_message = "Falha no processamento."
@@ -144,6 +183,11 @@ class ProcessGeneration:
             if generation.status is not GenerationStatus.DONE:
                 await self._refund_credit(generation, reason=error_code)
                 await self._refund_quota(generation, reason=error_code)
+            final_status = (
+                GenerationStatus.CANCELED
+                if error_code == "canceled"
+                else GenerationStatus.FAILED
+            )
             if generation.status in (
                 GenerationStatus.QUEUED,
                 GenerationStatus.PROCESSING,
@@ -151,17 +195,18 @@ class ProcessGeneration:
                 generation.warning_level = warning_level
                 generation.warning_message = warning_message
                 generation.transition_to(
-                    GenerationStatus.FAILED, error=safe_message, error_code=error_code
+                    final_status, error=safe_message, error_code=error_code
                 )
                 await self._generations.save(generation)
+                await self._commit_if_available()
             GENERATIONS_TOTAL.labels(
-                kind=generation.kind.value, status="failed"
+                kind=generation.kind.value, status=final_status.value
             ).inc()
             GENERATION_DURATION.labels(kind=generation.kind.value).observe(
                 max(0.0, time.monotonic() - started)
             )
             await publish(
-                GenerationStatus.FAILED,
+                final_status,
                 100,
                 error=safe_message,
                 error_code=error_code,
@@ -171,9 +216,7 @@ class ProcessGeneration:
             if raise_on_failure:
                 raise
 
-    async def _record_moderation(
-        self, generation: Generation, exc, *, apply_penalty: bool = True
-    ):
+    async def _record_moderation(self, generation: Generation, exc, *, apply_penalty: bool = True):
         if self._moderation is None or exc.category is None:
             return None
         user: User | None = None
@@ -202,16 +245,22 @@ class ProcessGeneration:
             )
             return None
 
-    async def _refund_credit(
-        self, generation: Generation, *, reason: str = "unknown"
-    ) -> None:
-        if (
-            self._users is None
-            or generation.user_id is None
-            or generation.credits_refunded
-        ):
+    async def _refund_credit(self, generation: Generation, *, reason: str = "unknown") -> None:
+        if self._users is None or generation.user_id is None or generation.credits_refunded:
             return
         try:
+            if self._credits is not None:
+                await self._credits.refund(
+                    generation.user_id,
+                    amount=generation.credits_cost,
+                    ref_type="generation",
+                    ref_id=str(generation.id),
+                    idempotency_key=f"refund:{generation.id}",
+                    meta={"reason": reason},
+                )
+                generation.credits_refunded = True
+                CREDITS_REFUNDED_TOTAL.labels(reason=reason).inc()
+                return
             user = await self._users.get_by_id(generation.user_id)
             if user is None:
                 return
@@ -226,9 +275,7 @@ class ProcessGeneration:
                 exc_info=True,
             )
 
-    async def _refund_quota(
-        self, generation: Generation, *, reason: str = "unknown"
-    ) -> None:
+    async def _refund_quota(self, generation: Generation, *, reason: str = "unknown") -> None:
         if self._quota_refund is None or generation.quota_refunded:
             return
         if generation.user_id is not None:
@@ -278,9 +325,7 @@ class ProcessGeneration:
         }
         reason = reasons.get(code)
         if reason is not None:
-            ENGINE_FAILURES_TOTAL.labels(
-                kind=generation.kind.value, reason=reason
-            ).inc()
+            ENGINE_FAILURES_TOTAL.labels(kind=generation.kind.value, reason=reason).inc()
 
 
 __all__ = ["ProcessGeneration", "stream_channel"]

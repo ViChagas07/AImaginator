@@ -223,7 +223,17 @@
     "uploadRequired": "Escolha uma imagem de origem para continuar.",
     "upscale": "Ampliar",
     "upscaling": "Ampliando...",
-    "upscaleRemaining": "Ampliações restantes hoje: {count}"
+    "upscaleRemaining": "Ampliações restantes hoje: {count}",
+    "styleLabel": "Style",
+    "styleNone": "No style",
+    "stylePhotorealistic": "Photographic",
+    "styleAnime": "Anime",
+    "styleOilPainting": "Oil painting",
+    "styleCyberpunk": "Cyberpunk",
+    "styleWatercolor": "Watercolor",
+    "styleIsometric3d": "3D isometric",
+    "cancel": "Cancelar geracao",
+    "cancelConfirm": "Cancelar esta geracao? O credito sera devolvido."
   },
   "gallery": {
     "title": "Galeria pública",
@@ -245,7 +255,9 @@
     "generic": "Algo deu errado. Tente novamente.",
     "generationHttp": "Erro {status}: não foi possível iniciar a geração. Tente novamente.",
     "generationFailed": "A geração falhou. Tente novamente.",
-    "generationNetwork": "Falha de rede ao contatar a API. Verifique sua conexão e tente novamente."
+    "generationNetwork": "Falha de rede ao contatar a API. Verifique sua conexão e tente novamente.",
+    "queuePublishFailed": "Não foi possível iniciar a geração agora. Seu crédito foi devolvido; tente novamente.",
+    "queueLost": "A geração anterior foi perdida na fila. Seu crédito foi devolvido; tente novamente."
   },
   "language": {
     "selectorLabel": "Selecionar idioma"
@@ -639,6 +651,37 @@
         "cancel": "Cancelar",
         "confirm": "Sim, Redefinir Tudo"
       }
+    }
+  },
+  "status": {
+    "title": "Status do serviço",
+    "maintenance": "AImaginator está em manutenção. Voltamos em breve.",
+    "offline": "O motor de imagem está offline no momento.",
+    "canceled": "Cancelado"
+  },
+  "admin": {
+    "title": "Administração",
+    "unauthorized": "Acesso restrito a administradores.",
+    "flaggedUsers": "Usuários sinalizados",
+    "noUsers": "Nenhum usuário sinalizado."
+  },
+  "usage": {
+    "title": "Seu uso",
+    "balance": "Créditos",
+    "plan": "Plano",
+    "daily": "Prompts hoje",
+    "upscale": "Upscale hoje"
+  },
+  "share": {
+    "report": "Denunciar",
+    "reportReason": "Motivo",
+    "reportSent": "Denúncia enviada.",
+    "reasons": {
+      "nsfw": "Conteúdo sexual",
+      "gore": "Violência gráfica",
+      "hate": "Ódio",
+      "self_harm": "Autolesão",
+      "other": "Outro"
     }
   }
 }

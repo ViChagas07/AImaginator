@@ -13,6 +13,9 @@ from modules.users.contracts import User
 # Testes nunca devem disparar `alembic upgrade head` no boot da app
 # (o lifespan da API roda as migrations quando auto_migrate=True).
 os.environ.setdefault("AUTO_MIGRATE", "false")
+# A suite pode rodar com o .env de dev apontando para servicos remotos.
+# A guarda de infra continua testada explicitamente em test_dev_guard.py.
+os.environ.setdefault("ALLOW_REMOTE_INFRA_IN_DEV", "true")
 # Isola a suite do .env do desenvolvedor: modelos reais nunca rodam em teste.
 os.environ["IMAGE_ENGINE"] = "stub"
 os.environ["FEATURE_IMAGE_GENERATION_ENABLED"] = "true"
@@ -52,6 +55,9 @@ class InMemoryUserRepository:
     async def get_by_id(self, user_id):
         return self._users.get(user_id)
 
+    async def get_by_id_for_update(self, user_id):
+        return self._users.get(user_id)
+
     async def get_by_google_sub(self, google_sub: str):
         return next((u for u in self._users.values() if u.google_sub == google_sub), None)
 
@@ -61,6 +67,12 @@ class InMemoryUserRepository:
     async def save(self, user: User) -> User:
         self._users[user.id] = user
         return user
+
+    async def list_flagged(self, *, limit: int = 100):
+        return [u for u in self._users.values() if u.moderation_flag][:limit]
+
+    async def list_period_due(self, *, before, limit: int = 1000):
+        return [u for u in self._users.values() if u.credits_period_start < before][:limit]
 
 
 class InMemoryGenerationRepository:
@@ -86,11 +98,7 @@ class InMemoryGenerationRepository:
         self._items[generation.id] = generation
 
     async def list_by_user(self, user_id, *, cursor, limit):
-        items = [
-            g
-            for g in self._items.values()
-            if g.user_id == user_id and g.deleted_at is None
-        ]
+        items = [g for g in self._items.values() if g.user_id == user_id and g.deleted_at is None]
         items.sort(key=lambda g: (g.created_at, g.id), reverse=True)
         if cursor is not None:
             cursor_item = self._items.get(cursor)
@@ -133,6 +141,35 @@ class InMemoryGenerationRepository:
         ]
         items.sort(key=lambda g: g.created_at, reverse=True)
         return items[:limit]
+
+    async def list_done_without_original(self, *, limit=500):
+        from modules.image_generation.domain.entities import GenerationStatus
+
+        items = [
+            g
+            for g in self._items.values()
+            if g.status is GenerationStatus.DONE
+            and g.original_object_key is None
+            and g.deleted_at is None
+        ]
+        return items[:limit]
+
+    async def list_stale(self, *, older_than, limit):
+        from modules.image_generation.domain.entities import GenerationStatus
+
+        items = [
+            g
+            for g in self._items.values()
+            if g.deleted_at is None
+            and g.status in (GenerationStatus.QUEUED, GenerationStatus.PROCESSING)
+            and g.updated_at < older_than
+        ]
+        items.sort(key=lambda g: g.updated_at)
+        return items[:limit]
+
+    async def list_stale_for_user(self, user_id, *, older_than, limit):
+        items = await self.list_stale(older_than=older_than, limit=limit * 2)
+        return [g for g in items if g.user_id == user_id][:limit]
 
 
 class InMemoryObjectStorage:

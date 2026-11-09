@@ -10,6 +10,9 @@ from modules.image_generation.application.ports import (
     ObjectStoragePort,
 )
 from modules.image_generation.application.schemas import GenerationOutput, GenerationPage
+from modules.image_generation.application.services.queue_recovery import (
+    QueueRecoveryService,
+)
 from modules.image_generation.domain.entities import Generation
 from shared_kernel.errors import ForbiddenError, NotFoundError
 
@@ -44,10 +47,15 @@ async def _to_output(
 
 class GetGeneration:
     def __init__(
-        self, generations: GenerationRepositoryPort, *, storage: ObjectStoragePort | None = None
+        self,
+        generations: GenerationRepositoryPort,
+        *,
+        storage: ObjectStoragePort | None = None,
+        reconciler: QueueRecoveryService | None = None,
     ) -> None:
         self._generations = generations
         self._storage = storage
+        self._reconciler = reconciler
 
     async def execute(self, *, user_id: UUID, generation_id: UUID) -> GenerationOutput:
         generation = await self._generations.get_by_id(generation_id)
@@ -56,20 +64,32 @@ class GetGeneration:
         if generation.user_id != user_id:
             # Nao vaza existencia do recurso a terceiros (anti-enumeracao).
             raise ForbiddenError("Acesso negado a esta geracao.")
+        if self._reconciler is not None:
+            await self._reconciler.reconcile_generation(generation_id)
+            generation = await self._generations.get_by_id(generation_id)
+            if generation is None:
+                raise NotFoundError("Geracao nao encontrada.")
         return await _to_output(generation, self._storage)
 
 
 class ListUserGenerations:
     def __init__(
-        self, generations: GenerationRepositoryPort, *, storage: ObjectStoragePort | None = None
+        self,
+        generations: GenerationRepositoryPort,
+        *,
+        storage: ObjectStoragePort | None = None,
+        reconciler: QueueRecoveryService | None = None,
     ) -> None:
         self._generations = generations
         self._storage = storage
+        self._reconciler = reconciler
 
     async def execute(
         self, *, user_id: UUID, cursor: str | None, limit: int = _DEFAULT_PAGE_SIZE
     ) -> GenerationPage:
         limit = max(1, min(limit, _MAX_PAGE_SIZE))
+        if self._reconciler is not None:
+            await self._reconciler.reconcile_user(user_id, limit=limit)
         cursor_uuid = self._decode_cursor(cursor)
         items = await self._generations.list_by_user(user_id, cursor=cursor_uuid, limit=limit + 1)
         next_cursor = None

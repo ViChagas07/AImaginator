@@ -223,7 +223,17 @@
     "uploadRequired": "Выберите исходное изображение, чтобы продолжить.",
     "upscale": "высококлассный",
     "upscaling": "Масштабирование...",
-    "upscaleRemaining": "Сегодня осталось высококлассных пользователей: {count}"
+    "upscaleRemaining": "Сегодня осталось высококлассных пользователей: {count}",
+    "styleLabel": "Style",
+    "styleNone": "No style",
+    "stylePhotorealistic": "Photographic",
+    "styleAnime": "Anime",
+    "styleOilPainting": "Oil painting",
+    "styleCyberpunk": "Cyberpunk",
+    "styleWatercolor": "Watercolor",
+    "styleIsometric3d": "3D isometric",
+    "cancel": "Cancel generation",
+    "cancelConfirm": "Cancel this generation? Credits will be refunded."
   },
   "gallery": {
     "title": "Публичная галерея",
@@ -245,7 +255,9 @@
     "generic": "Что-то пошло не так. Попробуйте снова.",
     "generationHttp": "Ошибка {status}: не удалось начать генерацию. Попробуйте снова.",
     "generationFailed": "Генерация не удалась. Попробуйте снова.",
-    "generationNetwork": "Сетевая ошибка при обращении к API. Проверьте соединение и попробуйте снова."
+    "generationNetwork": "Сетевая ошибка при обращении к API. Проверьте соединение и попробуйте снова.",
+    "queuePublishFailed": "Не удалось запустить генерацию сейчас. Кредит возвращён; попробуйте ещё раз.",
+    "queueLost": "Предыдущая генерация потерялась в очереди. Кредит возвращён; попробуйте ещё раз."
   },
   "language": {
     "selectorLabel": "Выбрать язык"
@@ -639,6 +651,37 @@
         "cancel": "Отмена",
         "confirm": "Да, сбросить все"
       }
+    }
+  },
+  "status": {
+    "title": "Service status",
+    "maintenance": "AImaginator is under maintenance. We will be back soon.",
+    "offline": "The image engine is offline right now.",
+    "canceled": "Отменено"
+  },
+  "admin": {
+    "title": "Administration",
+    "unauthorized": "Administrator access only.",
+    "flaggedUsers": "Flagged users",
+    "noUsers": "No flagged users."
+  },
+  "usage": {
+    "title": "Your usage",
+    "balance": "Credits",
+    "plan": "Plan",
+    "daily": "Prompts today",
+    "upscale": "Upscale today"
+  },
+  "share": {
+    "report": "Report",
+    "reportReason": "Reason",
+    "reportSent": "Report sent.",
+    "reasons": {
+      "nsfw": "Sexual content",
+      "gore": "Graphic violence",
+      "hate": "Hate",
+      "self_harm": "Self-harm",
+      "other": "Other"
     }
   }
 }

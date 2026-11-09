@@ -12,15 +12,58 @@ from __future__ import annotations
 
 import os
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _read_env_value(path: Path, key: str) -> str | None:
+    """Le uma chave simples de um arquivo .env sem carregar segredos."""
+    if not path.is_file():
+        return None
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in stripped:
+            continue
+        name, value = stripped.split("=", 1)
+        if name.strip().lower() == key.lower():
+            return value.strip().strip('"').strip("'")
+    return None
+
+
+def resolve_env_files() -> tuple[str, ...]:
+    """Escolhe o arquivo de ambiente com precedencia segura.
+
+    - ENV_FILE explicito sempre vence.
+    - Em development, .env.development (se existir) substitui o .env:
+      o arquivo de producao nunca e carregado nesse modo.
+    - Em qualquer outro modo, apenas .env.
+    """
+    explicit = os.environ.get("ENV_FILE")
+    if explicit:
+        return (explicit,)
+
+    app_env = (
+        os.environ.get("APP_ENV")
+        or _read_env_value(Path(".env"), "APP_ENV")
+        or _read_env_value(Path(".env.development"), "APP_ENV")
+        or "development"
+    ).lower()
+    dev_file = Path(".env.development")
+    if app_env == "development" and dev_file.is_file():
+        return (str(dev_file),)
+    return (".env",)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=os.environ.get("ENV_FILE", ".env"),
+        env_file=resolve_env_files(),
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
@@ -69,15 +112,24 @@ class Settings(BaseSettings):
     jwt_refresh_token_ttl_seconds: int = 2_592_000
 
     # ---- Provedor de IA ----
-    # IMAGE_ENGINE e o switch do runtime local (stub | sdcpp).
+    # IMAGE_ENGINE: stub (testes), sdcpp (local) ou hosted (HTTP remoto).
     # AI_IMAGE_PROVIDER permanece como legado do provedor HTTP externo.
-    image_engine: Literal["stub", "sdcpp"] = "stub"
+    image_engine: Literal["stub", "sdcpp", "hosted"] = "stub"
+    image_engine_fallback: str = ""
     sdcpp_binary_path: str = ""
     sdcpp_vae_path: str = ""
     sdcpp_clip_l_path: str = ""
     sdcpp_t5xxl_path: str = ""
     sdcpp_gen_model_path: str = ""
     sdcpp_edit_model_path: str = ""
+
+    # ---- Motor hospedado (esqueleto; nenhum provedor real em teste) ----
+    hosted_engine_base_url: str = ""
+    hosted_engine_api_key: str = ""
+    hosted_engine_generate_path: str = "/generate"
+    hosted_engine_edit_path: str = "/edit"
+    hosted_engine_poll_interval_seconds: float = Field(default=1.0, gt=0)
+    hosted_engine_timeout_seconds: float = Field(default=600.0, gt=0)
 
     ai_image_provider: str = "stub"
     ai_image_api_key: str = ""
@@ -123,11 +175,21 @@ class Settings(BaseSettings):
     llm_base_url: str = "http://localhost:1235/v1"
     llm_model: str = "qwen/qwen3.5-9b"
     llm_api_key: str = Field(default="lm-studio", min_length=1)
-    llm_timeout_seconds: float = Field(default=90.0, gt=0)
-    llm_max_output_tokens: int = Field(default=400, gt=0)
+    llm_timeout_seconds: float = Field(default=120.0, gt=0)
+    llm_max_output_tokens: int = Field(default=512, gt=0)
+    # Tentativa unica extra quando a saida vem truncada sem content.
+    llm_max_output_tokens_retry: int = Field(default=1024, gt=0)
+    # "none" desliga o reasoning; vazio nao envia o campo.
+    llm_reasoning_effort: str = "none"
     llm_ttl_seconds: int = Field(default=60, ge=0)
     # Confianca minima para aceitar uma categoria moderada como bloqueio.
     llm_block_confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+    # Descarrega o modelo do LM Studio entre o assistente e o FLUX.
+    llm_unload_after_use: bool | None = None
+    llm_unload_timeout_seconds: float = Field(default=20.0, gt=0)
+    lms_cli_path: str = ""
+    # Conteudo do LLM em log so em desenvolvimento e com opt-in explicito.
+    llm_debug_log_content: bool = False
 
     # ---- Classificador de topico legado (nao usado no fluxo principal) ----
     # "stub" (default, sem LLM) | "http" (OpenAI Chat Completions) | "gemini" (API nativa do Gemini)
@@ -157,9 +219,7 @@ class Settings(BaseSettings):
     image_self_harm_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
 
     # ---- Marca d'agua ----
-    watermark_logo_path: str = (
-        "modules/image_generation/assets/AImaginator_pic_transparent.png"
-    )
+    watermark_logo_path: str = "modules/image_generation/assets/AImaginator_pic_transparent.png"
     watermark_width_ratio: float = Field(default=0.20, gt=0.0, lt=1.0)
     watermark_min_width_px: int = Field(default=96, ge=1)
     watermark_margin_ratio: float = Field(default=0.025, ge=0.0, lt=0.5)
@@ -168,14 +228,53 @@ class Settings(BaseSettings):
 
     # ---- Metadados de IA / C2PA opcional ----
     c2pa_enabled: bool = False
+    c2pa_required: bool = False
     c2pa_cert_path: str = ""
     c2pa_key_path: str = ""
+    c2pa_algorithm: str = "es256"
 
     # ---- Upscale ----
     upscale_engine: Literal["lanczos", "esrgan"] = "lanczos"
     sdcpp_upscale_model_path: str = ""
     upscale_timeout_seconds: int = Field(default=300, gt=0)
     upscale_daily_limit: int = Field(default=5, ge=1)
+
+    # ---- Planos, creditos e avatar ----
+    plan_free_monthly_credits: int = Field(default=50, ge=0)
+    plan_pro_monthly_credits: int = Field(default=300, ge=0)
+    plan_free_daily_prompts: int = Field(default=3, ge=0)
+    plan_pro_daily_prompts: int = Field(default=20, ge=0)
+    plan_free_upscale_daily_limit: int = Field(default=5, ge=0)
+    plan_pro_upscale_daily_limit: int = Field(default=50, ge=0)
+    credit_reset_startup_limit: int = Field(default=1000, ge=1)
+    avatar_max_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
+    avatar_size_px: int = Field(default=256, ge=32, le=1024)
+    avatar_max_pixels: int = Field(default=1_000_000, ge=10_000)
+
+    # ---- Admin ----
+    admin_emails: str = ""
+
+    # ---- Disponibilidade do motor / worker remoto ----
+    worker_mode: Literal["local", "remote"] = "local"
+    worker_capabilities: str = "generate,edit,upscale"
+    worker_heartbeat_ttl_seconds: int = Field(default=30, ge=5)
+    worker_heartbeat_interval_seconds: float = Field(default=10.0, gt=0)
+    engine_availability_required: bool | None = None
+    maintenance_mode: bool = False
+    maintenance_redis_key: str = "system:maintenance"
+
+    # ---- Guarda termica / recursos ----
+    thermal_guard_enabled: bool = False
+    start_temp_max_c: float = Field(default=80.0, gt=0)
+    abort_temp_c: float = Field(default=92.0, gt=0)
+    cooldown_after_abort_seconds: int = Field(default=120, ge=0)
+    min_free_ram_abort_mb: int = Field(default=512, ge=0)
+    hw_sensor_url: str = ""
+    hw_sensor_timeout_seconds: float = Field(default=2.0, gt=0)
+    hw_sensor_interval_seconds: float = Field(default=2.0, gt=0)
+
+    # ---- i18n ----
+    pseudo_localization: bool = False
 
     # ---- Observabilidade ----
     sentry_dsn_backend: str = ""
@@ -191,6 +290,12 @@ class Settings(BaseSettings):
     authenticated_prompt_chances_per_day: int = 3
     anonymous_session_cookie_name: str = "aimaginator_anon"
     anonymous_session_max_age_days: int = 7
+
+    # ---- Fila / reconciliacao ----
+    # Geracoes paradas ha mais que isso sao marcadas como queue_lost.
+    queue_stale_seconds: int = Field(default=900, ge=1)
+    # Em dev, exige infra local salvo opt-in explicito.
+    allow_remote_infra_in_dev: bool = False
 
     # ---- Rate limiting / resiliencia ----
     rate_limit_generation_per_minute: int = 10
@@ -216,14 +321,44 @@ class Settings(BaseSettings):
     def _normalize_public_url(cls, v: str) -> str:
         return v.strip().rstrip("/")
 
+    @field_validator("llm_reasoning_effort")
+    @classmethod
+    def _normalize_reasoning_effort(cls, v: str) -> str:
+        return v.strip()
+
     @property
     def image_generation_enabled(self) -> bool:
         return self.feature_image_generation_enabled is True
+
+    @property
+    def is_development(self) -> bool:
+        return self.app_env.lower() == "development"
+
+    @property
+    def llm_debug_log_content_enabled(self) -> bool:
+        """Conteudo do prompt so em desenvolvimento com opt-in."""
+        return self.llm_debug_log_content and self.is_development
 
     @model_validator(mode="after")
     def _resolve_feature_flag(self) -> Settings:
         if self.feature_image_generation_enabled is None:
             self.feature_image_generation_enabled = self.app_env != "production"
+        return self
+
+    @model_validator(mode="after")
+    def _resolve_llm_unload(self) -> Settings:
+        if self.llm_unload_after_use is None:
+            self.llm_unload_after_use = self.is_development
+        return self
+
+    @model_validator(mode="after")
+    def _resolve_engine_availability(self) -> Settings:
+        if self.engine_availability_required is None:
+            self.engine_availability_required = (
+                self.image_generation_enabled and self.image_engine in {"sdcpp", "hosted"}
+            )
+        if self.image_engine == "hosted" and not self.hosted_engine_configured:
+            raise ValueError("IMAGE_ENGINE=hosted exige HOSTED_ENGINE_BASE_URL.")
         return self
 
     @model_validator(mode="after")
@@ -306,16 +441,40 @@ class Settings(BaseSettings):
             if not value.strip()
         ]
         if missing_storage:
-            msg = (
-                "IMAGE_ENGINE=sdcpp exige o storage S3: "
-                f"{', '.join(missing_storage)}."
-            )
+            msg = "IMAGE_ENGINE=sdcpp exige o storage S3: " f"{', '.join(missing_storage)}."
             raise ValueError(msg)
         return self
 
     @property
     def is_production(self) -> bool:
         return self.app_env.lower() == "production"
+
+    @property
+    def admin_email_list(self) -> frozenset[str]:
+        return frozenset(
+            email.strip().lower() for email in self.admin_emails.split(",") if email.strip()
+        )
+
+    @property
+    def worker_capability_list(self) -> tuple[str, ...]:
+        return tuple(item.strip() for item in self.worker_capabilities.split(",") if item.strip())
+
+    @property
+    def hosted_engine_configured(self) -> bool:
+        return bool(self.hosted_engine_base_url.strip())
+
+    def plan_monthly_credits(self, plan: str) -> int:
+        return self.plan_pro_monthly_credits if plan == "pro" else self.plan_free_monthly_credits
+
+    def plan_daily_prompts(self, plan: str) -> int:
+        return self.plan_pro_daily_prompts if plan == "pro" else self.plan_free_daily_prompts
+
+    def plan_upscale_limit(self, plan: str) -> int:
+        return (
+            self.plan_pro_upscale_daily_limit
+            if plan == "pro"
+            else self.plan_free_upscale_daily_limit
+        )
 
     @property
     def allowed_image_domains(self) -> frozenset[str]:

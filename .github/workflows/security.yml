@@ -1,0 +1,47 @@
+name: security
+
+on:
+  push:
+    branches: [main, feat/local-flux-engine, feat/platform-hardening]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install poetry==2.1.1 pip-audit
+      - run: poetry install --with dev --no-interaction --no-ansi
+      - name: pip-audit gate
+        run: |
+          poetry run pip-audit --local -f json --output pip-audit.json || true
+          python tools/security/audit_gate.py pip pip-audit.json .github/security-exceptions.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - working-directory: apps/web
+        run: npm ci
+      - name: npm audit gate
+        working-directory: apps/web
+        run: |
+          npm audit --json > npm-audit.json || true
+          python ../../tools/security/audit_gate.py npm npm-audit.json ../../.github/security-exceptions.json

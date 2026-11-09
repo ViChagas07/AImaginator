@@ -19,7 +19,8 @@ def _settings(**overrides) -> Settings:
     return Settings(**values)
 
 
-def test_defaults_dos_parametros_medidos() -> None:
+def test_defaults_dos_parametros_medidos(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ALLOW_REMOTE_INFRA_IN_DEV", raising=False)
     settings = _settings()
 
     assert settings.image_engine == "stub"
@@ -46,10 +47,17 @@ def test_defaults_dos_parametros_medidos() -> None:
     assert settings.prompt_max_chars == 1000
     assert settings.llm_base_url == "http://localhost:1235/v1"
     assert settings.llm_model == "qwen/qwen3.5-9b"
-    assert settings.llm_timeout_seconds == 90
-    assert settings.llm_max_output_tokens == 400
+    assert settings.llm_timeout_seconds == 120
+    assert settings.llm_max_output_tokens == 512
+    assert settings.llm_max_output_tokens_retry == 1024
+    assert settings.llm_reasoning_effort == "none"
     assert settings.llm_ttl_seconds == 60
     assert settings.llm_block_confidence == 0.5
+    assert settings.llm_unload_after_use is True
+    assert settings.llm_unload_timeout_seconds == 20
+    assert settings.llm_debug_log_content is False
+    assert settings.queue_stale_seconds == 900
+    assert settings.allow_remote_infra_in_dev is False
     assert settings.moderation_store_prompt_text is False
     assert settings.mod_warn_at == 3
     assert settings.mod_block_at == 5

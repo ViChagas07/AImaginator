@@ -8,11 +8,15 @@ import pytest
 
 from modules.image_generation.adapters.ai_agents.providers import make_png_bytes
 from modules.image_generation.application.schemas import EditImageInput, GenerateImageInput
+from modules.image_generation.application.use_cases.create_upscale import CreateUpscale
 from modules.image_generation.application.use_cases.edit_image import (
     CreateEditFromUpload,
     EditImageFromPrompt,
 )
-from modules.image_generation.application.use_cases.generate_image import GenerateImageFromPrompt
+from modules.image_generation.application.use_cases.generate_image import (
+    GenerateImageAnonymous,
+    GenerateImageFromPrompt,
+)
 from modules.image_generation.application.use_cases.read_generations import (
     GetGeneration,
     ListUserGenerations,
@@ -35,6 +39,7 @@ from shared_kernel.security_errors import (
     InvalidPromptTopicError,
     OutOfScopeError,
     PromptInjectionDetectedError,
+    QueuePublishFailedError,
 )
 from tests.conftest import (
     InMemoryGenerationRepository,
@@ -50,6 +55,34 @@ from tests.conftest import (
 class _RejectingTopicGuard:
     async def validate(self, prompt: str) -> str:
         raise InvalidPromptTopicError()
+
+
+class _FailingQueue:
+    def enqueue_generation(self, generation_id, *, kind="generate"):
+        raise ConnectionError("broker fora do ar")
+
+
+class _QuotaRefund:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    async def refund(self, principal_id: str) -> bool:
+        self.calls.append(principal_id)
+        return True
+
+
+class _UpscaleQuotaStore:
+    def __init__(self) -> None:
+        self.released: list[str] = []
+
+    async def consume(self, *, principal_id: str, total: int):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(chances_remaining=total - 1)
+
+    async def release(self, *, principal_id: str) -> bool:
+        self.released.append(principal_id)
+        return True
 
 
 def _geracao(status: GenerationStatus = GenerationStatus.QUEUED) -> Generation:
@@ -138,9 +171,7 @@ class TestGenerateImageFromPrompt:
             prompt_quota=quota,
         )
         with pytest.raises(QuotaExceededError):
-            await use_case.execute(
-                user=sample_user, data=GenerateImageInput(prompt="castelo")
-            )
+            await use_case.execute(user=sample_user, data=GenerateImageInput(prompt="castelo"))
         assert queue.enqueued == []
         assert quota.calls == []
 
@@ -204,6 +235,37 @@ class TestGenerateImageFromPrompt:
         assert queue.enqueued == []
         assert sample_user.generation_credits == 5
 
+    async def test_falha_de_enqueue_marca_failed_e_devolve_credito_e_cota(
+        self, sample_user
+    ) -> None:
+        generations = InMemoryGenerationRepository()
+        events = SpyEventPublisher()
+        refund = _QuotaRefund()
+        use_case = GenerateImageFromPrompt(
+            generations=generations,
+            users=InMemoryUserRepository(sample_user),
+            task_queue=_FailingQueue(),
+            prompt_guard=PromptInjectionGuard(),
+            topic_guard=PassThroughTopicGuard(),
+            events=events,
+            prompt_quota=SpyPromptQuota(),
+            quota_refund=refund,
+        )
+
+        with pytest.raises(QueuePublishFailedError) as exc:
+            await use_case.execute(user=sample_user, data=GenerateImageInput(prompt="um castelo"))
+
+        assert exc.value.code == "queue_publish_failed"
+        generation = next(iter(generations._items.values()))
+        assert generation.status == GenerationStatus.FAILED
+        assert generation.error_code == "queue_publish_failed"
+        assert generation.credits_refunded is True
+        assert generation.quota_refunded is True
+        assert sample_user.generation_credits == 5
+        assert refund.calls == [f"user:{sample_user.id}"]
+        assert events.events[-1].status == GenerationStatus.FAILED
+        assert events.events[-1].error_code == "queue_publish_failed"
+
     async def test_locale_e_ip_hash_ficam_na_generation(self, sample_user) -> None:
         generations = InMemoryGenerationRepository()
         use_case = GenerateImageFromPrompt(
@@ -222,6 +284,65 @@ class TestGenerateImageFromPrompt:
         assert generation is not None
         assert generation.locale == "ja"
         assert generation.ip_hash == "abc123"
+
+
+@pytest.mark.unit
+class TestGenerateImageAnonymousEnqueueFailure:
+    async def test_falha_publica_queue_publish_failed(self) -> None:
+        generations = InMemoryGenerationRepository()
+        refund = _QuotaRefund()
+        events = SpyEventPublisher()
+        use_case = GenerateImageAnonymous(
+            generations=generations,
+            task_queue=_FailingQueue(),
+            prompt_guard=PromptInjectionGuard(),
+            topic_guard=PassThroughTopicGuard(),
+            events=events,
+            prompt_quota=SpyPromptQuota(),
+            quota_refund=refund,
+        )
+
+        with pytest.raises(QueuePublishFailedError):
+            await use_case.execute(
+                anonymous_session_id="anon-1",
+                data=GenerateImageInput(prompt="um castelo"),
+            )
+
+        generation = next(iter(generations._items.values()))
+        assert generation.status == GenerationStatus.FAILED
+        assert generation.quota_refunded is True
+        assert refund.calls == ["anon:anon-1"]
+
+
+@pytest.mark.unit
+class TestUpscaleEnqueueFailure:
+    async def test_falha_de_enqueue_marca_failed_e_libera_cota(self, sample_user) -> None:
+        generations = InMemoryGenerationRepository()
+        parent = Generation(
+            user_id=sample_user.id,
+            kind=GenerationKind.GENERATE,
+            prompt="um castelo",
+            status=GenerationStatus.QUEUED,
+        )
+        parent.transition_to(GenerationStatus.PROCESSING)
+        parent.attach_result("https://cdn.example/result.png")
+        parent.original_object_key = f"generations/{parent.id}/original.png"
+        await generations.save(parent)
+        quota = _UpscaleQuotaStore()
+
+        with pytest.raises(QueuePublishFailedError):
+            await CreateUpscale(
+                generations=generations,
+                task_queue=_FailingQueue(),
+                quota_store=quota,
+                daily_limit=5,
+            ).execute(generation_id=parent.id, user=sample_user)
+
+        upscale = next(g for g in generations._items.values() if g.kind is GenerationKind.UPSCALE)
+        assert upscale.status == GenerationStatus.FAILED
+        assert upscale.error_code == "queue_publish_failed"
+        assert upscale.quota_refunded is True
+        assert quota.released == [f"user:{sample_user.id}"]
 
 
 @pytest.mark.unit
@@ -347,14 +468,58 @@ class TestLeitura:
             parent_generation_id=parent_id,
         )
         await repo.save(g)
-        output = await GetGeneration(repo).execute(
-            user_id=g.user_id, generation_id=g.id
-        )
+        output = await GetGeneration(repo).execute(user_id=g.user_id, generation_id=g.id)
         assert output.seed == 777
         assert output.parent_generation_id == parent_id
         assert output.aspect_ratio is AspectRatio.FOUR_THREE
         assert output.prompt == "mude o ceu"
         assert output.kind is GenerationKind.EDIT
+
+    async def test_get_reconcilia_antes_de_devolver(self) -> None:
+        repo = InMemoryGenerationRepository()
+        g = _geracao()
+        await repo.save(g)
+
+        class _Reconciler:
+            def __init__(self) -> None:
+                self.calls: list = []
+
+            async def reconcile_generation(self, generation_id):
+                self.calls.append(generation_id)
+                item = await repo.get_by_id(generation_id)
+                item.transition_to(
+                    GenerationStatus.FAILED,
+                    error="perdida",
+                    error_code="queue_lost",
+                )
+                await repo.save(item)
+                return True
+
+        reconciler = _Reconciler()
+        output = await GetGeneration(repo, reconciler=reconciler).execute(
+            user_id=g.user_id, generation_id=g.id
+        )
+        assert reconciler.calls == [g.id]
+        assert output.status == GenerationStatus.FAILED
+
+    async def test_historico_reconcilia_por_usuario(self) -> None:
+        repo = InMemoryGenerationRepository()
+        g = _geracao()
+        await repo.save(g)
+
+        class _Reconciler:
+            def __init__(self) -> None:
+                self.users: list = []
+
+            async def reconcile_user(self, user_id, *, limit=100):
+                self.users.append(user_id)
+                return 0
+
+        reconciler = _Reconciler()
+        await ListUserGenerations(repo, reconciler=reconciler).execute(
+            user_id=g.user_id, cursor=None
+        )
+        assert reconciler.users == [g.user_id]
 
     async def test_get_inexistente_404(self) -> None:
         with pytest.raises(NotFoundError):
@@ -376,9 +541,7 @@ class TestLeitura:
         assert len(pagina1.items) == 2
         assert pagina1.next_cursor is not None
 
-        pagina2 = await use_case.execute(
-            user_id=dono, cursor=pagina1.next_cursor, limit=2
-        )
+        pagina2 = await use_case.execute(user_id=dono, cursor=pagina1.next_cursor, limit=2)
         ids_p1 = {item.id for item in pagina1.items}
         ids_p2 = {item.id for item in pagina2.items}
         assert ids_p1.isdisjoint(ids_p2)  # sem sobreposicao entre paginas

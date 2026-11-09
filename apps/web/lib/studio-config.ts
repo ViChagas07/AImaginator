@@ -12,6 +12,18 @@ export const ASPECT_RATIOS = [
 
 export type AspectRatioValue = (typeof ASPECT_RATIOS)[number]["value"];
 
+export const STYLE_PRESETS = [
+  {value: "none", labelKey: "styleNone"},
+  {value: "photorealistic", labelKey: "stylePhotorealistic"},
+  {value: "anime", labelKey: "styleAnime"},
+  {value: "oil_painting", labelKey: "styleOilPainting"},
+  {value: "cyberpunk", labelKey: "styleCyberpunk"},
+  {value: "watercolor", labelKey: "styleWatercolor"},
+  {value: "isometric_3d", labelKey: "styleIsometric3d"},
+] as const;
+
+export type StylePresetValue = (typeof STYLE_PRESETS)[number]["value"];
+
 export type UploadErrorCode = "type" | "size" | "dimensions";
 
 export function isAspectRatio(value: string): value is AspectRatioValue {

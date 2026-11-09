@@ -1,4 +1,4 @@
-"""Rotas REST do recurso generations — spec secoes 16 e 5.
+"""Rotas REST do recurso generations â€” spec secoes 16 e 5.
 
 - POST /api/v1/generations        -> 202 Accepted + stream_url (auth opcional)
 - POST /api/v1/generations/edits  -> 202 (edicao com imagem por URL, anti-SSRF)
@@ -23,7 +23,9 @@ from fastapi import (
 )
 
 from apps.api.dependencies import (
+    CreditLedgerDep,
     CurrentUserDep,
+    EngineAvailabilityDep,
     EventPublisherDep,
     GenerationRepoDep,
     ImageFetcherDep,
@@ -34,6 +36,8 @@ from apps.api.dependencies import (
     OptionalCurrentUserDep,
     PromptGuardDep,
     PromptQuotaStoreDep,
+    QueueReconcilerDep,
+    RedisDep,
     SettingsDep,
     TaskQueueDep,
     UpscaleQuotaDep,
@@ -45,7 +49,13 @@ from apps.api.dependencies import (
     resolve_anonymous_session,
     set_anonymous_session_cookie,
 )
-from modules.image_generation.application.schemas import MAX_PROMPT_LENGTH
+from modules.image_generation.application.schemas import (
+    MAX_PROMPT_LENGTH,
+    GenerationProgressEvent,
+)
+from modules.image_generation.application.use_cases.cancel_generation import (
+    CancelGeneration,
+)
 from modules.image_generation.contracts import (
     CreateEditFromUpload,
     CreateUpscale,
@@ -60,9 +70,15 @@ from modules.image_generation.contracts import (
     GetGeneration,
     ListUserGenerations,
 )
-from modules.image_generation.domain.entities import AspectRatio, StylePreset
+from modules.image_generation.domain.entities import (
+    AspectRatio,
+    Generation,
+    GenerationKind,
+    GenerationStatus,
+    StylePreset,
+)
 from modules.image_generation.domain.storage_errors import StorageUnavailableError
-from modules.prompt_quota.contracts import ConsumePromptQuota
+from modules.prompt_quota.contracts import ConsumePromptQuota, RefundPromptQuota
 from modules.rate_limiting.token_bucket import TokenBucket
 
 router = APIRouter(prefix="/api/v1", tags=["generations"])
@@ -76,6 +92,7 @@ async def create_generation(
     current_user: OptionalCurrentUserDep,
     generations: GenerationRepoDep,
     users: UserRepoDep,
+    credits: CreditLedgerDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
     settings: SettingsDep,
@@ -83,10 +100,12 @@ async def create_generation(
     events: EventPublisherDep,
     moderation: ModerationServiceDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("generate", locale=locale)
     if current_user is not None:
         await ensure_not_moderation_blocked(
             moderation,
@@ -104,9 +123,9 @@ async def create_generation(
             prompt_guard=guard,
             events=events,
             prompt_quota=ConsumePromptQuota(store, total=total),
-        ).execute(
-            user=current_user, data=data, locale=locale, ip_hash=ip_hash
-        )
+            quota_refund=RefundPromptQuota(store),
+            credits=credits,
+        ).execute(user=current_user, data=data, locale=locale, ip_hash=ip_hash)
 
     anonymous_id, token = resolve_anonymous_session(request, settings)
     set_anonymous_session_cookie(response, settings, token)
@@ -125,6 +144,7 @@ async def create_generation(
         prompt_guard=guard,
         events=events,
         prompt_quota=ConsumePromptQuota(store, total=total),
+        quota_refund=RefundPromptQuota(store),
     ).execute(
         anonymous_session_id=anonymous_id,
         data=data,
@@ -148,10 +168,12 @@ async def create_upscale(
     events: EventPublisherDep,
     quota: UpscaleQuotaDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("upscale", locale=locale)
     await limiter.consume(f"upscale:{current_user.id}")
     return await CreateUpscale(
         generations=generations,
@@ -179,6 +201,7 @@ async def create_variation(
     current_user: OptionalCurrentUserDep,
     generations: GenerationRepoDep,
     users: UserRepoDep,
+    credits: CreditLedgerDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
     settings: SettingsDep,
@@ -186,10 +209,12 @@ async def create_variation(
     events: EventPublisherDep,
     moderation: ModerationServiceDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("generate", locale=locale)
     if current_user is not None:
         await ensure_not_moderation_blocked(
             moderation,
@@ -208,6 +233,8 @@ async def create_variation(
             prompt_quota=ConsumePromptQuota(
                 store, total=settings.authenticated_prompt_chances_per_day
             ),
+            quota_refund=RefundPromptQuota(store),
+            credits=credits,
         )
         return await CreateVariation(
             generations=generations, generate_authenticated=generate
@@ -234,13 +261,10 @@ async def create_variation(
         task_queue=queue,
         prompt_guard=guard,
         events=events,
-        prompt_quota=ConsumePromptQuota(
-            store, total=settings.anonymous_prompt_chances_per_day
-        ),
+        prompt_quota=ConsumePromptQuota(store, total=settings.anonymous_prompt_chances_per_day),
+        quota_refund=RefundPromptQuota(store),
     )
-    return await CreateVariation(
-        generations=generations, generate_anonymous=generate_anon
-    ).execute(
+    return await CreateVariation(generations=generations, generate_anonymous=generate_anon).execute(
         generation_id=generation_id,
         user=None,
         anonymous_session_id=anonymous_id,
@@ -259,6 +283,7 @@ async def create_edit(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     users: UserRepoDep,
+    credits: CreditLedgerDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
     url_policy: UrlPolicyDep,
@@ -269,11 +294,13 @@ async def create_edit(
     image_fetcher: ImageFetcherDep,
     moderation: ModerationServiceDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     request: Request,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("edit", locale=locale)
     await ensure_not_moderation_blocked(
         moderation,
         user=current_user,
@@ -289,18 +316,16 @@ async def create_edit(
         prompt_guard=guard,
         url_policy=url_policy,
         events=events,
-        prompt_quota=ConsumePromptQuota(
-            store, total=settings.authenticated_prompt_chances_per_day
-        ),
+        prompt_quota=ConsumePromptQuota(store, total=settings.authenticated_prompt_chances_per_day),
+        quota_refund=RefundPromptQuota(store),
+        credits=credits,
         image_fetcher=image_fetcher,
         storage=storage,
         max_upload_bytes=settings.edit_upload_max_bytes,
         max_upload_dimension=settings.edit_upload_max_dimension,
         max_upload_pixels=settings.edit_upload_max_pixels,
     )
-    return await use_case.execute(
-        user=current_user, data=data, locale=locale, ip_hash=ip_hash
-    )
+    return await use_case.execute(user=current_user, data=data, locale=locale, ip_hash=ip_hash)
 
 
 @router.post(
@@ -312,6 +337,7 @@ async def create_edit_upload(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     users: UserRepoDep,
+    credits: CreditLedgerDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
     events: EventPublisherDep,
@@ -320,6 +346,7 @@ async def create_edit_upload(
     storage: ObjectStorageDep,
     moderation: ModerationServiceDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     request: Request,
     prompt: str = Form(..., min_length=1, max_length=MAX_PROMPT_LENGTH),
@@ -335,6 +362,7 @@ async def create_edit_upload(
     if storage is None:
         raise StorageUnavailableError()
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("edit", locale=locale)
     await ensure_not_moderation_blocked(
         moderation,
         user=current_user,
@@ -359,9 +387,9 @@ async def create_edit_upload(
         prompt_guard=guard,
         storage=storage,
         events=events,
-        prompt_quota=ConsumePromptQuota(
-            store, total=settings.authenticated_prompt_chances_per_day
-        ),
+        prompt_quota=ConsumePromptQuota(store, total=settings.authenticated_prompt_chances_per_day),
+        quota_refund=RefundPromptQuota(store),
+        credits=credits,
         max_upload_bytes=settings.edit_upload_max_bytes,
         max_upload_dimension=settings.edit_upload_max_dimension,
         max_upload_pixels=settings.edit_upload_max_pixels,
@@ -375,15 +403,95 @@ async def create_edit_upload(
     )
 
 
+@router.post("/generations/{generation_id}/retry")
+async def retry_generation(
+    generation_id: UUID,
+    current_user: CurrentUserDep,
+    generations: GenerationRepoDep,
+    users: UserRepoDep,
+    queue: TaskQueueDep,
+    guard: PromptGuardDep,
+    events: EventPublisherDep,
+    credits: CreditLedgerDep,
+    store: PromptQuotaStoreDep,
+    settings: SettingsDep,
+) -> dict:
+    original = await generations.get_by_id(generation_id)
+    if original is None or original.user_id != current_user.id:
+        from shared_kernel.errors import NotFoundError
+
+        raise NotFoundError("Geracao nao encontrada.")
+    if not original.can_retry():
+        from shared_kernel.errors import DomainError
+
+        raise DomainError("Esta geracao nao pode ser retentada.")
+    if original.kind is not GenerationKind.GENERATE:
+        from shared_kernel.errors import DomainError
+
+        raise DomainError("Retentativa disponivel apenas para geracoes.")
+    guard.validate(original.prompt)
+    await credits.reset_if_due(current_user.id)
+    generation = Generation(
+        user_id=current_user.id,
+        kind=GenerationKind.GENERATE,
+        prompt=original.prompt,
+        negative_prompt=original.negative_prompt,
+        style_preset=original.style_preset,
+        aspect_ratio=original.aspect_ratio,
+        seed=original.seed,
+        title=original.title,
+        locale=original.locale,
+    )
+    await credits.consume(
+        current_user.id,
+        ref_type="generation",
+        ref_id=str(generation.id),
+        idempotency_key=f"consume:{generation.id}",
+    )
+    await ConsumePromptQuota(store, total=settings.plan_daily_prompts(current_user.plan)).execute(
+        f"user:{current_user.id}"
+    )
+    await generations.save(generation)
+    queue.enqueue_generation(generation.id, kind="generate")
+    await events.publish_progress(
+        GenerationProgressEvent(
+            generation_id=generation.id,
+            status=GenerationStatus.QUEUED,
+            progress=0,
+        )
+    )
+    return {"id": str(generation.id), "status": "queued"}
+
+
+@router.post("/generations/{generation_id}/cancel")
+async def cancel_generation(
+    generation_id: UUID,
+    current_user: CurrentUserDep,
+    generations: GenerationRepoDep,
+    events: EventPublisherDep,
+    redis: RedisDep,
+    credits: CreditLedgerDep,
+    store: PromptQuotaStoreDep,
+) -> dict:
+    return await CancelGeneration(
+        generations=generations,
+        events=events,
+        redis=redis,
+        credits=credits,
+        quota_refund=RefundPromptQuota(store),
+    ).execute(user_id=current_user.id, generation_id=generation_id)
+
+
 @router.get("/generations", response_model=GenerationPage)
 async def list_generations(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     storage: ObjectStorageDep,
+    reconciler: QueueReconcilerDep,
     cursor: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=50),
 ) -> GenerationPage:
-    return await ListUserGenerations(generations, storage=storage).execute(
+    return await ListUserGenerations(generations, storage=storage, reconciler=reconciler).execute(
         user_id=current_user.id, cursor=cursor, limit=limit
     )
 
@@ -394,7 +502,8 @@ async def get_generation(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     storage: ObjectStorageDep,
+    reconciler: QueueReconcilerDep,
 ) -> GenerationOutput:
-    return await GetGeneration(generations, storage=storage).execute(
+    return await GetGeneration(generations, storage=storage, reconciler=reconciler).execute(
         user_id=current_user.id, generation_id=generation_id
     )

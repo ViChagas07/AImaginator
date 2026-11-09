@@ -83,6 +83,26 @@ LLM_JSON_REPAIRS_TOTAL = Counter(
     "aimaginator_llm_json_repairs_total",
     "Tentativas de reparo de JSON do assistente",
 )
+LLM_CATEGORY_MISMATCH_TOTAL = Counter(
+    "aimaginator_llm_category_mismatch_total",
+    "Divergencia entre blocked_category declarado e booleanos de moderacao",
+    ["declared", "derived"],
+)
+LLM_REWRITE_REPAIRS_TOTAL = Counter(
+    "aimaginator_llm_rewrite_repairs_total",
+    "Reparos deterministas de reescrita do assistente",
+    ["outcome"],  # repaired | sanitized | invalid | unavailable
+)
+LLM_UNLOAD_TOTAL = Counter(
+    "aimaginator_llm_unload_total",
+    "Tentativas de descarregar o LLM via lms CLI",
+    ["outcome"],  # success | failed | timeout | missing
+)
+QUEUE_RECONCILED_TOTAL = Counter(
+    "aimaginator_queue_reconciled_total",
+    "Geracoes orfas reconciliadas por codigo",
+    ["code"],
+)
 ENGINE_FAILURES_TOTAL = Counter(
     "aimaginator_engine_failures_total",
     "Falhas do motor de imagem por motivo",
@@ -93,8 +113,7 @@ ENGINE_PEAK_RAM_BYTES = Histogram(
     "Pico de RAM do subprocesso do motor (amostrado)",
     ["kind"],
     buckets=tuple(
-        value * 1024
-        for value in (64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768)
+        value * 1024 for value in (64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768)
     ),
 )
 RAM_FREE_BYTES = Gauge(
@@ -136,6 +155,25 @@ SSE_STREAM_DURATION = Histogram(
     "aimaginator_sse_stream_duration_seconds",
     "Duracao dos streams SSE",
     buckets=(1, 5, 15, 30, 60, 120, 300, 600, 1200),
+)
+
+
+HARDWARE_TEMPERATURE_C = Gauge(
+    "aimaginator_hardware_temperature_celsius",
+    "Temperatura maxima observada no hardware",
+)
+HARDWARE_FREE_RAM_BYTES = Gauge(
+    "aimaginator_hardware_free_ram_bytes",
+    "RAM livre observada antes/durante jobs",
+)
+HARDWARE_ABORTS_TOTAL = Counter(
+    "aimaginator_hardware_aborts_total",
+    "Abortos por protecao de hardware",
+    ["reason"],  # thermal | resource
+)
+HARDWARE_SENSOR_MISSING_TOTAL = Counter(
+    "aimaginator_hardware_sensor_missing_total",
+    "Leituras sem sensor de temperatura disponivel",
 )
 
 

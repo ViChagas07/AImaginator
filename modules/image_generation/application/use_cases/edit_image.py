@@ -20,6 +20,9 @@ from modules.image_generation.application.schemas import (
     GenerationOutput,
     GenerationProgressEvent,
 )
+from modules.image_generation.application.services.queue_recovery import (
+    QueueRecoveryService,
+)
 from modules.image_generation.application.use_cases.generate_image import _to_output
 from modules.image_generation.domain.entities import Generation, GenerationKind, GenerationStatus
 from modules.image_generation.domain.image_bytes import inspect_image_bytes
@@ -33,12 +36,48 @@ from modules.image_generation.domain.scope_guard import ScopeGuardrail
 from modules.image_generation.domain.storage_errors import StorageUnavailableError
 from modules.image_generation.domain.url_policy import UrlPolicy
 from modules.observability.logging_config import get_logger
-from modules.prompt_quota.contracts import PromptQuotaConsumerPort
+from modules.prompt_quota.contracts import (
+    PromptQuotaConsumerPort,
+    PromptQuotaRefundPort,
+)
+from modules.users.application.credits import CreditLedgerService
 from modules.users.contracts import User, UserRepositoryPort
 from shared_kernel.errors import DomainError, ForbiddenError, NotFoundError, QuotaExceededError
-from shared_kernel.security_errors import OriginalUnavailableError
+from shared_kernel.security_errors import (
+    OriginalUnavailableError,
+    QueuePublishFailedError,
+)
 
 logger = get_logger(__name__)
+
+
+async def _enqueue_or_fail(
+    *,
+    queue: TaskQueuePort,
+    generation: Generation,
+    generations: GenerationRepositoryPort,
+    events: EventPublisherPort | None,
+    users: UserRepositoryPort | None,
+    quota_refund: PromptQuotaRefundPort | None,
+    credits: CreditLedgerService | None,
+    locale: str,
+) -> None:
+    try:
+        queue.enqueue_generation(generation.id, kind=generation.kind.value)
+    except Exception as exc:
+        logger.warning(
+            "queue_publish_failed",
+            correlation_id=str(generation.id),
+            error_type=type(exc).__name__,
+        )
+        await QueueRecoveryService(
+            generations=generations,
+            events=events,
+            users=users,
+            quota_refund=quota_refund,
+            credits=credits,
+        ).mark_publish_failed(generation)
+        raise QueuePublishFailedError(message_for("queue_publish_failed", locale)) from exc
 
 
 class EditImageFromPrompt:
@@ -53,6 +92,8 @@ class EditImageFromPrompt:
         topic_guard: IPromptTopicGuard | None = None,
         events: EventPublisherPort | None = None,
         prompt_quota: PromptQuotaConsumerPort | None = None,
+        quota_refund: PromptQuotaRefundPort | None = None,
+        credits: CreditLedgerService | None = None,
         image_fetcher: ImageFetcherPort | None = None,
         storage: ObjectStoragePort | None = None,
         max_upload_bytes: int = 10 * 1024 * 1024,
@@ -68,6 +109,8 @@ class EditImageFromPrompt:
         self._url_policy = url_policy
         self._events = events
         self._prompt_quota = prompt_quota
+        self._quota_refund = quota_refund
+        self._credits = credits
         self._image_fetcher = image_fetcher
         self._storage = storage
         self._max_upload_bytes = max_upload_bytes
@@ -105,16 +148,14 @@ class EditImageFromPrompt:
             if parent.status is not GenerationStatus.DONE:
                 raise DomainError("A geracao de origem ainda nao esta pronta.")
             if not parent.original_object_key:
-                raise OriginalUnavailableError(
-                    message_for("original_unavailable", locale)
-                )
+                raise OriginalUnavailableError(message_for("original_unavailable", locale))
         else:
             if data.source_image_url is None:
                 raise DomainError("Imagem de origem obrigatoria.")
             source_url = self._url_policy.validate(str(data.source_image_url))
             source_image = await self._download_source(source_url)
 
-        if not user.has_quota():
+        if self._credits is None and not user.has_quota():
             raise QuotaExceededError("Cota de geracoes esgotada.")
 
         generation = Generation(
@@ -145,10 +186,28 @@ class EditImageFromPrompt:
                     pass
             raise
 
-        user.consume_credit()
-        await self._users.save(user)
+        if self._credits is not None:
+            await self._credits.reset_if_due(user.id)
+            await self._credits.consume(
+                user.id,
+                ref_type="generation",
+                ref_id=str(generation.id),
+                idempotency_key=f"consume:{generation.id}",
+            )
+        else:
+            user.consume_credit()
+            await self._users.save(user)
         await self._generations.save(generation)
-        self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        await _enqueue_or_fail(
+            queue=self._queue,
+            generation=generation,
+            generations=self._generations,
+            events=self._events,
+            users=self._users,
+            quota_refund=self._quota_refund,
+            credits=self._credits,
+            locale=locale,
+        )
         logger.info(
             "generation_created",
             correlation_id=str(generation.id),
@@ -206,6 +265,8 @@ class CreateEditFromUpload:
         topic_guard: IPromptTopicGuard | None = None,
         events: EventPublisherPort | None = None,
         prompt_quota: PromptQuotaConsumerPort | None = None,
+        quota_refund: PromptQuotaRefundPort | None = None,
+        credits: CreditLedgerService | None = None,
         max_upload_bytes: int = 10 * 1024 * 1024,
         max_upload_dimension: int = 8192,
         max_upload_pixels: int = 40_000_000,
@@ -219,6 +280,8 @@ class CreateEditFromUpload:
         self._storage = storage
         self._events = events
         self._prompt_quota = prompt_quota
+        self._quota_refund = quota_refund
+        self._credits = credits
         self._max_upload_bytes = max_upload_bytes
         self._max_upload_dimension = max_upload_dimension
         self._max_upload_pixels = max_upload_pixels
@@ -250,11 +313,9 @@ class CreateEditFromUpload:
             max_dimension=self._max_upload_dimension,
             max_pixels=self._max_upload_pixels,
         )
-        normalized = normalize_uploaded_image(
-            image_bytes, max_pixels=self._max_upload_pixels
-        )
+        normalized = normalize_uploaded_image(image_bytes, max_pixels=self._max_upload_pixels)
 
-        if not user.has_quota():
+        if self._credits is None and not user.has_quota():
             raise QuotaExceededError("Cota de geracoes esgotada.")
 
         generation = Generation(
@@ -285,10 +346,28 @@ class CreateEditFromUpload:
                 pass
             raise
 
-        user.consume_credit()
-        await self._users.save(user)
+        if self._credits is not None:
+            await self._credits.reset_if_due(user.id)
+            await self._credits.consume(
+                user.id,
+                ref_type="generation",
+                ref_id=str(generation.id),
+                idempotency_key=f"consume:{generation.id}",
+            )
+        else:
+            user.consume_credit()
+            await self._users.save(user)
         await self._generations.save(generation)
-        self._queue.enqueue_generation(generation.id, kind=generation.kind.value)
+        await _enqueue_or_fail(
+            queue=self._queue,
+            generation=generation,
+            generations=self._generations,
+            events=self._events,
+            users=self._users,
+            quota_refund=self._quota_refund,
+            credits=self._credits,
+            locale=locale,
+        )
         logger.info(
             "generation_created",
             correlation_id=str(generation.id),

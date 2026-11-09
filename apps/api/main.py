@@ -26,19 +26,27 @@ from apps.api.middlewares.payload_limit import PayloadLimitMiddleware
 from apps.api.middlewares.rate_limit import RateLimitMiddleware
 from apps.api.middlewares.security_headers import SecurityHeadersMiddleware
 from apps.api.routers import (
+    admin,
     auth,
     gallery,
     generations,
     health,
+    library,
     metrics,
     prompt_quota,
+    reports,
+    sharing,
     stream,
     users,
 )
 from apps.api.routers import (
     config as config_router,
 )
+from apps.api.routers import (
+    status as status_router,
+)
 from infra.database import dispose_engine
+from infra.dev_guard import enforce_local_infra
 from infra.redis_client import close_redis
 from infra.settings import get_settings
 from modules.image_generation.application.localization import (
@@ -89,9 +97,24 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     app.state.settings = settings
     configure_logging(app_env=settings.app_env)
+    enforce_local_infra(settings)
     init_sentry(dsn=settings.sentry_dsn_backend, environment=settings.sentry_environment)
     if settings.auto_migrate:
         await asyncio.to_thread(_run_pending_migrations)
+    if settings.admin_email_list:
+        try:
+            from infra.database import session_scope
+            from modules.users.adapters.repository import SQLAlchemyUserRepository
+
+            async with session_scope() as session:
+                users = SQLAlchemyUserRepository(session)
+                for email in settings.admin_email_list:
+                    user = await users.get_by_email(email)
+                    if user is not None and user.role != "admin":
+                        user.role = "admin"
+                        await users.save(user)
+        except Exception:
+            logger.warning("admin_bootstrap_failed", exc_info=True)
     app.state.http_client = httpx.AsyncClient(
         timeout=httpx.Timeout(30.0, connect=5.0),
         limits=httpx.Limits(max_connections=50, max_keepalive_connections=10),
@@ -143,6 +166,11 @@ def create_app() -> FastAPI:
     app.include_router(gallery.router)
     app.include_router(prompt_quota.router)
     app.include_router(users.router)
+    app.include_router(status_router.router)
+    app.include_router(admin.router)
+    app.include_router(library.router)
+    app.include_router(sharing.router)
+    app.include_router(reports.router)
 
     @app.exception_handler(AImaginatorError)
     async def domain_error_handler(request: Request, exc: AImaginatorError) -> JSONResponse:

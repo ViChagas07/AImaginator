@@ -22,11 +22,12 @@ _BLOCKED_CODE = {
     BlockedCategory.SELF_HARM: "content_blocked_self_harm",
 }
 
-# Prioridade de recusa quando mais de uma flag vem verdadeira.
+# Prioridade de recusa quando mais de uma flag vem verdadeira:
+# sexual > hate > gore > self_harm.
 _PRIORITY = (
     BlockedCategory.NSFW,
-    BlockedCategory.GORE,
     BlockedCategory.HATE,
+    BlockedCategory.GORE,
     BlockedCategory.SELF_HARM,
 )
 
@@ -49,11 +50,18 @@ class ModerationFlags:
     def enabled_categories(self) -> tuple[BlockedCategory, ...]:
         mapping = (
             (BlockedCategory.NSFW, self.sexual),
-            (BlockedCategory.GORE, self.gore),
             (BlockedCategory.HATE, self.hate),
+            (BlockedCategory.GORE, self.gore),
             (BlockedCategory.SELF_HARM, self.self_harm),
         )
         return tuple(category for category, enabled in mapping if enabled)
+
+    def derived_category(self) -> BlockedCategory | None:
+        """Categoria decidida pelos booleanos, na prioridade de recusa."""
+        for category in _PRIORITY:
+            if category in self.enabled_categories():
+                return category
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,21 +82,20 @@ class AssistantResult:
     def engine_prompt(self, kind: GenerationKind) -> str:
         if kind is GenerationKind.EDIT:
             return (
-                self.kontext_instruction
-                or self.flux_prompt
-                or self.corrected_text
-                or ""
+                self.kontext_instruction or self.flux_prompt or self.corrected_text or ""
             ).strip()
         return (self.flux_prompt or self.corrected_text or "").strip()
 
     def moderation_category(self, *, block_confidence: float) -> BlockedCategory | None:
         if self.confidence < block_confidence:
             return None
+        # Booleanos vencem o campo declarado pelo modelo. O campo so e usado
+        # como fallback quando nenhum booleano veio true (inconsistencia).
+        derived = self.moderation.derived_category()
+        if derived is not None:
+            return derived
         if self.blocked_category is not None:
             return self.blocked_category
-        for category in _PRIORITY:
-            if category in self.moderation.enabled_categories():
-                return category
         return None
 
     def refusal_code(self, *, block_confidence: float) -> str | None:

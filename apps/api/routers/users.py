@@ -3,12 +3,22 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from io import BytesIO
 from uuid import UUID
 
 from fastapi import APIRouter, File, HTTPException, Response, UploadFile, status
+from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field, field_validator
 
-from apps.api.dependencies import CurrentUserDep, UserRepoDep
+from apps.api.dependencies import (
+    CreditLedgerDep,
+    CurrentUserDep,
+    ObjectStorageDep,
+    PromptQuotaStoreDep,
+    SettingsDep,
+    UpscaleQuotaDep,
+    UserRepoDep,
+)
 from modules.users.contracts import User, UserRepositoryPort, UserSettings
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
@@ -41,6 +51,18 @@ class UserProfileResponse(BaseModel):
             created_at=user.created_at.isoformat(),
             updated_at=user.updated_at.isoformat(),
         )
+
+
+
+
+class UsageResponse(BaseModel):
+    plan: str
+    generation_credits: int
+    period_start: str
+    daily_prompts_total: int
+    daily_prompts_remaining: int
+    upscale_limit: int
+    upscale_remaining: int
 
 
 class UpdateProfileInput(BaseModel):
@@ -227,43 +249,128 @@ async def update_profile(
     return UserProfileResponse.from_entity(user)
 
 
+
+
+@router.get("/me/usage", response_model=UsageResponse)
+async def get_usage(
+    current_user: CurrentUserDep,
+    users: UserRepoDep,
+    credits: CreditLedgerDep,
+    prompt_quota: PromptQuotaStoreDep,
+    upscale_quota: UpscaleQuotaDep,
+    settings: SettingsDep,
+) -> UsageResponse:
+    user = await credits.reset_if_due(current_user.id)
+    refreshed = await users.get_by_id(current_user.id) or user
+    daily_total = settings.plan_daily_prompts(refreshed.plan)
+    upscale_total = settings.plan_upscale_limit(refreshed.plan)
+    daily = await prompt_quota.get_quota(
+        principal_id=f"user:{refreshed.id}", total=daily_total
+    )
+    upscale = await upscale_quota.get_quota(
+        principal_id=f"user:{refreshed.id}", total=upscale_total
+    )
+    return UsageResponse(
+        plan=refreshed.plan,
+        generation_credits=refreshed.generation_credits,
+        period_start=refreshed.credits_period_start.isoformat(),
+        daily_prompts_total=daily_total,
+        daily_prompts_remaining=daily.chances_remaining,
+        upscale_limit=upscale_total,
+        upscale_remaining=upscale.chances_remaining,
+    )
+
 @router.post("/me/avatar", response_model=AvatarUploadResponse)
 async def upload_avatar(
     current_user: CurrentUserDep,
     users: UserRepoDep,
+    storage: ObjectStorageDep,
+    settings: SettingsDep,
     file: UploadFile = File(...),
 ) -> AvatarUploadResponse:
-    """Upload do avatar do usuario (valida tipo e tamanho)."""
+    """Reencoda para PNG 256px, remove metadados e grava no S3."""
     allowed_types = {"image/jpeg", "image/png", "image/webp"}
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Formato invalido. Use JPG, PNG ou WebP")
+    if storage is None:
+        raise HTTPException(status_code=503, detail="Storage indisponivel.")
 
     content = await file.read()
-    if len(content) > 5 * 1024 * 1024:  # 5MB
-        raise HTTPException(status_code=400, detail="Arquivo muito grande. Maximo 5MB")
+    if len(content) > settings.avatar_max_bytes:
+        raise HTTPException(status_code=400, detail="Arquivo muito grande.")
 
-    # TODO: upload para storage S3-compatível e obter URL
-    # Por enquanto, simula com data URL (em produção usar storage real)
-    import base64
-    b64 = base64.b64encode(content).decode()
-    avatar_url = f"data:{file.content_type};base64,{b64}"
+    try:
+        with Image.open(BytesIO(content)) as probe:
+            probe.verify()
+        with Image.open(BytesIO(content)) as image:
+            if image.width * image.height > settings.avatar_max_pixels:
+                raise HTTPException(status_code=400, detail="Imagem grande demais.")
+            image = image.convert("RGBA")
+            image.thumbnail((settings.avatar_size_px, settings.avatar_size_px))
+            output = BytesIO()
+            image.save(output, format="PNG")
+            normalized = output.getvalue()
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Imagem invalida.") from exc
 
-    current_user.avatar_url = avatar_url
+    key = f"avatars/{current_user.id}.png"
+    await storage.put_object(key, normalized, content_type="image/png")
+    old_key = current_user.avatar_object_key
+    current_user.avatar_object_key = key
+    current_user.avatar_url = (
+        f"{settings.api_base_url.rstrip('/')}/api/v1/users/{current_user.id}/avatar"
+    )
     current_user.updated_at = datetime.now(UTC)
     await users.save(current_user)
+    if old_key and old_key != key:
+        try:
+            await storage.delete_object(old_key)
+        except Exception:  # noqa: S110
+            pass
+    return AvatarUploadResponse(avatar_url=current_user.avatar_url)
 
-    return AvatarUploadResponse(avatar_url=avatar_url)
+
+@router.get("/{user_id}/avatar")
+async def get_avatar(
+    user_id: UUID,
+    users: UserRepoDep,
+    storage: ObjectStorageDep,
+) -> Response:
+    """Proxy do avatar; nunca expoe bucket publico nem URL assinada."""
+    user = await users.get_by_id(user_id)
+    if user is None or not user.avatar_object_key or storage is None:
+        raise HTTPException(status_code=404, detail="Avatar nao encontrado.")
+    try:
+        data = await storage.get_object(user.avatar_object_key)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail="Avatar nao encontrado.") from exc
+    return Response(
+        content=data,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=300",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.delete("/me/avatar", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_avatar(
     current_user: CurrentUserDep,
     users: UserRepoDep,
+    storage: ObjectStorageDep,
 ) -> Response:
-    """Remove o avatar do usuario (volta para avatar padrão)."""
+    """Remove o avatar do usuario e apaga o objeto do S3."""
+    old_key = current_user.avatar_object_key
     current_user.avatar_url = None
+    current_user.avatar_object_key = None
     current_user.updated_at = datetime.now(UTC)
     await users.save(current_user)
+    if old_key and storage is not None:
+        try:
+            await storage.delete_object(old_key)
+        except Exception:  # noqa: S110
+            pass
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

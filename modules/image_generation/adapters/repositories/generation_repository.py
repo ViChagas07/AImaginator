@@ -68,6 +68,8 @@ class SQLAlchemyGenerationRepository(GenerationRepositoryPort):
         model.updated_at = generation.updated_at
         model.completed_at = generation.completed_at
         model.deleted_at = generation.deleted_at
+        model.is_favorite = generation.is_favorite
+        model.hidden_at = generation.hidden_at
         await self._session.flush()
         return generation
 
@@ -113,9 +115,7 @@ class SQLAlchemyGenerationRepository(GenerationRepositoryPort):
         models = (await self._session.execute(stmt)).scalars().all()
         return [self._to_entity(m) for m in models]
 
-    async def reassign_anonymous_to_user(
-        self, anonymous_session_id: str, user_id: UUID
-    ) -> int:
+    async def reassign_anonymous_to_user(self, anonymous_session_id: str, user_id: UUID) -> int:
         """Vincula artes anonimas temporarias a um usuario (pos-login)."""
         result = await self._session.execute(
             update(GenerationModel)
@@ -125,6 +125,47 @@ class SQLAlchemyGenerationRepository(GenerationRepositoryPort):
         )
         await self._session.flush()
         return int(result.rowcount or 0)
+
+    async def list_stale(self, *, older_than: datetime, limit: int) -> list[Generation]:
+        stmt = (
+            select(GenerationModel)
+            .where(
+                GenerationModel.status.in_(
+                    (
+                        GenerationStatus.QUEUED.value,
+                        GenerationStatus.PROCESSING.value,
+                    )
+                )
+            )
+            .where(GenerationModel.updated_at < older_than)
+            .where(GenerationModel.deleted_at.is_(None))
+            .order_by(GenerationModel.updated_at.asc())
+            .limit(limit)
+        )
+        models = (await self._session.execute(stmt)).scalars().all()
+        return [self._to_entity(m) for m in models]
+
+    async def list_stale_for_user(
+        self, user_id: UUID, *, older_than: datetime, limit: int
+    ) -> list[Generation]:
+        stmt = (
+            select(GenerationModel)
+            .where(GenerationModel.user_id == user_id)
+            .where(
+                GenerationModel.status.in_(
+                    (
+                        GenerationStatus.QUEUED.value,
+                        GenerationStatus.PROCESSING.value,
+                    )
+                )
+            )
+            .where(GenerationModel.updated_at < older_than)
+            .where(GenerationModel.deleted_at.is_(None))
+            .order_by(GenerationModel.updated_at.asc())
+            .limit(limit)
+        )
+        models = (await self._session.execute(stmt)).scalars().all()
+        return [self._to_entity(m) for m in models]
 
     async def list_public_showcase(self, *, limit: int) -> list[Generation]:
         stmt = (
@@ -173,4 +214,6 @@ class SQLAlchemyGenerationRepository(GenerationRepositoryPort):
             updated_at=model.updated_at,
             completed_at=model.completed_at,
             deleted_at=model.deleted_at,
+            is_favorite=model.is_favorite,
+            hidden_at=model.hidden_at,
         )

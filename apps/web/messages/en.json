@@ -223,7 +223,17 @@
     "uploadRequired": "Choose a source image to continue.",
     "upscale": "Upscale",
     "upscaling": "Upscaling...",
-    "upscaleRemaining": "Upscales left today: {count}"
+    "upscaleRemaining": "Upscales left today: {count}",
+    "styleLabel": "Style",
+    "styleNone": "No style",
+    "stylePhotorealistic": "Photographic",
+    "styleAnime": "Anime",
+    "styleOilPainting": "Oil painting",
+    "styleCyberpunk": "Cyberpunk",
+    "styleWatercolor": "Watercolor",
+    "styleIsometric3d": "3D isometric",
+    "cancel": "Cancel generation",
+    "cancelConfirm": "Cancel this generation? Credits will be refunded."
   },
   "gallery": {
     "title": "Public gallery",
@@ -245,7 +255,9 @@
     "generic": "Something went wrong. Try again.",
     "generationHttp": "Error {status}: could not start the generation. Try again.",
     "generationFailed": "Generation failed. Try again.",
-    "generationNetwork": "Network error while contacting the API. Check your connection and try again."
+    "generationNetwork": "Network error while contacting the API. Check your connection and try again.",
+    "queuePublishFailed": "We couldn't start the generation right now. Your credit was refunded; please try again.",
+    "queueLost": "The previous generation was lost in the queue. Your credit was refunded; please try again."
   },
   "language": {
     "selectorLabel": "Select language"
@@ -639,6 +651,37 @@
         "cancel": "Cancel",
         "confirm": "Yes, Reset Everything"
       }
+    }
+  },
+  "status": {
+    "title": "Service status",
+    "maintenance": "AImaginator is under maintenance. We will be back soon.",
+    "offline": "The image engine is offline right now.",
+    "canceled": "Canceled"
+  },
+  "admin": {
+    "title": "Administration",
+    "unauthorized": "Administrator access only.",
+    "flaggedUsers": "Flagged users",
+    "noUsers": "No flagged users."
+  },
+  "usage": {
+    "title": "Your usage",
+    "balance": "Credits",
+    "plan": "Plan",
+    "daily": "Prompts today",
+    "upscale": "Upscale today"
+  },
+  "share": {
+    "report": "Report",
+    "reportReason": "Reason",
+    "reportSent": "Report sent.",
+    "reasons": {
+      "nsfw": "Sexual content",
+      "gore": "Graphic violence",
+      "hate": "Hate",
+      "self_harm": "Self-harm",
+      "other": "Other"
     }
   }
 }

@@ -18,6 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from infra.database import get_session_factory
 from infra.redis_client import get_redis
 from infra.settings import Settings, get_settings
+from modules.admin.adapters.repository import SQLAlchemyAdminAuditRepository
+from modules.admin.application.service import AdminService
 from modules.auth.application.anonymous_identity import (
     generate_anonymous_id,
     sign_anonymous_id,
@@ -31,21 +33,38 @@ from modules.image_generation.adapters.redis_stream_tickets import RedisStreamTi
 from modules.image_generation.adapters.repositories.generation_repository import (
     SQLAlchemyGenerationRepository,
 )
+from modules.image_generation.adapters.repositories.library_repository import (
+    LibraryRepository,
+)
+from modules.image_generation.adapters.repositories.moderation_repository import (
+    SQLAlchemyModerationEventRepository,
+)
 from modules.image_generation.application.localization import message_for
 from modules.image_generation.application.ports import (
     ImageFetcherPort,
     ObjectStoragePort,
 )
 from modules.image_generation.application.ports.task_queue import TaskQueuePort
+from modules.image_generation.application.services.engine_availability import (
+    EngineAvailabilityService,
+)
 from modules.image_generation.application.services.moderation import ModerationService
+from modules.image_generation.application.services.queue_recovery import (
+    QueueRecoveryService,
+)
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
 from modules.image_generation.domain.prompt_topic_guard import PromptTopicGuard
 from modules.image_generation.domain.url_policy import UrlPolicy
 from modules.image_generation.infra import wiring as gen_wiring
 from modules.prompt_quota.adapters.redis_quota_store import RedisPromptQuotaStore
+from modules.prompt_quota.contracts import RefundPromptQuota
 from modules.rate_limiting.circuit_breaker import CircuitBreaker
 from modules.rate_limiting.token_bucket import TokenBucket
+from modules.users.adapters.credit_ledger_repository import (
+    SQLAlchemyCreditLedgerRepository,
+)
 from modules.users.adapters.repository import SQLAlchemyUserRepository
+from modules.users.application.credits import CreditLedgerService
 from modules.users.contracts import User
 from shared_kernel.errors import UnauthorizedError
 from shared_kernel.security_errors import FeatureDisabledError
@@ -144,9 +163,7 @@ async def authenticate_user(
     return user
 
 
-async def get_current_user(
-    request: Request, jwt: JWTDep, users: UserRepoDep
-) -> User:
+async def get_current_user(request: Request, jwt: JWTDep, users: UserRepoDep) -> User:
     return await authenticate_user(request, jwt, users)
 
 
@@ -187,9 +204,7 @@ def resolve_anonymous_session(request: Request, settings: Settings) -> tuple[str
     return anonymous_id, new_token
 
 
-def set_anonymous_session_cookie(
-    response: Response, settings: Settings, token: str | None
-) -> None:
+def set_anonymous_session_cookie(response: Response, settings: Settings, token: str | None) -> None:
     """Grava a sessao anonima assinada no cliente (cookie httpOnly)."""
     if token is None:
         return
@@ -277,21 +292,15 @@ def get_object_storage(settings: SettingsDep) -> ObjectStoragePort | None:
 ObjectStorageDep = Annotated[ObjectStoragePort | None, Depends(get_object_storage)]
 
 
-def get_secure_image_fetcher(
-    settings: SettingsDep, http: HttpClientDep
-) -> ImageFetcherPort:
+def get_secure_image_fetcher(settings: SettingsDep, http: HttpClientDep) -> ImageFetcherPort:
     return gen_wiring.build_secure_image_fetcher(settings, http_client=http)
 
 
 ImageFetcherDep = Annotated[ImageFetcherPort, Depends(get_secure_image_fetcher)]
 
 
-def get_stream_ticket_store(
-    settings: SettingsDep, redis: RedisDep
-) -> RedisStreamTicketStore:
-    return RedisStreamTicketStore(
-        redis, ttl_seconds=settings.stream_ticket_ttl_seconds
-    )
+def get_stream_ticket_store(settings: SettingsDep, redis: RedisDep) -> RedisStreamTicketStore:
+    return RedisStreamTicketStore(redis, ttl_seconds=settings.stream_ticket_ttl_seconds)
 
 
 StreamTicketDep = Annotated[RedisStreamTicketStore, Depends(get_stream_ticket_store)]
@@ -367,9 +376,7 @@ EventPublisherDep = Annotated[RedisEventPublisher, Depends(get_event_publisher)]
 
 
 def get_generation_rate_limiter(settings: SettingsDep, redis: RedisDep) -> TokenBucket:
-    return TokenBucket(
-        redis, capacity=settings.rate_limit_generation_per_minute, window_seconds=60
-    )
+    return TokenBucket(redis, capacity=settings.rate_limit_generation_per_minute, window_seconds=60)
 
 
 def get_auth_rate_limiter(settings: SettingsDep, redis: RedisDep) -> TokenBucket:
@@ -390,3 +397,116 @@ def get_prompt_quota_rate_limiter(settings: SettingsDep, redis: RedisDep) -> Tok
     return TokenBucket(
         redis, capacity=settings.rate_limit_prompt_quota_per_minute, window_seconds=60
     )
+
+
+# ---- queue recovery ----
+
+
+def get_queue_reconciler(
+    generations: GenerationRepoDep,
+    users: UserRepoDep,
+    store: PromptQuotaStoreDep,
+    events: EventPublisherDep,
+    settings: SettingsDep,
+    session: SessionDep,
+) -> QueueRecoveryService:
+    return QueueRecoveryService(
+        generations=generations,
+        events=events,
+        users=users,
+        quota_refund=RefundPromptQuota(store),
+        credits=CreditLedgerService(
+            users=users,
+            ledger=SQLAlchemyCreditLedgerRepository(session),
+            monthly_credits=settings.plan_monthly_credits,
+        ),
+        stale_seconds=settings.queue_stale_seconds,
+    )
+
+
+QueueReconcilerDep = Annotated[QueueRecoveryService, Depends(get_queue_reconciler)]
+
+
+# ---- engine availability / maintenance ----
+
+
+def get_engine_availability(settings: SettingsDep, redis: RedisDep) -> EngineAvailabilityService:
+    return EngineAvailabilityService(redis, settings)
+
+
+EngineAvailabilityDep = Annotated[EngineAvailabilityService, Depends(get_engine_availability)]
+
+
+# ---- admin ----
+
+
+def get_moderation_event_repository(
+    session: SessionDep,
+) -> SQLAlchemyModerationEventRepository:
+    return SQLAlchemyModerationEventRepository(session)
+
+
+ModerationEventRepoDep = Annotated[
+    SQLAlchemyModerationEventRepository,
+    Depends(get_moderation_event_repository),
+]
+
+
+def get_admin_service(
+    session: SessionDep,
+    users: UserRepoDep,
+    moderation_events: ModerationEventRepoDep,
+    settings: SettingsDep,
+) -> AdminService:
+    credits = CreditLedgerService(
+        users=users,
+        ledger=SQLAlchemyCreditLedgerRepository(session),
+        monthly_credits=settings.plan_monthly_credits,
+    )
+    return AdminService(
+        users=users,
+        audit=SQLAlchemyAdminAuditRepository(session),
+        moderation=moderation_events,
+        credits=credits,
+    )
+
+
+AdminServiceDep = Annotated[AdminService, Depends(get_admin_service)]
+
+
+def get_credit_ledger(
+    session: SessionDep, users: UserRepoDep, settings: SettingsDep
+) -> CreditLedgerService:
+    return CreditLedgerService(
+        users=users,
+        ledger=SQLAlchemyCreditLedgerRepository(session),
+        monthly_credits=settings.plan_monthly_credits,
+    )
+
+
+CreditLedgerDep = Annotated[CreditLedgerService, Depends(get_credit_ledger)]
+
+
+async def require_admin(current_user: CurrentUserDep) -> User:
+    if not current_user.is_admin:
+        from shared_kernel.errors import ForbiddenError
+
+        raise ForbiddenError("Acesso restrito a administradores.")
+    return current_user
+
+
+AdminUserDep = Annotated[User, Depends(require_admin)]
+
+
+def get_library_repository(session: SessionDep) -> LibraryRepository:
+    return LibraryRepository(session)
+
+
+LibraryRepoDep = Annotated[LibraryRepository, Depends(get_library_repository)]
+
+
+def get_report_rate_limiter(redis: RedisDep) -> TokenBucket:
+    return TokenBucket(redis, capacity=5, window_seconds=60)
+
+
+ReportLimiterDep = Annotated[TokenBucket, Depends(get_report_rate_limiter)]

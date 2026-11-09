@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
@@ -29,12 +30,24 @@ class GenerationRepositoryPort(Protocol):
         """Artes temporarias de uma sessao anonima (pre-login)."""
         ...
 
-    async def reassign_anonymous_to_user(
-        self, anonymous_session_id: str, user_id: UUID
-    ) -> int:
+    async def reassign_anonymous_to_user(self, anonymous_session_id: str, user_id: UUID) -> int:
         """Vincula artes anonimas a um usuario (pos-login). Devolve quantas migrou."""
         ...
 
     async def list_public_showcase(self, *, limit: int) -> list[Generation]:
         """Melhores geracoes concluidas (galeria publica/SEO)."""
+        ...
+
+    async def list_stale(self, *, older_than: datetime, limit: int) -> list[Generation]:
+        """Geracoes queued/processing sem heartbeat desde older_than."""
+        ...
+
+    async def list_done_without_original(self, *, limit: int = 500) -> list[Generation]:
+        """Geracoes DONE anteriores ao original privado (backfill)."""
+        ...
+
+    async def list_stale_for_user(
+        self, user_id: UUID, *, older_than: datetime, limit: int
+    ) -> list[Generation]:
+        """Versao por usuario do reconciliador (abertura de historico)."""
         ...

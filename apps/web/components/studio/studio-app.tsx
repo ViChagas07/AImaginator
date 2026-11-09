@@ -26,6 +26,7 @@ import {AIGeneratingLoader} from "@/components/ui/ai-generating-loader";
 import {LoginGateModal} from "@/components/studio/login-gate-modal";
 import {
   ASPECT_RATIOS,
+  STYLE_PRESETS,
   isAspectRatio,
   UPLOAD_MAX_DIMENSION,
   UPLOAD_MAX_MB,
@@ -424,6 +425,33 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
           </p>
         </fieldset>
 
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-foreground">
+            {t("styleLabel")}
+          </legend>
+          <div className="flex flex-wrap gap-2">
+            {STYLE_PRESETS.map((preset) => {
+              const selected = gen.stylePreset === preset.value;
+              return (
+                <button
+                  key={preset.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => gen.setStylePreset(preset.value)}
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-sm transition-colors",
+                    selected
+                      ? "border-accent-to bg-white/[0.08] text-foreground"
+                      : "border-foreground/10 bg-surface text-muted hover:text-foreground",
+                  )}
+                >
+                  {t(preset.labelKey)}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
         <details className="rounded-lg border border-foreground/10 bg-surface p-4">
           <summary className="cursor-pointer text-sm font-medium text-foreground">
             {t("seedAdvanced")}
@@ -507,6 +535,19 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
             />
           </div>
         )}
+        {isGenerating && gen.result ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm(t("cancelConfirm"))) {
+                void gen.cancelGeneration(errorMessages);
+              }
+            }}
+            className="rounded-md border border-foreground/10 px-3 py-1.5 text-xs text-muted hover:text-foreground"
+          >
+            {t("cancel")}
+          </button>
+        ) : null}
         {gen.status === "failed" && gen.error && (
           <p role="alert" className="flex items-center gap-2 text-sm text-foreground">
             <TriangleAlert className="h-4 w-4" aria-hidden />
