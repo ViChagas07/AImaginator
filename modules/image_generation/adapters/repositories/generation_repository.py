@@ -7,7 +7,9 @@ contexto async ele explode em MissingGreenlet.
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select, update
@@ -72,6 +74,40 @@ class SQLAlchemyGenerationRepository(GenerationRepositoryPort):
         model.hidden_at = generation.hidden_at
         await self._session.flush()
         return generation
+
+    async def transition_if_status(
+        self,
+        generation_id: UUID,
+        *,
+        from_statuses: Collection[GenerationStatus],
+        to_status: GenerationStatus,
+        **values: Any,
+    ) -> bool:
+        values.setdefault("updated_at", datetime.now(UTC))
+        result = await self._session.execute(
+            update(GenerationModel)
+            .where(GenerationModel.id == generation_id)
+            .where(
+                GenerationModel.status.in_(
+                    [status.value for status in from_statuses]
+                )
+            )
+            .values(status=to_status.value, **values)
+        )
+        await self._session.flush()
+        return int(result.rowcount or 0) == 1
+
+    async def touch_processing(
+        self, generation_id: UUID, *, updated_at: datetime
+    ) -> bool:
+        result = await self._session.execute(
+            update(GenerationModel)
+            .where(GenerationModel.id == generation_id)
+            .where(GenerationModel.status == GenerationStatus.PROCESSING.value)
+            .values(updated_at=updated_at)
+        )
+        await self._session.flush()
+        return int(result.rowcount or 0) == 1
 
     async def delete(self, generation: Generation) -> None:
         """Soft delete (marca deleted_at; nao remove o registro)."""

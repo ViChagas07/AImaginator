@@ -43,8 +43,12 @@ from modules.observability.metrics import (
 from modules.prompt_quota.contracts import PromptQuotaRefundPort
 from modules.users.application.credits import CreditLedgerService
 from modules.users.contracts import User, UserRepositoryPort
-from shared_kernel.errors import AImaginatorError, NotFoundError
-from shared_kernel.security_errors import ContentBlockedError, ImageBlockedError
+from shared_kernel.errors import AImaginatorError, DomainError, NotFoundError
+from shared_kernel.security_errors import (
+    ContentBlockedError,
+    GenerationCanceledError,
+    ImageBlockedError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +84,66 @@ class ProcessGeneration:
     async def _heartbeat(self, generation: Generation) -> None:
         """Persiste updated_at em transacao curta (visivel ao reconciliador)."""
         generation.updated_at = datetime.now(UTC)
-        await self._generations.save(generation)
+        touch = getattr(self._generations, "touch_processing", None)
+        if touch is None:
+            await self._generations.save(generation)
+        else:
+            still_processing = await touch(
+                generation.id, updated_at=generation.updated_at
+            )
+            if not still_processing:
+                current = await self._generations.get_by_id(generation.id)
+                if current is not None and current.status is GenerationStatus.CANCELED:
+                    raise GenerationCanceledError(
+                        message_for("canceled", generation.locale)
+                    )
+                raise DomainError("Geracao nao esta mais em processamento.")
         await self._commit_if_available()
+
+    async def _transition(
+        self,
+        generation: Generation,
+        *,
+        from_statuses,
+        to_status: GenerationStatus,
+        **values,
+    ) -> bool:
+        transition = getattr(self._generations, "transition_if_status", None)
+        if transition is None:
+            # Compatibilidade com fakes antigos; o repositorio real usa CAS.
+            if generation.status not in from_statuses:
+                return False
+            for key, value in values.items():
+                if hasattr(generation, key):
+                    setattr(generation, key, value)
+            generation.transition_to(
+                to_status,
+                error=values.get("error_message"),
+                error_code=values.get("error_code"),
+            )
+            await self._generations.save(generation)
+            return True
+        return await transition(
+            generation.id,
+            from_statuses=from_statuses,
+            to_status=to_status,
+            **values,
+        )
+
+    async def _discard_result(self, generation: Generation) -> None:
+        if self._storage is None:
+            return
+        for key in (generation.result_object_key, generation.original_object_key):
+            if not key:
+                continue
+            try:
+                await self._storage.delete_object(key)
+            except Exception:
+                logger.warning(
+                    "canceled_result_delete_failed",
+                    extra={"generation_id": str(generation.id), "key": key},
+                    exc_info=True,
+                )
 
     async def execute(
         self, generation_id: UUID, *, raise_on_failure: bool = True
@@ -89,7 +151,11 @@ class ProcessGeneration:
         generation = await self._generations.get_by_id(generation_id)
         if generation is None:
             raise NotFoundError(f"Geracao {generation_id} nao encontrada.")
-        if generation.status in (GenerationStatus.DONE, GenerationStatus.FAILED):
+        if generation.status in (
+            GenerationStatus.DONE,
+            GenerationStatus.FAILED,
+            GenerationStatus.CANCELED,
+        ):
             # Reentrega idempotente (acks_late): estado terminal sai sem trabalho.
             logger.info(
                 "generation_already_terminal",
@@ -117,8 +183,34 @@ class ProcessGeneration:
                 # PROCESSING -> PROCESSING (transicao invalida).
                 await self._heartbeat(generation)
             else:
-                generation.transition_to(GenerationStatus.PROCESSING)
-                await self._generations.save(generation)
+                changed = await self._transition(
+                    generation,
+                    from_statuses=(GenerationStatus.QUEUED,),
+                    to_status=GenerationStatus.PROCESSING,
+                    updated_at=datetime.now(UTC),
+                )
+                if not changed:
+                    current = await self._generations.get_by_id(generation.id)
+                    if current is None:
+                        raise NotFoundError(
+                            f"Geracao {generation_id} nao encontrada."
+                        )
+                    if current.status in (
+                        GenerationStatus.DONE,
+                        GenerationStatus.FAILED,
+                        GenerationStatus.CANCELED,
+                    ):
+                        logger.info(
+                            "generation_already_terminal",
+                            extra={
+                                "generation_id": str(current.id),
+                                "status": current.status.value,
+                            },
+                        )
+                        return
+                    generation = current
+                else:
+                    generation.status = GenerationStatus.PROCESSING
                 await self._commit_if_available()
             await publish(GenerationStatus.PROCESSING, 5)
 
@@ -130,8 +222,29 @@ class ProcessGeneration:
             if self._storage is not None and generation.result_object_key:
                 result_url = await self._storage.presigned_get_url(generation.result_object_key)
 
-            generation.attach_result(result_url, object_key=generation.result_object_key)
-            await self._generations.save(generation)
+            completed = await self._transition(
+                generation,
+                from_statuses=(GenerationStatus.PROCESSING,),
+                to_status=GenerationStatus.DONE,
+                result_image_url=result_url,
+                result_object_key=generation.result_object_key,
+                seed=generation.seed,
+                completed_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+            if not completed:
+                current = await self._generations.get_by_id(generation.id)
+                if current is not None and current.status is GenerationStatus.CANCELED:
+                    await self._discard_result(generation)
+                    await publish(
+                        GenerationStatus.CANCELED,
+                        100,
+                        error=message_for("canceled", generation.locale),
+                        error_code="canceled",
+                    )
+                return
+            generation.status = GenerationStatus.DONE
+            generation.completed_at = datetime.now(UTC)
             await self._commit_if_available()
             GENERATIONS_TOTAL.labels(kind=generation.kind.value, status="done").inc()
             GENERATION_DURATION.labels(kind=generation.kind.value).observe(
@@ -179,26 +292,51 @@ class ProcessGeneration:
                     warning_level = outcome.warning_level
                     warning_message = outcome.warning_message
 
-            self._record_failure_metrics(generation, error_code)
-            if generation.status is not GenerationStatus.DONE:
-                await self._refund_credit(generation, reason=error_code)
-                await self._refund_quota(generation, reason=error_code)
             final_status = (
                 GenerationStatus.CANCELED
                 if error_code == "canceled"
                 else GenerationStatus.FAILED
             )
-            if generation.status in (
-                GenerationStatus.QUEUED,
-                GenerationStatus.PROCESSING,
-            ):
-                generation.warning_level = warning_level
-                generation.warning_message = warning_message
-                generation.transition_to(
-                    final_status, error=safe_message, error_code=error_code
+            changed = await self._transition(
+                generation,
+                from_statuses=(
+                    GenerationStatus.QUEUED,
+                    GenerationStatus.PROCESSING,
+                ),
+                to_status=final_status,
+                error_message=safe_message,
+                error_code=error_code,
+                warning_level=warning_level,
+                warning_message=warning_message,
+                completed_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
+            )
+            if not changed:
+                # Outro caminho ja venceu (DONE/CANCELED/FAILED): nao
+                # devolve cota de novo e nao publica um estado duplicado.
+                logger.info(
+                    "generation_terminal_race_lost",
+                    extra={
+                        "generation_id": str(generation.id),
+                        "error_code": error_code,
+                    },
                 )
-                await self._generations.save(generation)
-                await self._commit_if_available()
+                if raise_on_failure:
+                    raise
+                return
+
+            self._record_failure_metrics(generation, error_code)
+            generation.status = final_status
+            generation.error_message = safe_message
+            generation.error_code = error_code
+            generation.warning_level = warning_level
+            generation.warning_message = warning_message
+            generation.completed_at = datetime.now(UTC)
+            generation.updated_at = datetime.now(UTC)
+            await self._refund_credit(generation, reason=error_code)
+            await self._refund_quota(generation, reason=error_code)
+            await self._generations.save(generation)
+            await self._commit_if_available()
             GENERATIONS_TOTAL.labels(
                 kind=generation.kind.value, status=final_status.value
             ).inc()

@@ -57,11 +57,19 @@ class GetGeneration:
         self._storage = storage
         self._reconciler = reconciler
 
-    async def execute(self, *, user_id: UUID, generation_id: UUID) -> GenerationOutput:
+    async def execute(
+        self,
+        *,
+        user_id: UUID | None,
+        anonymous_session_id: str | None = None,
+        generation_id: UUID,
+    ) -> GenerationOutput:
         generation = await self._generations.get_by_id(generation_id)
         if generation is None:
             raise NotFoundError("Geracao nao encontrada.")
-        if generation.user_id != user_id:
+        if not generation.belongs_to(
+            user_id, anonymous_session_id=anonymous_session_id
+        ):
             # Nao vaza existencia do recurso a terceiros (anti-enumeracao).
             raise ForbiddenError("Acesso negado a esta geracao.")
         if self._reconciler is not None:

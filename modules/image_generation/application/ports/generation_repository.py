@@ -2,17 +2,35 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from datetime import datetime
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import UUID
 
-from modules.image_generation.domain.entities import Generation
+from modules.image_generation.domain.entities import Generation, GenerationStatus
 
 
 class GenerationRepositoryPort(Protocol):
     async def get_by_id(self, generation_id: UUID) -> Generation | None: ...
 
     async def save(self, generation: Generation) -> Generation: ...
+
+    async def transition_if_status(
+        self,
+        generation_id: UUID,
+        *,
+        from_statuses: Collection[GenerationStatus],
+        to_status: GenerationStatus,
+        **values: Any,
+    ) -> bool:
+        """Compare-and-set terminal: so grava se o status atual estiver na lista."""
+        ...
+
+    async def touch_processing(
+        self, generation_id: UUID, *, updated_at: datetime
+    ) -> bool:
+        """Atualiza o heartbeat somente se a geracao ainda estiver PROCESSING."""
+        ...
 
     async def delete(self, generation: Generation) -> None:
         """Soft delete (marca deleted_at)."""

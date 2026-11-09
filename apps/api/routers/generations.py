@@ -21,6 +21,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.responses import JSONResponse
 
 from apps.api.dependencies import (
     CreditLedgerDep,
@@ -466,20 +467,37 @@ async def retry_generation(
 @router.post("/generations/{generation_id}/cancel")
 async def cancel_generation(
     generation_id: UUID,
-    current_user: CurrentUserDep,
+    request: Request,
+    settings: SettingsDep,
+    current_user: OptionalCurrentUserDep,
     generations: GenerationRepoDep,
     events: EventPublisherDep,
     redis: RedisDep,
     credits: CreditLedgerDep,
     store: PromptQuotaStoreDep,
-) -> dict:
-    return await CancelGeneration(
+) -> JSONResponse:
+    anonymous_id = None
+    if current_user is None:
+        anonymous_id, _ = resolve_anonymous_session(request, settings)
+    result = await CancelGeneration(
         generations=generations,
         events=events,
         redis=redis,
         credits=credits,
         quota_refund=RefundPromptQuota(store),
-    ).execute(user_id=current_user.id, generation_id=generation_id)
+    ).execute(
+        user_id=current_user.id if current_user is not None else None,
+        anonymous_session_id=anonymous_id,
+        generation_id=generation_id,
+    )
+    status_code = (
+        status.HTTP_202_ACCEPTED
+        if result["status"] == "cancel_requested"
+        else status.HTTP_409_CONFLICT
+        if result.get("already_finished")
+        else status.HTTP_200_OK
+    )
+    return JSONResponse(result, status_code=status_code)
 
 
 @router.get("/generations", response_model=GenerationPage)
@@ -499,11 +517,18 @@ async def list_generations(
 @router.get("/generations/{generation_id}", response_model=GenerationOutput)
 async def get_generation(
     generation_id: UUID,
-    current_user: CurrentUserDep,
+    request: Request,
+    settings: SettingsDep,
+    current_user: OptionalCurrentUserDep,
     generations: GenerationRepoDep,
     storage: ObjectStorageDep,
     reconciler: QueueReconcilerDep,
 ) -> GenerationOutput:
+    anonymous_id = None
+    if current_user is None:
+        anonymous_id, _ = resolve_anonymous_session(request, settings)
     return await GetGeneration(generations, storage=storage, reconciler=reconciler).execute(
-        user_id=current_user.id, generation_id=generation_id
+        user_id=current_user.id if current_user is not None else None,
+        anonymous_session_id=anonymous_id,
+        generation_id=generation_id,
     )
