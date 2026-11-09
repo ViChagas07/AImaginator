@@ -223,7 +223,17 @@
     "uploadRequired": "Wählen Sie ein Quellbild aus, um fortzufahren.",
     "upscale": "Gehoben",
     "upscaling": "Hochskalierung...",
-    "upscaleRemaining": "Gehobene Angebote heute noch übrig: {count}"
+    "upscaleRemaining": "Gehobene Angebote heute noch übrig: {count}",
+    "styleLabel": "Style",
+    "styleNone": "No style",
+    "stylePhotorealistic": "Photographic",
+    "styleAnime": "Anime",
+    "styleOilPainting": "Oil painting",
+    "styleCyberpunk": "Cyberpunk",
+    "styleWatercolor": "Watercolor",
+    "styleIsometric3d": "3D isometric",
+    "cancel": "Cancel generation",
+    "cancelConfirm": "Cancel this generation? Credits will be refunded."
   },
   "gallery": {
     "title": "Öffentliche Galerie",
@@ -646,7 +656,8 @@
   "status": {
     "title": "Service status",
     "maintenance": "AImaginator is under maintenance. We will be back soon.",
-    "offline": "The image engine is offline right now."
+    "offline": "The image engine is offline right now.",
+    "canceled": "Abgebrochen"
   },
   "admin": {
     "title": "Administration",
@@ -660,5 +671,17 @@
     "plan": "Plan",
     "daily": "Prompts today",
     "upscale": "Upscale today"
+  },
+  "share": {
+    "report": "Report",
+    "reportReason": "Reason",
+    "reportSent": "Report sent.",
+    "reasons": {
+      "nsfw": "Sexual content",
+      "gore": "Graphic violence",
+      "hate": "Hate",
+      "self_harm": "Self-harm",
+      "other": "Other"
+    }
   }
 }

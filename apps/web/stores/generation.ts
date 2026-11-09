@@ -19,14 +19,15 @@ import {
   readWarningMessage,
   toHistoryItem,
 } from "@/lib/generation-contract";
-import type {AspectRatioValue} from "@/lib/studio-config";
+import type {AspectRatioValue, StylePresetValue} from "@/lib/studio-config";
 
 export type GenerationStatus =
   | "idle"
   | "queued"
   | "processing"
   | "done"
-  | "failed";
+  | "failed"
+  | "canceled";
 
 export type GenerationMode = "generate" | "edit";
 
@@ -42,6 +43,7 @@ type GenerationState = {
   prompt: string;
   mode: GenerationMode;
   aspectRatio: AspectRatioValue;
+  stylePreset: StylePresetValue;
   seed: string;
   uploadFile: File | null;
   imageBase64: string | undefined;
@@ -84,10 +86,12 @@ type GenerationState = {
   ) => Promise<void>;
   loadHistory: (reset?: boolean) => Promise<void>;
   showResult: (item: GenerationRecord) => void;
+  cancelGeneration: (errors: GenerationErrorMessages) => Promise<void>;
   reset: () => void;
   setPrompt: (p: string) => void;
   setMode: (mode: GenerationMode) => void;
   setAspectRatio: (ratio: AspectRatioValue) => void;
+  setStylePreset: (preset: StylePresetValue) => void;
   setSeed: (seed: string) => void;
   setUploadFile: (file: File | null) => void;
   setImage: (image: string | undefined) => void;
@@ -230,6 +234,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   prompt: "",
   mode: "generate",
   aspectRatio: "1:1",
+  stylePreset: "none",
   seed: "",
   uploadFile: null,
   imageBase64: undefined,
@@ -247,6 +252,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   setPrompt: (prompt) => set({prompt}),
   setMode: (mode) => set({mode}),
   setAspectRatio: (aspectRatio) => set({aspectRatio}),
+  setStylePreset: (stylePreset) => set({stylePreset}),
   setSeed: (seed) => set({seed}),
   setUploadFile: (uploadFile) => set({uploadFile}),
   setImage: (imageBase64) => set({imageBase64}),
@@ -306,6 +312,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       const body: Record<string, unknown> = {
         prompt,
         aspect_ratio: get().aspectRatio,
+        style_preset: get().stylePreset,
       };
       const seed = parseSeedInput(get().seed);
       if (seed !== undefined) body.seed = seed;
@@ -434,6 +441,20 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     } catch {
       set({status: "failed", error: errors.network});
     }
+  },
+
+  async cancelGeneration(errors) {
+    const current = get().result;
+    if (!current || !isGeneratingStatus(get().status)) return;
+    const res = await authedFetch(
+      `${API_BASE_URL}/api/v1/generations/${encodeURIComponent(current.id)}/cancel`,
+      {method: "POST"},
+    );
+    if (!res.ok) {
+      set({error: await readFailure(res, errors)});
+      return;
+    }
+    set({status: "canceled", error: null});
   },
 
   async startVariation(generationId, errors, locale) {
