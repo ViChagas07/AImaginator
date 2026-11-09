@@ -54,7 +54,7 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
     import httpx
     import redis.asyncio as aioredis
 
-    from infra.database import session_scope
+    from infra.database import dispose_engine, session_scope
     from infra.settings import get_settings
     from modules.image_generation.adapters.redis_event_publisher import RedisEventPublisher
     from modules.image_generation.adapters.repositories.generation_repository import (
@@ -155,6 +155,9 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                 logger.warning("purge_sources_failed", exc_info=True)
         await http_client.aclose()
         await redis_client.aclose()
+        # Cada task roda em um asyncio.run novo; o pool nao pode atravessar
+        # loops fechados (asyncpg: Event loop is closed).
+        await dispose_engine()
         mark_state(settings, "idle")
         clear_generation_context()
 
