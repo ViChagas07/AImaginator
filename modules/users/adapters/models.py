@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infra.database import Base
@@ -22,9 +22,15 @@ class UserModel(Base):
     )
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    avatar_object_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     bio: Mapped[str | None] = mapped_column(String(160), nullable=True)
     handle: Mapped[str | None] = mapped_column(String(50), unique=True, index=True, nullable=True)
     generation_credits: Mapped[int] = mapped_column(Integer, default=50)
+    plan: Mapped[str] = mapped_column(String(16), default="free")
+    role: Mapped[str] = mapped_column(String(16), default="user")
+    credits_period_start: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
     moderation_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     moderation_blocked_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -36,6 +42,27 @@ class UserModel(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
+    )
+
+
+class CreditLedgerModel(Base):
+    __tablename__ = "credit_ledger"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    delta: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(String(32))
+    ref_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    ref_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    idempotency_key: Mapped[str] = mapped_column(
+        String(200), unique=True, index=True
+    )
+    balance_after: Mapped[int] = mapped_column(Integer)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
 

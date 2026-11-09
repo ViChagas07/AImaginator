@@ -55,6 +55,9 @@ class InMemoryUserRepository:
     async def get_by_id(self, user_id):
         return self._users.get(user_id)
 
+    async def get_by_id_for_update(self, user_id):
+        return self._users.get(user_id)
+
     async def get_by_google_sub(self, google_sub: str):
         return next((u for u in self._users.values() if u.google_sub == google_sub), None)
 
@@ -64,6 +67,12 @@ class InMemoryUserRepository:
     async def save(self, user: User) -> User:
         self._users[user.id] = user
         return user
+
+    async def list_flagged(self, *, limit: int = 100):
+        return [u for u in self._users.values() if u.moderation_flag][:limit]
+
+    async def list_period_due(self, *, before, limit: int = 1000):
+        return [u for u in self._users.values() if u.credits_period_start < before][:limit]
 
 
 class InMemoryGenerationRepository:
@@ -131,6 +140,18 @@ class InMemoryGenerationRepository:
             and g.deleted_at is None
         ]
         items.sort(key=lambda g: g.created_at, reverse=True)
+        return items[:limit]
+
+    async def list_done_without_original(self, *, limit=500):
+        from modules.image_generation.domain.entities import GenerationStatus
+
+        items = [
+            g
+            for g in self._items.values()
+            if g.status is GenerationStatus.DONE
+            and g.original_object_key is None
+            and g.deleted_at is None
+        ]
         return items[:limit]
 
     async def list_stale(self, *, older_than, limit):

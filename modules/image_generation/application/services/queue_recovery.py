@@ -26,6 +26,7 @@ from modules.observability.metrics import (
     QUOTA_REFUNDS_TOTAL,
 )
 from modules.prompt_quota.contracts import PromptQuotaRefundPort
+from modules.users.application.credits import CreditLedgerService
 from modules.users.contracts import UserRepositoryPort
 from shared_kernel.errors import DomainError
 
@@ -43,6 +44,7 @@ class QueueRecoveryService:
         events: EventPublisherPort | None = None,
         users: UserRepositoryPort | None = None,
         quota_refund: PromptQuotaRefundPort | None = None,
+        credits: CreditLedgerService | None = None,
         stale_seconds: int = 900,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
@@ -50,6 +52,7 @@ class QueueRecoveryService:
         self._events = events
         self._users = users
         self._quota_refund = quota_refund
+        self._credits = credits
         self._stale_seconds = stale_seconds
         self._clock = clock or (lambda: datetime.now(UTC))
 
@@ -142,6 +145,18 @@ class QueueRecoveryService:
         if self._users is None or generation.user_id is None or generation.credits_refunded:
             return
         try:
+            if self._credits is not None:
+                await self._credits.refund(
+                    generation.user_id,
+                    amount=generation.credits_cost,
+                    ref_type="generation",
+                    ref_id=str(generation.id),
+                    idempotency_key=f"refund:{generation.id}",
+                    meta={"reason": reason},
+                )
+                generation.credits_refunded = True
+                CREDITS_REFUNDED_TOTAL.labels(reason=reason).inc()
+                return
             user = await self._users.get_by_id(generation.user_id)
             if user is None:
                 return

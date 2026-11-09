@@ -717,6 +717,89 @@ for _locale, _messages in _QUEUE_MESSAGES.items():
     _MESSAGES[_locale].update(_messages)
 
 
+_PLATFORM_MESSAGES: dict[str, dict[str, str]] = {
+    "pt-BR": {
+        "engine_offline": "O motor de imagem esta offline no momento. Tente novamente em instantes.",
+        "maintenance": "O AImaginator esta em manutencao. Volte em breve.",
+        "hardware_busy": "O hardware esta ocupado ou quente demais. Aguarde alguns minutos.",
+        "thermal_abort": "A geracao foi interrompida por protecao termica. Tente novamente mais tarde.",
+        "resource_abort": "A geracao foi interrompida por falta de memoria. Tente novamente mais tarde.",
+    },
+    "en": {
+        "engine_offline": "The image engine is offline right now. Please try again shortly.",
+        "maintenance": "AImaginator is under maintenance. Please come back soon.",
+        "hardware_busy": "The hardware is busy or too hot. Please wait a few minutes.",
+        "thermal_abort": "Generation stopped for thermal protection. Please try again later.",
+        "resource_abort": "Generation stopped due to low memory. Please try again later.",
+    },
+    "es": {
+        "engine_offline": "El motor de imagenes esta desconectado. Intentalo de nuevo en breve.",
+        "maintenance": "AImaginator esta en mantenimiento. Vuelve pronto.",
+        "hardware_busy": "El hardware esta ocupado o demasiado caliente. Espera unos minutos.",
+        "thermal_abort": "La generacion se detuvo por proteccion termica. Intentalo mas tarde.",
+        "resource_abort": "La generacion se detuvo por falta de memoria. Intentalo mas tarde.",
+    },
+    "fr": {
+        "engine_offline": "Le moteur d'images est hors ligne. Reessayez dans un instant.",
+        "maintenance": "AImaginator est en maintenance. Revenez bientot.",
+        "hardware_busy": "Le materiel est occupe ou trop chaud. Patientez quelques minutes.",
+        "thermal_abort": "La generation a ete arretee pour protection thermique. Reessayez plus tard.",
+        "resource_abort": "La generation a ete arretee faute de memoire. Reessayez plus tard.",
+    },
+    "de": {
+        "engine_offline": "Die Bild-Engine ist derzeit offline. Bitte versuche es gleich erneut.",
+        "maintenance": "AImaginator wird gewartet. Bitte komm bald wieder.",
+        "hardware_busy": "Die Hardware ist besetzt oder zu heiss. Bitte warte einige Minuten.",
+        "thermal_abort": "Die Generierung wurde aus Hitzeschutz gestoppt. Bitte spaeter erneut versuchen.",
+        "resource_abort": "Die Generierung wurde wegen Speichermangel gestoppt. Bitte spaeter erneut versuchen.",
+    },
+    "it": {
+        "engine_offline": "Il motore immagini e offline. Riprova tra poco.",
+        "maintenance": "AImaginator e in manutenzione. Torna presto.",
+        "hardware_busy": "L'hardware e occupato o troppo caldo. Attendi qualche minuto.",
+        "thermal_abort": "La generazione e stata interrotta per protezione termica. Riprova piu tardi.",
+        "resource_abort": "La generazione e stata interrotta per memoria insufficiente. Riprova piu tardi.",
+    },
+    "ja": {
+        "engine_offline": "画像エンジンは現在オフラインです。しばらくしてから再試行してください。",
+        "maintenance": "AImaginator はメンテナンス中です。後でもう一度お越しください。",
+        "hardware_busy": "ハードウェアが使用中か高温です。数分お待ちください。",
+        "thermal_abort": "熱保護のため生成を中止しました。後で再試行してください。",
+        "resource_abort": "メモリ不足のため生成を中止しました。後で再試行してください。",
+    },
+    "zh": {
+        "engine_offline": "图像引擎当前离线。请稍后重试。",
+        "maintenance": "AImaginator 正在维护中。请稍后再来。",
+        "hardware_busy": "硬件忙碌或过热。请等待几分钟。",
+        "thermal_abort": "生成因热保护而停止。请稍后重试。",
+        "resource_abort": "生成因内存不足而停止。请稍后重试。",
+    },
+    "ko": {
+        "engine_offline": "이미지 엔진이 현재 오프라인입니다. 잠시 후 다시 시도해 주세요.",
+        "maintenance": "AImaginator가 점검 중입니다. 잠시 후 다시 방문해 주세요.",
+        "hardware_busy": "하드웨어가 사용 중이거나 너무 뜨겁습니다. 몇 분 기다려 주세요.",
+        "thermal_abort": "열 보호로 생성이 중단되었습니다. 나중에 다시 시도해 주세요.",
+        "resource_abort": "메모리 부족으로 생성이 중단되었습니다. 나중에 다시 시도해 주세요.",
+    },
+    "ru": {
+        "engine_offline": "Движок изображений сейчас офлайн. Попробуйте чуть позже.",
+        "maintenance": "AImaginator на обслуживании. Загляните позже.",
+        "hardware_busy": "Оборудование занято или перегрето. Подождите несколько минут.",
+        "thermal_abort": "Генерация остановлена из-за тепловой защиты. Попробуйте позже.",
+        "resource_abort": "Генерация остановлена из-за нехватки памяти. Попробуйте позже.",
+    },
+    "ar": {
+        "engine_offline": "محرك الصور غير متصل حاليا. حاول مرة أخرى بعد قليل.",
+        "maintenance": "AImaginator قيد الصيانة. عد قريبا.",
+        "hardware_busy": "الجهاز مشغول أو ساخن جدا. انتظر بضع دقائق.",
+        "thermal_abort": "توقف الإنشاء للحماية الحرارية. حاول لاحقا.",
+        "resource_abort": "توقف الإنشاء بسبب نقص الذاكرة. حاول لاحقا.",
+    },
+}
+
+for _locale, _messages in _PLATFORM_MESSAGES.items():
+    _MESSAGES[_locale].update(_messages)
+
 WARNING_LEVEL_MESSAGES = {
     1: "warning_level_1",
     2: "temporarily_blocked",

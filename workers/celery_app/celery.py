@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 
 from celery import Celery
-from celery.signals import worker_init
+from celery.signals import worker_init, worker_shutdown
 from kombu import Exchange, Queue
 
 from infra.dev_guard import enforce_local_infra
@@ -59,9 +59,22 @@ def _init_worker_observability(**_kwargs) -> None:
         start_metrics_server(settings.worker_metrics_port, settings.prometheus_multiproc_dir)
     start_queue_metrics_thread(settings.worker_metrics_interval_seconds)
 
-    from workers.celery_app.reconciler import reconcile_stale_generations_sync
+    from workers.celery_app.heartbeat import init_heartbeat
+    from workers.celery_app.reconciler import (
+        reconcile_stale_generations_sync,
+        reset_monthly_credits_sync,
+    )
 
+    init_heartbeat(settings)
     reconcile_stale_generations_sync()
+    reset_monthly_credits_sync()
+
+
+@worker_shutdown.connect
+def _stop_worker_heartbeat(**_kwargs) -> None:
+    from workers.celery_app.heartbeat import stop_heartbeat
+
+    stop_heartbeat()
 
 
 celery_app.conf.update(

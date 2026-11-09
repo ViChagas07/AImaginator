@@ -76,10 +76,14 @@ class _SdCppBase:
         *,
         available_ram_mb_fn: Callable[[], int] | None = None,
         sleep_fn: Callable[[float], Awaitable[None]] | None = None,
+        resource_check: Callable[[], Awaitable[None]] | None = None,
+        resource_interval_seconds: float = 2.0,
     ) -> None:
         self._settings = settings
         self._available_ram_mb = available_ram_mb_fn or available_ram_mb
         self._sleep = sleep_fn or asyncio.sleep
+        self._resource_check = resource_check
+        self._resource_interval = max(0.2, resource_interval_seconds)
 
     def _check_resources(self) -> None:
         free_mb = self._available_ram_mb()
@@ -164,7 +168,6 @@ class _SdCppBase:
     async def _execute(
         self, command: list[str], *, max_seconds: float, on_progress: ProgressCallback
     ) -> None:
-
         creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
         process = await asyncio.create_subprocess_exec(
             *command,
@@ -175,7 +178,13 @@ class _SdCppBase:
         )
         output: list[str] = []
         peak_ram = 0
+        abort_exc: BaseException | None = None
         sampler = asyncio.create_task(self._sample_peak_ram(process))
+        watcher = (
+            asyncio.create_task(self._watch_resources(process))
+            if self._resource_check is not None
+            else None
+        )
         try:
             await asyncio.wait_for(
                 self._consume_output(process, output, on_progress), timeout=max_seconds
@@ -193,10 +202,16 @@ class _SdCppBase:
             raise EngineTimeoutError() from None
         finally:
             sampler.cancel()
+            if watcher is not None:
+                watcher.cancel()
+                with contextlib.suppress(asyncio.CancelledError, Exception):
+                    abort_exc = await watcher
             with contextlib.suppress(asyncio.CancelledError, Exception):
                 peak_ram = await sampler
             ENGINE_PEAK_RAM_BYTES.labels(kind=self._kind).observe(peak_ram)
 
+        if abort_exc is not None:
+            raise abort_exc
         full_output = "".join(output)
         if returncode != 0:
             logger.error(
@@ -231,6 +246,19 @@ class _SdCppBase:
             if mapped > last_progress:
                 last_progress = mapped
                 await on_progress(mapped)
+
+    async def _watch_resources(self, process) -> BaseException | None:
+        while process.returncode is None:
+            await asyncio.sleep(self._resource_interval)
+            if process.returncode is not None:
+                break
+            try:
+                assert self._resource_check is not None
+                await self._resource_check()
+            except Exception as exc:
+                await self._kill_process_tree(process)
+                return exc
+        return None
 
     async def _sample_peak_ram(self, process) -> int:
         peak = 0

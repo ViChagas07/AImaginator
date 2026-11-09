@@ -158,6 +158,25 @@ SSE_STREAM_DURATION = Histogram(
 )
 
 
+HARDWARE_TEMPERATURE_C = Gauge(
+    "aimaginator_hardware_temperature_celsius",
+    "Temperatura maxima observada no hardware",
+)
+HARDWARE_FREE_RAM_BYTES = Gauge(
+    "aimaginator_hardware_free_ram_bytes",
+    "RAM livre observada antes/durante jobs",
+)
+HARDWARE_ABORTS_TOTAL = Counter(
+    "aimaginator_hardware_aborts_total",
+    "Abortos por protecao de hardware",
+    ["reason"],  # thermal | resource
+)
+HARDWARE_SENSOR_MISSING_TOTAL = Counter(
+    "aimaginator_hardware_sensor_missing_total",
+    "Leituras sem sensor de temperatura disponivel",
+)
+
+
 def render_metrics() -> bytes:
     import os
 

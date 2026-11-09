@@ -71,6 +71,8 @@ session-ses_*.md
 *.ckpt
 *.bin
 tools/flux-spike/
+tools/c2pa-dev/
+*.pem
 models/
 MODELS/
 

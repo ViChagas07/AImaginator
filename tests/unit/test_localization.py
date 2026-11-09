@@ -39,6 +39,11 @@ _EXPECTED_KEYS = {
     "original_unavailable",
     "queue_publish_failed",
     "queue_lost",
+    "engine_offline",
+    "maintenance",
+    "hardware_busy",
+    "thermal_abort",
+    "resource_abort",
 }
 
 

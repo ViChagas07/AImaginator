@@ -22,10 +22,18 @@ class User:
     handle: str | None = None
     id: UUID = field(default_factory=uuid4)
     generation_credits: int = DEFAULT_MONTHLY_CREDITS
+    plan: str = "free"
+    role: str = "user"
+    credits_period_start: datetime = field(default_factory=lambda: datetime.now(UTC))
+    avatar_object_key: str | None = None
     moderation_flag: bool = False
     moderation_blocked_until: datetime | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == "admin"
 
     def has_quota(self) -> bool:
         return self.generation_credits > 0
@@ -46,6 +54,20 @@ class User:
             raise QuotaExceededError("Cota de geracoes esgotada.")
         self.generation_credits -= 1
         self.updated_at = datetime.now(UTC)
+
+
+@dataclass(slots=True)
+class CreditLedgerEntry:
+    user_id: UUID
+    delta: int
+    reason: str
+    balance_after: int
+    idempotency_key: str
+    ref_type: str | None = None
+    ref_id: str | None = None
+    meta: dict | None = None
+    id: UUID = field(default_factory=uuid4)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(slots=True)

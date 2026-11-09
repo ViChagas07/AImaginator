@@ -18,6 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from infra.database import get_session_factory
 from infra.redis_client import get_redis
 from infra.settings import Settings, get_settings
+from modules.admin.adapters.repository import SQLAlchemyAdminAuditRepository
+from modules.admin.application.service import AdminService
 from modules.auth.application.anonymous_identity import (
     generate_anonymous_id,
     sign_anonymous_id,
@@ -31,12 +33,18 @@ from modules.image_generation.adapters.redis_stream_tickets import RedisStreamTi
 from modules.image_generation.adapters.repositories.generation_repository import (
     SQLAlchemyGenerationRepository,
 )
+from modules.image_generation.adapters.repositories.moderation_repository import (
+    SQLAlchemyModerationEventRepository,
+)
 from modules.image_generation.application.localization import message_for
 from modules.image_generation.application.ports import (
     ImageFetcherPort,
     ObjectStoragePort,
 )
 from modules.image_generation.application.ports.task_queue import TaskQueuePort
+from modules.image_generation.application.services.engine_availability import (
+    EngineAvailabilityService,
+)
 from modules.image_generation.application.services.moderation import ModerationService
 from modules.image_generation.application.services.queue_recovery import (
     QueueRecoveryService,
@@ -49,7 +57,11 @@ from modules.prompt_quota.adapters.redis_quota_store import RedisPromptQuotaStor
 from modules.prompt_quota.contracts import RefundPromptQuota
 from modules.rate_limiting.circuit_breaker import CircuitBreaker
 from modules.rate_limiting.token_bucket import TokenBucket
+from modules.users.adapters.credit_ledger_repository import (
+    SQLAlchemyCreditLedgerRepository,
+)
 from modules.users.adapters.repository import SQLAlchemyUserRepository
+from modules.users.application.credits import CreditLedgerService
 from modules.users.contracts import User
 from shared_kernel.errors import UnauthorizedError
 from shared_kernel.security_errors import FeatureDisabledError
@@ -393,14 +405,91 @@ def get_queue_reconciler(
     store: PromptQuotaStoreDep,
     events: EventPublisherDep,
     settings: SettingsDep,
+    session: SessionDep,
 ) -> QueueRecoveryService:
     return QueueRecoveryService(
         generations=generations,
         events=events,
         users=users,
         quota_refund=RefundPromptQuota(store),
+        credits=CreditLedgerService(
+            users=users,
+            ledger=SQLAlchemyCreditLedgerRepository(session),
+            monthly_credits=settings.plan_monthly_credits,
+        ),
         stale_seconds=settings.queue_stale_seconds,
     )
 
 
 QueueReconcilerDep = Annotated[QueueRecoveryService, Depends(get_queue_reconciler)]
+
+
+# ---- engine availability / maintenance ----
+
+
+def get_engine_availability(settings: SettingsDep, redis: RedisDep) -> EngineAvailabilityService:
+    return EngineAvailabilityService(redis, settings)
+
+
+EngineAvailabilityDep = Annotated[EngineAvailabilityService, Depends(get_engine_availability)]
+
+
+# ---- admin ----
+
+
+def get_moderation_event_repository(
+    session: SessionDep,
+) -> SQLAlchemyModerationEventRepository:
+    return SQLAlchemyModerationEventRepository(session)
+
+
+ModerationEventRepoDep = Annotated[
+    SQLAlchemyModerationEventRepository,
+    Depends(get_moderation_event_repository),
+]
+
+
+def get_admin_service(
+    session: SessionDep,
+    users: UserRepoDep,
+    moderation_events: ModerationEventRepoDep,
+    settings: SettingsDep,
+) -> AdminService:
+    credits = CreditLedgerService(
+        users=users,
+        ledger=SQLAlchemyCreditLedgerRepository(session),
+        monthly_credits=settings.plan_monthly_credits,
+    )
+    return AdminService(
+        users=users,
+        audit=SQLAlchemyAdminAuditRepository(session),
+        moderation=moderation_events,
+        credits=credits,
+    )
+
+
+AdminServiceDep = Annotated[AdminService, Depends(get_admin_service)]
+
+
+def get_credit_ledger(
+    session: SessionDep, users: UserRepoDep, settings: SettingsDep
+) -> CreditLedgerService:
+    return CreditLedgerService(
+        users=users,
+        ledger=SQLAlchemyCreditLedgerRepository(session),
+        monthly_credits=settings.plan_monthly_credits,
+    )
+
+
+CreditLedgerDep = Annotated[CreditLedgerService, Depends(get_credit_ledger)]
+
+
+async def require_admin(current_user: CurrentUserDep) -> User:
+    if not current_user.is_admin:
+        from shared_kernel.errors import ForbiddenError
+
+        raise ForbiddenError("Acesso restrito a administradores.")
+    return current_user
+
+
+AdminUserDep = Annotated[User, Depends(require_admin)]

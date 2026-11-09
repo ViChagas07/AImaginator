@@ -1,4 +1,4 @@
-"""Rotas REST do recurso generations — spec secoes 16 e 5.
+"""Rotas REST do recurso generations â€” spec secoes 16 e 5.
 
 - POST /api/v1/generations        -> 202 Accepted + stream_url (auth opcional)
 - POST /api/v1/generations/edits  -> 202 (edicao com imagem por URL, anti-SSRF)
@@ -23,7 +23,9 @@ from fastapi import (
 )
 
 from apps.api.dependencies import (
+    CreditLedgerDep,
     CurrentUserDep,
+    EngineAvailabilityDep,
     EventPublisherDep,
     GenerationRepoDep,
     ImageFetcherDep,
@@ -77,6 +79,7 @@ async def create_generation(
     current_user: OptionalCurrentUserDep,
     generations: GenerationRepoDep,
     users: UserRepoDep,
+    credits: CreditLedgerDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
     settings: SettingsDep,
@@ -84,10 +87,12 @@ async def create_generation(
     events: EventPublisherDep,
     moderation: ModerationServiceDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("generate", locale=locale)
     if current_user is not None:
         await ensure_not_moderation_blocked(
             moderation,
@@ -106,6 +111,7 @@ async def create_generation(
             events=events,
             prompt_quota=ConsumePromptQuota(store, total=total),
             quota_refund=RefundPromptQuota(store),
+            credits=credits,
         ).execute(user=current_user, data=data, locale=locale, ip_hash=ip_hash)
 
     anonymous_id, token = resolve_anonymous_session(request, settings)
@@ -149,10 +155,12 @@ async def create_upscale(
     events: EventPublisherDep,
     quota: UpscaleQuotaDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("upscale", locale=locale)
     await limiter.consume(f"upscale:{current_user.id}")
     return await CreateUpscale(
         generations=generations,
@@ -180,6 +188,7 @@ async def create_variation(
     current_user: OptionalCurrentUserDep,
     generations: GenerationRepoDep,
     users: UserRepoDep,
+    credits: CreditLedgerDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
     settings: SettingsDep,
@@ -187,10 +196,12 @@ async def create_variation(
     events: EventPublisherDep,
     moderation: ModerationServiceDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("generate", locale=locale)
     if current_user is not None:
         await ensure_not_moderation_blocked(
             moderation,
@@ -210,6 +221,7 @@ async def create_variation(
                 store, total=settings.authenticated_prompt_chances_per_day
             ),
             quota_refund=RefundPromptQuota(store),
+            credits=credits,
         )
         return await CreateVariation(
             generations=generations, generate_authenticated=generate
@@ -258,6 +270,7 @@ async def create_edit(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     users: UserRepoDep,
+    credits: CreditLedgerDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
     url_policy: UrlPolicyDep,
@@ -268,11 +281,13 @@ async def create_edit(
     image_fetcher: ImageFetcherDep,
     moderation: ModerationServiceDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     request: Request,
     limiter: TokenBucket = Depends(get_generation_rate_limiter),
 ) -> GenerationOutput:
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("edit", locale=locale)
     await ensure_not_moderation_blocked(
         moderation,
         user=current_user,
@@ -290,6 +305,7 @@ async def create_edit(
         events=events,
         prompt_quota=ConsumePromptQuota(store, total=settings.authenticated_prompt_chances_per_day),
         quota_refund=RefundPromptQuota(store),
+        credits=credits,
         image_fetcher=image_fetcher,
         storage=storage,
         max_upload_bytes=settings.edit_upload_max_bytes,
@@ -308,6 +324,7 @@ async def create_edit_upload(
     current_user: CurrentUserDep,
     generations: GenerationRepoDep,
     users: UserRepoDep,
+    credits: CreditLedgerDep,
     queue: TaskQueueDep,
     guard: PromptGuardDep,
     events: EventPublisherDep,
@@ -316,6 +333,7 @@ async def create_edit_upload(
     storage: ObjectStorageDep,
     moderation: ModerationServiceDep,
     locale: LocaleDep,
+    availability: EngineAvailabilityDep,
     _enabled: ImageGenerationEnabledDep,
     request: Request,
     prompt: str = Form(..., min_length=1, max_length=MAX_PROMPT_LENGTH),
@@ -331,6 +349,7 @@ async def create_edit_upload(
     if storage is None:
         raise StorageUnavailableError()
     ip_hash = get_client_ip_hash(request)
+    await availability.ensure_available("edit", locale=locale)
     await ensure_not_moderation_blocked(
         moderation,
         user=current_user,
@@ -357,6 +376,7 @@ async def create_edit_upload(
         events=events,
         prompt_quota=ConsumePromptQuota(store, total=settings.authenticated_prompt_chances_per_day),
         quota_refund=RefundPromptQuota(store),
+        credits=credits,
         max_upload_bytes=settings.edit_upload_max_bytes,
         max_upload_dimension=settings.edit_upload_max_dimension,
         max_upload_pixels=settings.edit_upload_max_pixels,

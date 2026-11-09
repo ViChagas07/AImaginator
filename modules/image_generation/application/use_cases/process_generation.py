@@ -13,6 +13,7 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from uuid import UUID
 
+from modules.image_generation.application.localization import message_for
 from modules.image_generation.application.ports import (
     EventPublisherPort,
     GenerationRepositoryPort,
@@ -40,6 +41,7 @@ from modules.observability.metrics import (
     REFUSALS_TOTAL,
 )
 from modules.prompt_quota.contracts import PromptQuotaRefundPort
+from modules.users.application.credits import CreditLedgerService
 from modules.users.contracts import User, UserRepositoryPort
 from shared_kernel.errors import AImaginatorError, NotFoundError
 from shared_kernel.security_errors import ContentBlockedError, ImageBlockedError
@@ -58,6 +60,7 @@ class ProcessGeneration:
         users: UserRepositoryPort | None = None,
         moderation: ModerationService | None = None,
         quota_refund: PromptQuotaRefundPort | None = None,
+        credits: CreditLedgerService | None = None,
         commit: Callable[[], Awaitable[None]] | None = None,
     ) -> None:
         self._generations = generations
@@ -67,6 +70,7 @@ class ProcessGeneration:
         self._users = users
         self._moderation = moderation
         self._quota_refund = quota_refund
+        self._credits = credits
         self._commit = commit
 
     async def _commit_if_available(self) -> None:
@@ -142,6 +146,14 @@ class ProcessGeneration:
             if isinstance(exc, AImaginatorError):
                 error_code = exc.code
                 safe_message = exc.message
+                if error_code in {
+                    "engine_offline",
+                    "maintenance",
+                    "hardware_busy",
+                    "thermal_abort",
+                    "resource_abort",
+                }:
+                    safe_message = message_for(error_code, generation.locale)
             else:
                 error_code = "engine_failed"
                 safe_message = "Falha no processamento."
@@ -227,6 +239,18 @@ class ProcessGeneration:
         if self._users is None or generation.user_id is None or generation.credits_refunded:
             return
         try:
+            if self._credits is not None:
+                await self._credits.refund(
+                    generation.user_id,
+                    amount=generation.credits_cost,
+                    ref_type="generation",
+                    ref_id=str(generation.id),
+                    idempotency_key=f"refund:{generation.id}",
+                    meta={"reason": reason},
+                )
+                generation.credits_refunded = True
+                CREDITS_REFUNDED_TOTAL.labels(reason=reason).inc()
+                return
             user = await self._users.get_by_id(generation.user_id)
             if user is None:
                 return

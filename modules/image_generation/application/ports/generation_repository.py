@@ -42,6 +42,10 @@ class GenerationRepositoryPort(Protocol):
         """Geracoes queued/processing sem heartbeat desde older_than."""
         ...
 
+    async def list_done_without_original(self, *, limit: int = 500) -> list[Generation]:
+        """Geracoes DONE anteriores ao original privado (backfill)."""
+        ...
+
     async def list_stale_for_user(
         self, user_id: UUID, *, older_than: datetime, limit: int
     ) -> list[Generation]:

@@ -10,6 +10,8 @@ from pathlib import Path
 
 from PIL import Image, ImageFilter
 
+from shared_kernel.security_errors import C2PARequiredError
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,14 +39,10 @@ class PillowWatermarker:
             self._logo = self._logo.convert("RGBA")
         self._cache: dict[int, Image.Image] = {}
 
-    def geometry(
-        self, width: int, height: int
-    ) -> tuple[int, int, int, int, int]:
+    def geometry(self, width: int, height: int) -> tuple[int, int, int, int, int]:
         """Devolve (x, y, logo_w, logo_h, margem) para testes/previsao."""
         margin = int(round(width * self._margin_ratio))
-        target_w = min(
-            width, max(self._min_width_px, int(round(width * self._width_ratio)))
-        )
+        target_w = min(width, max(self._min_width_px, int(round(width * self._width_ratio))))
         target_h = max(1, int(round(self._logo.height * target_w / self._logo.width)))
         if target_h > height:
             target_h = height
@@ -78,16 +76,12 @@ class PillowWatermarker:
         target_h = max(1, int(round(self._logo.height * ratio)))
         resized = self._logo.resize((target_w, target_h), Image.Resampling.LANCZOS)
         if self._opacity < 1.0:
-            alpha = resized.getchannel("A").point(
-                lambda value: int(value * self._opacity)
-            )
+            alpha = resized.getchannel("A").point(lambda value: int(value * self._opacity))
             resized.putalpha(alpha)
         self._cache[target_w] = resized
         return resized
 
-    def _with_shadow(
-        self, image: Image.Image, logo: Image.Image, x: int, y: int
-    ) -> Image.Image:
+    def _with_shadow(self, image: Image.Image, logo: Image.Image, x: int, y: int) -> Image.Image:
         base = image.convert("RGBA")
         shadow_alpha = logo.getchannel("A").filter(
             ImageFilter.GaussianBlur(radius=max(1, logo.width // 80))
@@ -132,26 +126,44 @@ class C2PASigner:
     """Assinatura C2PA opcional; ausencia de lib/certificados apenas avisa."""
 
     def __init__(
-        self, *, enabled: bool, cert_path: str = "", key_path: str = ""
+        self,
+        *,
+        enabled: bool,
+        cert_path: str = "",
+        key_path: str = "",
+        required: bool = False,
+        algorithm: str = "es256",
+        version: str = "0.1.0",
     ) -> None:
         self._enabled = enabled
         self._cert_path = cert_path
         self._key_path = key_path
+        self._required = required
+        self._algorithm = algorithm
+        self._version = version
+
+    def _fail_or_warn(self, message: str) -> bytes | None:
+        if self._required:
+            raise C2PARequiredError(message)
+        logger.warning(message)
+        return None
 
     def sign(self, image_bytes: bytes) -> bytes:
         if not self._enabled:
             return image_bytes
         if not self._cert_path or not self._key_path:
-            logger.warning("c2pa_certificate_missing")
-            return image_bytes
+            failed = self._fail_or_warn("c2pa_certificate_missing")
+            return image_bytes if failed is None else failed
         try:
             import c2pa  # noqa: F401
         except ImportError:
-            logger.warning("c2pa_library_missing")
-            return image_bytes
+            failed = self._fail_or_warn("c2pa_library_missing")
+            return image_bytes if failed is None else failed
         try:
             return self._sign_with_c2pa(image_bytes)
-        except Exception:
+        except Exception as exc:
+            if self._required:
+                raise C2PARequiredError("c2pa_signing_failed") from exc
             logger.warning("c2pa_signing_failed", exc_info=True)
             return image_bytes
 
@@ -162,7 +174,7 @@ class C2PASigner:
         key = Path(self._key_path).read_bytes()
         manifest = json.dumps(
             {
-                "claim_generator": "AImaginator",
+                "claim_generator": f"AImaginator/{self._version}",
                 "assertions": [
                     {
                         "label": "c2pa.actions",
@@ -178,9 +190,7 @@ class C2PASigner:
                 ],
             }
         )
-        signer = Signer.from_info(
-            {"private_key": key, "sign_cert": cert, "alg": "es256"}
-        )
+        signer = Signer.from_info({"private_key": key, "sign_cert": cert, "alg": self._algorithm})
         builder = Builder.from_json(manifest)
         with builder:
             signed = builder.sign(signer, "image/png", io.BytesIO(image_bytes))

@@ -112,15 +112,24 @@ class Settings(BaseSettings):
     jwt_refresh_token_ttl_seconds: int = 2_592_000
 
     # ---- Provedor de IA ----
-    # IMAGE_ENGINE e o switch do runtime local (stub | sdcpp).
+    # IMAGE_ENGINE: stub (testes), sdcpp (local) ou hosted (HTTP remoto).
     # AI_IMAGE_PROVIDER permanece como legado do provedor HTTP externo.
-    image_engine: Literal["stub", "sdcpp"] = "stub"
+    image_engine: Literal["stub", "sdcpp", "hosted"] = "stub"
+    image_engine_fallback: str = ""
     sdcpp_binary_path: str = ""
     sdcpp_vae_path: str = ""
     sdcpp_clip_l_path: str = ""
     sdcpp_t5xxl_path: str = ""
     sdcpp_gen_model_path: str = ""
     sdcpp_edit_model_path: str = ""
+
+    # ---- Motor hospedado (esqueleto; nenhum provedor real em teste) ----
+    hosted_engine_base_url: str = ""
+    hosted_engine_api_key: str = ""
+    hosted_engine_generate_path: str = "/generate"
+    hosted_engine_edit_path: str = "/edit"
+    hosted_engine_poll_interval_seconds: float = Field(default=1.0, gt=0)
+    hosted_engine_timeout_seconds: float = Field(default=600.0, gt=0)
 
     ai_image_provider: str = "stub"
     ai_image_api_key: str = ""
@@ -219,14 +228,53 @@ class Settings(BaseSettings):
 
     # ---- Metadados de IA / C2PA opcional ----
     c2pa_enabled: bool = False
+    c2pa_required: bool = False
     c2pa_cert_path: str = ""
     c2pa_key_path: str = ""
+    c2pa_algorithm: str = "es256"
 
     # ---- Upscale ----
     upscale_engine: Literal["lanczos", "esrgan"] = "lanczos"
     sdcpp_upscale_model_path: str = ""
     upscale_timeout_seconds: int = Field(default=300, gt=0)
     upscale_daily_limit: int = Field(default=5, ge=1)
+
+    # ---- Planos, creditos e avatar ----
+    plan_free_monthly_credits: int = Field(default=50, ge=0)
+    plan_pro_monthly_credits: int = Field(default=300, ge=0)
+    plan_free_daily_prompts: int = Field(default=3, ge=0)
+    plan_pro_daily_prompts: int = Field(default=20, ge=0)
+    plan_free_upscale_daily_limit: int = Field(default=5, ge=0)
+    plan_pro_upscale_daily_limit: int = Field(default=50, ge=0)
+    credit_reset_startup_limit: int = Field(default=1000, ge=1)
+    avatar_max_bytes: int = Field(default=5 * 1024 * 1024, gt=0)
+    avatar_size_px: int = Field(default=256, ge=32, le=1024)
+    avatar_max_pixels: int = Field(default=1_000_000, ge=10_000)
+
+    # ---- Admin ----
+    admin_emails: str = ""
+
+    # ---- Disponibilidade do motor / worker remoto ----
+    worker_mode: Literal["local", "remote"] = "local"
+    worker_capabilities: str = "generate,edit,upscale"
+    worker_heartbeat_ttl_seconds: int = Field(default=30, ge=5)
+    worker_heartbeat_interval_seconds: float = Field(default=10.0, gt=0)
+    engine_availability_required: bool | None = None
+    maintenance_mode: bool = False
+    maintenance_redis_key: str = "system:maintenance"
+
+    # ---- Guarda termica / recursos ----
+    thermal_guard_enabled: bool = False
+    start_temp_max_c: float = Field(default=80.0, gt=0)
+    abort_temp_c: float = Field(default=92.0, gt=0)
+    cooldown_after_abort_seconds: int = Field(default=120, ge=0)
+    min_free_ram_abort_mb: int = Field(default=512, ge=0)
+    hw_sensor_url: str = ""
+    hw_sensor_timeout_seconds: float = Field(default=2.0, gt=0)
+    hw_sensor_interval_seconds: float = Field(default=2.0, gt=0)
+
+    # ---- i18n ----
+    pseudo_localization: bool = False
 
     # ---- Observabilidade ----
     sentry_dsn_backend: str = ""
@@ -301,6 +349,16 @@ class Settings(BaseSettings):
     def _resolve_llm_unload(self) -> Settings:
         if self.llm_unload_after_use is None:
             self.llm_unload_after_use = self.is_development
+        return self
+
+    @model_validator(mode="after")
+    def _resolve_engine_availability(self) -> Settings:
+        if self.engine_availability_required is None:
+            self.engine_availability_required = (
+                self.image_generation_enabled and self.image_engine in {"sdcpp", "hosted"}
+            )
+        if self.image_engine == "hosted" and not self.hosted_engine_configured:
+            raise ValueError("IMAGE_ENGINE=hosted exige HOSTED_ENGINE_BASE_URL.")
         return self
 
     @model_validator(mode="after")
@@ -390,6 +448,33 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env.lower() == "production"
+
+    @property
+    def admin_email_list(self) -> frozenset[str]:
+        return frozenset(
+            email.strip().lower() for email in self.admin_emails.split(",") if email.strip()
+        )
+
+    @property
+    def worker_capability_list(self) -> tuple[str, ...]:
+        return tuple(item.strip() for item in self.worker_capabilities.split(",") if item.strip())
+
+    @property
+    def hosted_engine_configured(self) -> bool:
+        return bool(self.hosted_engine_base_url.strip())
+
+    def plan_monthly_credits(self, plan: str) -> int:
+        return self.plan_pro_monthly_credits if plan == "pro" else self.plan_free_monthly_credits
+
+    def plan_daily_prompts(self, plan: str) -> int:
+        return self.plan_pro_daily_prompts if plan == "pro" else self.plan_free_daily_prompts
+
+    def plan_upscale_limit(self, plan: str) -> int:
+        return (
+            self.plan_pro_upscale_daily_limit
+            if plan == "pro"
+            else self.plan_free_upscale_daily_limit
+        )
 
     @property
     def allowed_image_domains(self) -> frozenset[str]:

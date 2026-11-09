@@ -58,9 +58,15 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
     from modules.image_generation.infra import wiring as gen_wiring
     from modules.prompt_quota.adapters.redis_quota_store import RedisPromptQuotaStore
     from modules.prompt_quota.contracts import RefundPromptQuota
+    from modules.users.adapters.credit_ledger_repository import (
+        SQLAlchemyCreditLedgerRepository,
+    )
     from modules.users.adapters.repository import SQLAlchemyUserRepository
+    from modules.users.application.credits import CreditLedgerService
+    from workers.celery_app.heartbeat import mark_state
 
     settings = get_settings()
+    mark_state(settings, "busy")
     bind_generation_context(generation_id=generation_id, kind=kind)
     logger.info(
         "generation_processing_started",
@@ -87,14 +93,18 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                     commit=session.commit,
                 ).execute(UUID(generation_id), raise_on_failure=False)
             return
-        if settings.image_engine == "sdcpp":
+        if settings.image_engine in {"sdcpp", "hosted"}:
             storage = gen_wiring.build_object_storage_required(settings)
             assistant = gen_wiring.build_prompt_assistant(settings, http_client=http_client)
+            from workers.celery_app.heartbeat import mark_cooling
+
             agent = gen_wiring.build_engine_image_agent(
                 settings=settings,
                 guard=guard,
                 storage=storage,
                 prompt_assistant=assistant,
+                cooling_callback=lambda seconds, code: mark_cooling(settings, seconds, code),
+                http_client=http_client,
             )
         else:
             provider = gen_wiring.build_image_provider(
@@ -117,6 +127,11 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                 users=users,
                 moderation=moderation,
                 quota_refund=RefundPromptQuota(RedisPromptQuotaStore(redis_client)),
+                credits=CreditLedgerService(
+                    users=users,
+                    ledger=SQLAlchemyCreditLedgerRepository(session),
+                    monthly_credits=settings.plan_monthly_credits,
+                ),
                 commit=session.commit,
             )
             await use_case.execute(UUID(generation_id), raise_on_failure=False)
@@ -131,6 +146,7 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                 logger.warning("purge_sources_failed", exc_info=True)
         await http_client.aclose()
         await redis_client.aclose()
+        mark_state(settings, "idle")
         clear_generation_context()
 
 

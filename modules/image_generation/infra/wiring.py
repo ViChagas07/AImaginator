@@ -27,6 +27,15 @@ from modules.image_generation.adapters.ai_agents.providers import (
     StubImageGenerator,
     StubImageProvider,
 )
+from modules.image_generation.adapters.hardware_sensors import (
+    LibreHardwareMonitorSensor,
+    NoneSensor,
+)
+from modules.image_generation.adapters.hosted_engine import (
+    FallbackEditor,
+    FallbackGenerator,
+    HttpHostedEngine,
+)
 from modules.image_generation.adapters.image_moderation import (
     FakeImageModerator,
     LocalImageModerator,
@@ -63,6 +72,7 @@ from modules.image_generation.application.services.moderation import ModerationS
 from modules.image_generation.application.services.prompt_assistant import (
     PromptAssistant,
 )
+from modules.image_generation.application.services.thermal_guard import ThermalGuard
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
 from modules.image_generation.domain.prompt_topic_guard import (
     IPromptClassifier,
@@ -222,6 +232,9 @@ def build_c2pa_signer(settings: Settings) -> C2PASigner:
         enabled=settings.c2pa_enabled,
         cert_path=settings.c2pa_cert_path,
         key_path=settings.c2pa_key_path,
+        required=settings.c2pa_required,
+        algorithm=settings.c2pa_algorithm,
+        version="0.1.0",
     )
 
 
@@ -241,16 +254,82 @@ def build_secure_image_fetcher(
     )
 
 
-def build_image_generator(settings: Settings) -> ImageGeneratorPort:
-    if settings.image_engine == "sdcpp":
-        return SdCppImageGenerator(settings)
-    return StubImageGenerator()
+def build_hardware_sensor(settings: Settings):
+    if settings.thermal_guard_enabled and settings.hw_sensor_url.strip():
+        return LibreHardwareMonitorSensor(
+            url=settings.hw_sensor_url,
+            timeout_seconds=settings.hw_sensor_timeout_seconds,
+        )
+    return NoneSensor()
 
 
-def build_image_editor(settings: Settings) -> ImageEditorPort:
-    if settings.image_engine == "sdcpp":
-        return SdCppImageEditor(settings)
-    return StubImageEditor()
+def build_thermal_guard(settings: Settings, *, cooling_callback=None):
+    return ThermalGuard(
+        settings=settings,
+        sensor=build_hardware_sensor(settings),
+        cooling_callback=cooling_callback,
+    )
+
+
+def _hosted_engine(settings: Settings, http_client) -> HttpHostedEngine:
+    if http_client is None:
+        msg = "IMAGE_ENGINE=hosted exige http_client."
+        raise RuntimeError(msg)
+    return HttpHostedEngine(
+        http_client=http_client,
+        base_url=settings.hosted_engine_base_url,
+        api_key=settings.hosted_engine_api_key,
+        generate_path=settings.hosted_engine_generate_path,
+        edit_path=settings.hosted_engine_edit_path,
+        poll_interval_seconds=settings.hosted_engine_poll_interval_seconds,
+        timeout_seconds=settings.hosted_engine_timeout_seconds,
+    )
+
+
+def build_image_generator(
+    settings: Settings, *, thermal_guard=None, http_client=None
+) -> ImageGeneratorPort:
+    if settings.image_engine == "hosted":
+        primary = _hosted_engine(settings, http_client)
+    elif settings.image_engine == "sdcpp":
+        resource_check = (
+            (lambda: thermal_guard.check_running(locale="pt-BR"))
+            if thermal_guard is not None
+            else None
+        )
+        primary = SdCppImageGenerator(
+            settings,
+            resource_check=resource_check,
+            resource_interval_seconds=settings.hw_sensor_interval_seconds,
+        )
+    else:
+        primary = StubImageGenerator()
+    if settings.image_engine_fallback == "hosted" and http_client is not None:
+        return FallbackGenerator(primary, _hosted_engine(settings, http_client))
+    return primary
+
+
+def build_image_editor(
+    settings: Settings, *, thermal_guard=None, http_client=None
+) -> ImageEditorPort:
+    if settings.image_engine == "hosted":
+        primary = _hosted_engine(settings, http_client)
+    elif settings.image_engine == "sdcpp":
+        resource_check = (
+            (lambda: thermal_guard.check_running(locale="pt-BR"))
+            if thermal_guard is not None
+            else None
+        )
+        primary = SdCppImageEditor(
+            settings,
+            resource_check=resource_check,
+            resource_interval_seconds=settings.hw_sensor_interval_seconds,
+        )
+    else:
+        primary = StubImageEditor()
+    if settings.image_engine_fallback == "hosted" and http_client is not None:
+        return FallbackEditor(primary, _hosted_engine(settings, http_client))
+    return primary
 
 
 def build_image_provider(
@@ -286,14 +365,20 @@ def build_engine_image_agent(
     guard: PromptInjectionGuard,
     storage: ObjectStoragePort | None,
     prompt_assistant: PromptAssistantPort | None = None,
+    cooling_callback=None,
+    http_client=None,
 ) -> LangGraphImageAgent:
+    thermal_guard = build_thermal_guard(settings, cooling_callback=cooling_callback)
     return LangGraphImageAgent(
         prompt_guard=guard,
-        generator=build_image_generator(settings),
-        editor=build_image_editor(settings),
+        generator=build_image_generator(
+            settings, thermal_guard=thermal_guard, http_client=http_client
+        ),
+        editor=build_image_editor(settings, thermal_guard=thermal_guard, http_client=http_client),
         storage=storage,
         prompt_assistant=prompt_assistant,
         llm_unloader=build_llm_unloader(settings),
+        thermal_guard=thermal_guard,
         block_confidence=settings.llm_block_confidence,
         image_moderator=build_image_moderator(settings),
         image_moderation_enabled=settings.image_moderation_enabled,

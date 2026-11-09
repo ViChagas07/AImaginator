@@ -15,6 +15,10 @@ from fastapi.testclient import TestClient
 import apps.api.dependencies as deps
 from infra import redis_client as redis_module
 from infra.settings import get_settings
+from modules.image_generation.application.services.queue_recovery import (
+    QueueRecoveryService,
+)
+from modules.users.application.credits import CreditLedgerService
 from tests.conftest import (
     FakeImageFetcher,
     InMemoryGenerationRepository,
@@ -42,6 +46,14 @@ def api_client(fake_redis, sample_user):
     app.dependency_overrides[deps.get_db_session] = lambda: _fake_session()
     app.dependency_overrides[deps.get_redis] = lambda: fake_redis
     app.dependency_overrides[deps.get_user_repository] = lambda: user_repo
+    app.dependency_overrides[deps.get_credit_ledger] = lambda: CreditLedgerService(
+        users=user_repo,
+        ledger=_MemoryLedger(),
+        monthly_credits=lambda plan: 50,
+    )
+    app.dependency_overrides[deps.get_queue_reconciler] = lambda: QueueRecoveryService(
+        generations=gen_repo, users=user_repo, stale_seconds=900
+    )
     app.dependency_overrides[deps.get_generation_repository] = lambda: gen_repo
     app.dependency_overrides[deps.get_task_queue] = lambda: queue
     app.dependency_overrides[deps.get_topic_guard] = lambda: PassThroughTopicGuard()
@@ -59,6 +71,20 @@ def api_client(fake_redis, sample_user):
     redis_module.override_redis(fake_redis)
 
 
+
+
+class _MemoryLedger:
+    def __init__(self) -> None:
+        self.entries: list = []
+
+    async def get_by_idempotency_key(self, key):
+        return next((e for e in self.entries if e.idempotency_key == key), None)
+
+    async def add(self, entry):
+        self.entries.append(entry)
+        return entry
+
+
 async def _fake_session():
     yield None  # repositorios foram substituidos; a sessao nunca e usada
 
@@ -67,6 +93,38 @@ def _auth_headers(api_client, sample_user) -> dict[str, str]:
     jwt = deps.get_jwt_service(get_settings())
     token, _ = jwt.issue_access_token(sample_user.id)
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.mark.integration
+class TestStatusAPI:
+    def test_status_publico_sem_detalhes_internos(self, api_client) -> None:
+        client, _ = api_client
+        response = client.get("/api/v1/status")
+        assert response.status_code == 200
+        body = response.json()
+        assert set(body) == {"feature_enabled", "maintenance", "available"}
+        assert set(body["available"]) == {"generate", "edit", "upscale"}
+        assert "worker" not in response.text.lower()
+
+
+@pytest.mark.integration
+class TestAdminAPI:
+    def test_anonimo_e_usuario_comum_nao_acessam(self, api_client, sample_user) -> None:
+        client, _ = api_client
+        assert client.get("/api/v1/admin/users/flagged").status_code == 401
+        response = client.get(
+            "/api/v1/admin/users/flagged", headers=_auth_headers(client, sample_user)
+        )
+        assert response.status_code == 403
+
+    def test_admin_acessa_sem_expor_email(self, api_client, sample_user) -> None:
+        client, _ = api_client
+        sample_user.role = "admin"
+        response = client.get(
+            "/api/v1/admin/users/flagged", headers=_auth_headers(client, sample_user)
+        )
+        assert response.status_code == 200
+        assert "email" not in response.text.lower()
 
 
 @pytest.mark.integration

@@ -20,6 +20,15 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
         model = await self._session.get(UserModel, user_id)
         return self._to_entity(model) if model else None
 
+    async def get_by_id_for_update(self, user_id: UUID) -> User | None:
+        stmt = (
+            select(UserModel)
+            .where(UserModel.id == user_id)
+            .with_for_update()
+        )
+        model = (await self._session.execute(stmt)).scalar_one_or_none()
+        return self._to_entity(model) if model else None
+
     async def get_by_google_sub(self, google_sub: str) -> User | None:
         stmt = select(UserModel).where(UserModel.google_sub == google_sub)
         model = (await self._session.execute(stmt)).scalar_one_or_none()
@@ -45,9 +54,13 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
         model.google_sub = user.google_sub
         model.password_hash = user.password_hash
         model.avatar_url = user.avatar_url
+        model.avatar_object_key = user.avatar_object_key
         model.bio = user.bio
         model.handle = user.handle
         model.generation_credits = user.generation_credits
+        model.plan = user.plan
+        model.role = user.role
+        model.credits_period_start = user.credits_period_start
         model.moderation_flag = user.moderation_flag
         model.moderation_blocked_until = user.moderation_blocked_until
         model.updated_at = user.updated_at
@@ -57,6 +70,26 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
     async def get_settings(self, user_id: UUID) -> UserSettings | None:
         model = await self._session.get(UserSettingsModel, user_id)
         return self._to_settings_entity(model) if model else None
+
+    async def list_flagged(self, *, limit: int = 100) -> list[User]:
+        stmt = (
+            select(UserModel)
+            .where(UserModel.moderation_flag.is_(True))
+            .order_by(UserModel.updated_at.desc())
+            .limit(limit)
+        )
+        models = (await self._session.execute(stmt)).scalars().all()
+        return [self._to_entity(model) for model in models]
+
+    async def list_period_due(self, *, before, limit: int = 1000) -> list[User]:
+        stmt = (
+            select(UserModel)
+            .where(UserModel.credits_period_start < before)
+            .order_by(UserModel.credits_period_start.asc())
+            .limit(limit)
+        )
+        models = (await self._session.execute(stmt)).scalars().all()
+        return [self._to_entity(model) for model in models]
 
     async def save_settings(self, settings: UserSettings) -> UserSettings:
         model = await self._session.get(UserSettingsModel, settings.user_id)
@@ -98,9 +131,13 @@ class SQLAlchemyUserRepository(UserRepositoryPort):
             google_sub=model.google_sub,
             password_hash=model.password_hash,
             avatar_url=model.avatar_url,
+            avatar_object_key=model.avatar_object_key,
             bio=model.bio,
             handle=model.handle,
             generation_credits=model.generation_credits,
+            plan=model.plan,
+            role=model.role,
+            credits_period_start=model.credits_period_start,
             moderation_flag=model.moderation_flag,
             moderation_blocked_until=model.moderation_blocked_until,
             created_at=model.created_at,

@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from infra.database import Base
 from infra.settings import get_settings
+from modules.admin.adapters import models as _admin_models  # noqa: F401
 from modules.image_generation.adapters.repositories import models as _gen_models  # noqa: F401
 
 # Registro explicito dos modelos de cada modulo (imports de efeito colateral).

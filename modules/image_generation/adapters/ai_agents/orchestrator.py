@@ -50,6 +50,7 @@ from modules.image_generation.application.ports.object_storage import ObjectStor
 from modules.image_generation.application.ports.prompt_assistant import (
     PromptAssistantPort,
 )
+from modules.image_generation.application.services.thermal_guard import ThermalGuard
 from modules.image_generation.domain.entities import (
     ASPECT_RATIO_DIMENSIONS,
     Generation,
@@ -107,6 +108,7 @@ class LangGraphImageAgent(ImageAgentPort):
         scope_guardrail: ScopeGuardrail | None = None,
         prompt_assistant: PromptAssistantPort | None = None,
         llm_unloader: LlmUnloaderPort | None = None,
+        thermal_guard: ThermalGuard | None = None,
         block_confidence: float = 0.5,
         image_moderator: ImageModeratorPort | None = None,
         image_moderation_enabled: bool = True,
@@ -125,6 +127,7 @@ class LangGraphImageAgent(ImageAgentPort):
         self._guard = prompt_guard
         self._prompt_assistant = prompt_assistant
         self._llm_unloader = llm_unloader
+        self._thermal_guard = thermal_guard
         self._block_confidence = block_confidence
         self._image_moderator = image_moderator
         self._image_moderation_enabled = image_moderation_enabled
@@ -293,6 +296,9 @@ class LangGraphImageAgent(ImageAgentPort):
             state["result_url"] = await self._provider.generate(generation, noop_progress)
             state["progress"] = 85
             return state
+
+        if self._thermal_guard is not None:
+            await self._thermal_guard.before_job(locale=generation.locale)
 
         width, height = ASPECT_RATIO_DIMENSIONS[generation.aspect_ratio]
         engine_prompt = state.get("engine_prompt") or generation.prompt

@@ -62,3 +62,27 @@ class SQLAlchemyModerationEventRepository(ModerationEventRepositoryPort):
             conditions.append(or_(*identity))
         stmt = select(func.count(ModerationEventModel.id)).where(*conditions)
         return int((await self._session.execute(stmt)).scalar_one())
+
+    async def aggregate_since(self, *, since: datetime) -> list[dict]:
+        day = func.date(ModerationEventModel.created_at)
+        stmt = (
+            select(
+                day.label("day"),
+                ModerationEventModel.category,
+                ModerationEventModel.layer,
+                func.count(ModerationEventModel.id).label("count"),
+            )
+            .where(ModerationEventModel.created_at >= since)
+            .group_by(day, ModerationEventModel.category, ModerationEventModel.layer)
+            .order_by(day.desc())
+        )
+        rows = (await self._session.execute(stmt)).all()
+        return [
+            {
+                "day": str(row.day),
+                "category": row.category,
+                "layer": row.layer,
+                "count": int(row.count),
+            }
+            for row in rows
+        ]

@@ -128,3 +128,33 @@ class OriginalUnavailableError(DomainError):
 
 class SSRFBlockedError(DomainError):
     code = "url_not_allowed"
+
+
+class EngineOfflineError(DomainError):
+    code = "engine_offline"
+    http_status = 503
+
+
+class MaintenanceError(DomainError):
+    code = "maintenance"
+    http_status = 503
+
+
+class HardwareBusyError(DomainError):
+    code = "hardware_busy"
+    http_status = 503
+
+
+class ThermalAbortError(DomainError):
+    code = "thermal_abort"
+    http_status = 503
+
+
+class ResourceAbortError(DomainError):
+    code = "resource_abort"
+    http_status = 503
+
+
+class C2PARequiredError(DomainError):
+    code = "c2pa_required"
+    http_status = 500
