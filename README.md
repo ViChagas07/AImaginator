@@ -184,6 +184,34 @@ npm run dev            # http://localhost:3000
 > `NEXT_PUBLIC_API_BASE_URL=http://localhost:8001` e
 > `NEXT_PUBLIC_STORAGE_ORIGIN=http://localhost:9002`.
 
+### Subir tudo sem o VS Code (worker host + frontend)
+
+Para liberar RAM, feche o VS Code e outros apps pesados antes do teste. Os
+scripts abaixo abrem janelas PowerShell independentes e não dependem de
+terminal ou tarefa do VS Code:
+
+```powershell
+# na raiz do repositório, em um PowerShell normal
+.\scripts\dev-local.ps1          # next build + next start (menos RAM em runtime)
+.\scripts\dev-local.ps1 -Dev     # fallback: next dev (mais RAM)
+.\scripts\dev-local.ps1 -Force   # continua mesmo com RAM abaixo do guard
+
+# encerra somente o que o dev-local.ps1 iniciou
+.\scripts\stop-local.ps1
+```
+
+- `dev-local.ps1` avisa se a RAM livre estiver abaixo de `MIN_FREE_RAM_MB`
+  (6000 MB); a guarda não é alterada.
+- Confere `api`, `postgres`, `redis`, `rabbitmq` e `minio` healthy; se o
+  container `worker` estiver rodando, para apenas ele para evitar dois
+  consumidores.
+- Sobe o worker host com `ENV_FILE=.env.worker` e o frontend na primeira porta
+  livre entre 3000 e 3001; saídas em `logs/worker.log` e `logs/web.log`.
+- Grava os PIDs em `logs/local-pids.json`. `stop-local.ps1` encerra apenas os
+  processos cujo PID e command line correspondem a esse arquivo.
+- Requer `.env.worker` configurado (seção “Worker no host Windows”) e
+  `apps/web/node_modules` instalado.
+
 ## Assistente de prompts, moderação e penalidades
 
 Com `IMAGE_ENGINE=sdcpp`, cada job chama primeiro o assistente local
@@ -427,6 +455,45 @@ executa o modelo**: a suite usa um executavel falso (`tests/fakes/fake_sd_cli.py
    O script imprime RAM livre antes/depois, tempo por etapa e recomenda
    monitorar temperatura/energia. O PC de desenvolvimento ja desligou sob
    carga longa do Kontext.
+
+### Worker no host Windows (GPU AMD/Vulkan)
+
+O `sd-cli.exe` e Windows/Vulkan; ele nao roda no container Linux. Para usar a
+GPU real, pare o worker do Compose (sem remover o servico) e suba o worker no
+host:
+
+```powershell
+docker compose -f infra/docker/docker-compose.yml --env-file .env.development stop worker
+
+Copy-Item .env.development .env.worker
+# no .env.worker:
+#   IMAGE_ENGINE=sdcpp
+#   SDCPP_BINARY_PATH=C:\caminho\sd-cli.exe
+#   SDCPP_VAE_PATH=C:\ai\models\flux\ae.safetensors
+#   SDCPP_CLIP_L_PATH=C:\ai\models\flux\clip_l.safetensors
+#   SDCPP_T5XXL_PATH=C:\ai\models\flux\t5xxl_fp8_e4m3fn.safetensors
+#   SDCPP_GEN_MODEL_PATH=C:\ai\models\flux\flux1-dev-Q4_K_S.gguf
+#   SDCPP_EDIT_MODEL_PATH=C:\ai\models\flux\flux1-kontext-dev-Q4_0.gguf
+#   WORKER_CAPABILITIES=generate
+#   MIN_FREE_RAM_MB=6000
+
+$env:ENV_FILE = ".env.worker"
+.\.venv\Scripts\python.exe -m celery `
+  -A workers.celery_app.celery:celery_app worker `
+  --loglevel=info --queues=generation.standard `
+  --pool=solo --concurrency=1 --max-tasks-per-child=1
+```
+
+O host worker usa `localhost:5433` (Postgres), `localhost:6380` (Redis),
+`localhost:5673` (RabbitMQ), `localhost:9002` (MinIO/S3) e
+`localhost:1235` (LM Studio), todos expostos pelo Compose.
+`WORKER_CAPABILITIES=generate` mantem a edicao Kontext desligada nesta rodada.
+
+Antes do `sd-cli`, o pipeline chama o assistente no LM Studio e executa
+`lms unload --all` (via `LMS_CLI_PATH`) para liberar VRAM. O `MIN_FREE_RAM_MB`
+e uma guarda de seguranca: nao baixe esse valor sem monitorar RAM/temperatura.
+O resultado e gravado no MinIO e devolvido por URL pre-assinada; o bucket de
+dev pode permanecer privado.
 
 Variaveis novas: `MIN_FREE_RAM_MB` (padrao 6000; aborta sem iniciar o processo),
 `COOLDOWN_SECONDS_BETWEEN_JOBS` (padrao 0; pausa protege o hardware),

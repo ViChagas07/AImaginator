@@ -49,6 +49,9 @@ Thumbs.db
 !.vscode/extensions.json
 *.log
 
+# ============ Logs locais dos scripts ============
+logs/
+
 # ============ Testes / Evals ============
 .eval_cache/
 .hypothesis/
