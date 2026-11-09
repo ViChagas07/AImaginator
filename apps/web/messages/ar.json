@@ -153,7 +153,8 @@
       "queued": "في قائمة الانتظار. بانتظار عامل متاح.",
       "processing": "جارٍ معالجة التوليد.",
       "done": "اكتمل. تم توليد الصورة بنجاح.",
-      "failed": "فشل التوليد."
+      "failed": "فشل التوليد.",
+      "canceled": "Generation canceled."
     },
     "resultAlt": "النتيجة المولّدة من أمرك.",
     "historyTitle": "أحدث الأعمال",
@@ -233,7 +234,20 @@
     "styleWatercolor": "Watercolor",
     "styleIsometric3d": "3D isometric",
     "cancel": "Cancel generation",
-    "cancelConfirm": "Cancel this generation? Credits will be refunded."
+    "cancelConfirm": "Cancel this generation? Credits will be refunded.",
+    "stage": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "assistant": "Reading your prompt",
+      "engine": "Generating the image",
+      "finalizing": "Finalizing the image",
+      "upload": "Saving the image",
+      "done": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "canceling": "Canceling...",
+    "cancelKeep": "Keep generating"
   },
   "gallery": {
     "title": "المعرض العام",
@@ -257,7 +271,8 @@
     "generationFailed": "فشل التوليد. حاول مرة أخرى.",
     "generationNetwork": "خطأ في الشبكة أثناء الاتصال بواجهة برمجة التطبيقات. تحقق من اتصالك وحاول مرة أخرى.",
     "queuePublishFailed": "تعذر بدء الإنشاء الآن. تم استرداد رصيدك؛ حاول مرة أخرى.",
-    "queueLost": "فقدت عملية الإنشاء السابقة في قائمة الانتظار. تم استرداد رصيدك؛ حاول مرة أخرى."
+    "queueLost": "فقدت عملية الإنشاء السابقة في قائمة الانتظار. تم استرداد رصيدك؛ حاول مرة أخرى.",
+    "generationAlreadyFinished": "Could not cancel: the generation already finished."
   },
   "language": {
     "selectorLabel": "اختيار اللغة"

@@ -38,9 +38,9 @@ export function CancelGenerationModal({
           id="cancel-generation-title"
           className="text-xl font-semibold text-foreground"
         >
-          {t("cancelTitle")}
+          {t("cancel")}
         </h2>
-        <p className="mt-2 text-sm text-muted">{t("cancelBody")}</p>
+        <p className="mt-2 text-sm text-muted">{t("cancelConfirm")}</p>
         {error && (
           <p role="alert" className="mt-3 text-sm text-foreground">
             {error}

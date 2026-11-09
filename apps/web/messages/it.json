@@ -153,7 +153,8 @@
       "queued": "In coda. In attesa di un worker disponibile.",
       "processing": "Elaborazione in corso.",
       "done": "Completato. L'immagine è stata generata.",
-      "failed": "Generazione non riuscita."
+      "failed": "Generazione non riuscita.",
+      "canceled": "Generation canceled."
     },
     "resultAlt": "Immagine generata dal tuo prompt.",
     "historyTitle": "Generazioni recenti",
@@ -233,7 +234,20 @@
     "styleWatercolor": "Watercolor",
     "styleIsometric3d": "3D isometric",
     "cancel": "Cancel generation",
-    "cancelConfirm": "Cancel this generation? Credits will be refunded."
+    "cancelConfirm": "Cancel this generation? Credits will be refunded.",
+    "stage": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "assistant": "Reading your prompt",
+      "engine": "Generating the image",
+      "finalizing": "Finalizing the image",
+      "upload": "Saving the image",
+      "done": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "canceling": "Canceling...",
+    "cancelKeep": "Keep generating"
   },
   "gallery": {
     "title": "Galleria pubblica",
@@ -257,7 +271,8 @@
     "generationFailed": "La generazione è fallita. Riprova.",
     "generationNetwork": "Errore di rete durante il contatto con l'API. Controlla la connessione e riprova.",
     "queuePublishFailed": "Non è stato possibile avviare la generazione ora. Il credito è stato rimborsato; riprova.",
-    "queueLost": "La generazione precedente è andata persa in coda. Il credito è stato rimborsato; riprova."
+    "queueLost": "La generazione precedente è andata persa in coda. Il credito è stato rimborsato; riprova.",
+    "generationAlreadyFinished": "Could not cancel: the generation already finished."
   },
   "language": {
     "selectorLabel": "Seleziona la lingua"

@@ -153,7 +153,19 @@
       "queued": "Queued. Waiting for an available worker.",
       "processing": "Processing the generation.",
       "done": "Done. The image was generated successfully.",
-      "failed": "Generation failed."
+      "failed": "Generation failed.",
+      "canceled": "Generation canceled."
+    },
+    "stage": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "assistant": "Reading your prompt",
+      "engine": "Generating the image",
+      "finalizing": "Finalizing the image",
+      "upload": "Saving the image",
+      "done": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled"
     },
     "resultAlt": "Result generated from your prompt.",
     "historyTitle": "Recent generations",
@@ -233,7 +245,9 @@
     "styleWatercolor": "Watercolor",
     "styleIsometric3d": "3D isometric",
     "cancel": "Cancel generation",
-    "cancelConfirm": "Cancel this generation? Credits will be refunded."
+    "cancelConfirm": "Cancel this generation? Credits will be refunded.",
+    "canceling": "Canceling...",
+    "cancelKeep": "Keep generating"
   },
   "gallery": {
     "title": "Public gallery",
@@ -256,6 +270,7 @@
     "generationHttp": "Error {status}: could not start the generation. Try again.",
     "generationFailed": "Generation failed. Try again.",
     "generationNetwork": "Network error while contacting the API. Check your connection and try again.",
+    "generationAlreadyFinished": "Could not cancel: the generation already finished.",
     "queuePublishFailed": "We couldn't start the generation right now. Your credit was refunded; please try again.",
     "queueLost": "The previous generation was lost in the queue. Your credit was refunded; please try again."
   },

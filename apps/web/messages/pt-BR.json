@@ -153,7 +153,19 @@
       "queued": "Na fila. Aguardando um worker disponível.",
       "processing": "Processando a geração.",
       "done": "Concluído. A imagem foi gerada com sucesso.",
-      "failed": "A geração falhou."
+      "failed": "A geração falhou.",
+      "canceled": "Geração cancelada."
+    },
+    "stage": {
+      "queued": "Na fila",
+      "processing": "Processando",
+      "assistant": "Interpretando o prompt",
+      "engine": "Gerando a imagem",
+      "finalizing": "Finalizando a imagem",
+      "upload": "Salvando a imagem",
+      "done": "Concluído",
+      "failed": "Falhou",
+      "canceled": "Cancelado"
     },
     "resultAlt": "Resultado gerado a partir do seu prompt.",
     "historyTitle": "Gerações recentes",
@@ -232,8 +244,10 @@
     "styleCyberpunk": "Cyberpunk",
     "styleWatercolor": "Watercolor",
     "styleIsometric3d": "3D isometric",
-    "cancel": "Cancelar geracao",
-    "cancelConfirm": "Cancelar esta geracao? O credito sera devolvido."
+    "cancel": "Cancelar geração",
+    "cancelConfirm": "Cancelar esta geração? O crédito será devolvido.",
+    "canceling": "Cancelando...",
+    "cancelKeep": "Continuar gerando"
   },
   "gallery": {
     "title": "Galeria pública",
@@ -256,6 +270,7 @@
     "generationHttp": "Erro {status}: não foi possível iniciar a geração. Tente novamente.",
     "generationFailed": "A geração falhou. Tente novamente.",
     "generationNetwork": "Falha de rede ao contatar a API. Verifique sua conexão e tente novamente.",
+    "generationAlreadyFinished": "Não foi possível cancelar: a geração já terminou.",
     "queuePublishFailed": "Não foi possível iniciar a geração agora. Seu crédito foi devolvido; tente novamente.",
     "queueLost": "A geração anterior foi perdida na fila. Seu crédito foi devolvido; tente novamente."
   },

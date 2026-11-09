@@ -153,7 +153,8 @@
       "queued": "En file d'attente. En attente d'un worker disponible.",
       "processing": "Traitement de la génération.",
       "done": "Terminé. L'image a été générée avec succès.",
-      "failed": "La génération a échoué."
+      "failed": "La génération a échoué.",
+      "canceled": "Generation canceled."
     },
     "resultAlt": "Résultat généré à partir de votre prompt.",
     "historyTitle": "Générations récentes",
@@ -233,7 +234,20 @@
     "styleWatercolor": "Watercolor",
     "styleIsometric3d": "3D isometric",
     "cancel": "Cancel generation",
-    "cancelConfirm": "Cancel this generation? Credits will be refunded."
+    "cancelConfirm": "Cancel this generation? Credits will be refunded.",
+    "stage": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "assistant": "Reading your prompt",
+      "engine": "Generating the image",
+      "finalizing": "Finalizing the image",
+      "upload": "Saving the image",
+      "done": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "canceling": "Canceling...",
+    "cancelKeep": "Keep generating"
   },
   "gallery": {
     "title": "Galerie publique",
@@ -257,7 +271,8 @@
     "generationFailed": "La génération a échoué. Réessayez.",
     "generationNetwork": "Erreur réseau lors de la connexion à l'API. Vérifiez votre connexion et réessayez.",
     "queuePublishFailed": "Impossible de démarrer la génération pour le moment. Votre crédit a été remboursé ; réessayez.",
-    "queueLost": "La génération précédente a été perdue dans la file. Votre crédit a été remboursé ; réessayez."
+    "queueLost": "La génération précédente a été perdue dans la file. Votre crédit a été remboursé ; réessayez.",
+    "generationAlreadyFinished": "Could not cancel: the generation already finished."
   },
   "language": {
     "selectorLabel": "Sélectionner la langue"

@@ -153,7 +153,8 @@
       "queued": "排队中。等待可用的工作节点。",
       "processing": "正在处理生成。",
       "done": "完成。图像已成功生成。",
-      "failed": "生成失败。"
+      "failed": "生成失败。",
+      "canceled": "Generation canceled."
     },
     "resultAlt": "根据你的提示词生成的结果。",
     "historyTitle": "最近的生成",
@@ -233,7 +234,20 @@
     "styleWatercolor": "Watercolor",
     "styleIsometric3d": "3D isometric",
     "cancel": "Cancel generation",
-    "cancelConfirm": "Cancel this generation? Credits will be refunded."
+    "cancelConfirm": "Cancel this generation? Credits will be refunded.",
+    "stage": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "assistant": "Reading your prompt",
+      "engine": "Generating the image",
+      "finalizing": "Finalizing the image",
+      "upload": "Saving the image",
+      "done": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "canceling": "Canceling...",
+    "cancelKeep": "Keep generating"
   },
   "gallery": {
     "title": "公共画廊",
@@ -257,7 +271,8 @@
     "generationFailed": "生成失败。请重试。",
     "generationNetwork": "连接 API 时发生网络错误。请检查连接后重试。",
     "queuePublishFailed": "现在无法启动生成。积分已退还，请重试。",
-    "queueLost": "之前的生成在队列中丢失。积分已退还，请重试。"
+    "queueLost": "之前的生成在队列中丢失。积分已退还，请重试。",
+    "generationAlreadyFinished": "Could not cancel: the generation already finished."
   },
   "language": {
     "selectorLabel": "选择语言"

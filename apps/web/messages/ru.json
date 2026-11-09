@@ -153,7 +153,8 @@
       "queued": "В очереди. Ожидание доступного воркера.",
       "processing": "Обработка генерации.",
       "done": "Готово. Изображение успешно сгенерировано.",
-      "failed": "Генерация не удалась."
+      "failed": "Генерация не удалась.",
+      "canceled": "Generation canceled."
     },
     "resultAlt": "Результат, сгенерированный по вашей подсказке.",
     "historyTitle": "Недавние генерации",
@@ -233,7 +234,20 @@
     "styleWatercolor": "Watercolor",
     "styleIsometric3d": "3D isometric",
     "cancel": "Cancel generation",
-    "cancelConfirm": "Cancel this generation? Credits will be refunded."
+    "cancelConfirm": "Cancel this generation? Credits will be refunded.",
+    "stage": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "assistant": "Reading your prompt",
+      "engine": "Generating the image",
+      "finalizing": "Finalizing the image",
+      "upload": "Saving the image",
+      "done": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "canceling": "Canceling...",
+    "cancelKeep": "Keep generating"
   },
   "gallery": {
     "title": "Публичная галерея",
@@ -257,7 +271,8 @@
     "generationFailed": "Генерация не удалась. Попробуйте снова.",
     "generationNetwork": "Сетевая ошибка при обращении к API. Проверьте соединение и попробуйте снова.",
     "queuePublishFailed": "Не удалось запустить генерацию сейчас. Кредит возвращён; попробуйте ещё раз.",
-    "queueLost": "Предыдущая генерация потерялась в очереди. Кредит возвращён; попробуйте ещё раз."
+    "queueLost": "Предыдущая генерация потерялась в очереди. Кредит возвращён; попробуйте ещё раз.",
+    "generationAlreadyFinished": "Could not cancel: the generation already finished."
   },
   "language": {
     "selectorLabel": "Выбрать язык"

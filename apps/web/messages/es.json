@@ -153,7 +153,8 @@
       "queued": "En cola. Esperando un worker disponible.",
       "processing": "Procesando la generación.",
       "done": "Listo. La imagen se generó correctamente.",
-      "failed": "La generación falló."
+      "failed": "La generación falló.",
+      "canceled": "Generation canceled."
     },
     "resultAlt": "Resultado generado a partir de tu prompt.",
     "historyTitle": "Generaciones recientes",
@@ -233,7 +234,20 @@
     "styleWatercolor": "Watercolor",
     "styleIsometric3d": "3D isometric",
     "cancel": "Cancel generation",
-    "cancelConfirm": "Cancel this generation? Credits will be refunded."
+    "cancelConfirm": "Cancel this generation? Credits will be refunded.",
+    "stage": {
+      "queued": "Queued",
+      "processing": "Processing",
+      "assistant": "Reading your prompt",
+      "engine": "Generating the image",
+      "finalizing": "Finalizing the image",
+      "upload": "Saving the image",
+      "done": "Done",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "canceling": "Canceling...",
+    "cancelKeep": "Keep generating"
   },
   "gallery": {
     "title": "Galería pública",
@@ -257,7 +271,8 @@
     "generationFailed": "La generación falló. Inténtalo de nuevo.",
     "generationNetwork": "Error de red al contactar la API. Revisa tu conexión e inténtalo de nuevo.",
     "queuePublishFailed": "No pudimos iniciar la generación ahora. Tu crédito fue devuelto; inténtalo de nuevo.",
-    "queueLost": "La generación anterior se perdió en la cola. Tu crédito fue devuelto; inténtalo de nuevo."
+    "queueLost": "La generación anterior se perdió en la cola. Tu crédito fue devuelto; inténtalo de nuevo.",
+    "generationAlreadyFinished": "Could not cancel: the generation already finished."
   },
   "language": {
     "selectorLabel": "Seleccionar idioma"
