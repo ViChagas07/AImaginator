@@ -78,3 +78,20 @@
   desligada ate a validacao.
 - Planejar upgrade major de `starlette`/FastAPI e da cadeia `langgraph` para
   eliminar as CVEs restantes.
+
+
+## Fase 9 - plataforma
+
+- Dependencias: FastAPI 0.162, Starlette 1.10, LangGraph 1.2; auditoria em
+  3 vulnerabilidades conhecidas (langsmith/pytest) cobertas por excecoes
+  datadas; npm producao 0.
+- Novo: heartbeat de workers, `/api/v1/status`, `WORKER_MODE=remote`,
+  `HttpHostedEngine` com fallback, guarda termica/RAM, ledger de creditos com
+  planos e reset mensal, console admin auditado, avatar no S3, backfill,
+  pseudo-localizacao, C2PA opcional `provenance`, Dependabot/CodeQL/gitleaks
+  e gates de auditoria.
+- Testes finais: backend 489 coletados/485 passed/4 skipped; evals 7/5/2;
+  vitest 45; Playwright 36; lint/tsc/build/ruff verdes.
+- Pendencias: calibracao termica e de limiares com hardware real, revisao
+  nativa das traducoes (review status `pending`), certificado C2PA de CA
+  confiavel, deploy real do worker remoto e testes E2E com infraestrutura.

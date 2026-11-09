@@ -34,12 +34,12 @@ dependências. Nenhum modelo real foi executado.
 
 ## Auditorias
 
-- `pip-audit --local` (2026-11-08): **44 vulnerabilidades conhecidas em 7
-  pacotes**: `starlette` 14 (FastAPI 0.115 limita `<0.47`), cadeia
-  `langgraph`/`langchain-core`/`langsmith` 28 (import lazy opcional; upgrade
-  major exige validação), `pytest` 2 (dev). Foram removidos `crewai` e
-  `langchain` diretos e 164 pacotes transitórios; o total caiu de 279/30 para
-  44/7. `python-multipart` subiu 0.0.9 -> 0.0.33; `urllib3`, `pyjwt` e
+- `pip-audit --local` (2026-11-09): **3 vulnerabilidades conhecidas em 2
+  pacotes**: `langsmith` 1 (transitiva do LangGraph opcional) e
+  `pytest` 2 (dev), ambos com exceção datada em
+  `.github/security-exceptions.json`. FastAPI/Starlette/LangGraph foram
+  atualizados para versões sem High/Critical. Foram removidos `crewai` e
+  `langchain` diretos e 164 pacotes transitórios; o total caiu de 279/30 para 3/2. `python-multipart` subiu 0.0.9 -> 0.0.33; `urllib3`, `pyjwt` e
   `multidict` foram atualizados.
 - `npm audit --omit=dev`: **0 vulnerabilidades de produção**.
 - `npm audit` completo: 8 moderadas de ferramentas de desenvolvimento
@@ -90,3 +90,17 @@ forte, C2PA desligado, calibracao/traducao manuais).
 - `crewai` e `langchain` diretos foram removidos do `pyproject.toml`; o
   `poetry.lock` tambem removeu 164 pacotes transitivos. `langgraph` permanece
   opcional/lazy, com fallback sequencial.
+
+## Revisao Fase 9 (plataforma)
+
+- Workers remotos exigem `WORKER_MODE=remote`, TLS em broker/Redis/Postgres e
+  credenciais de menor privilegio; ver `docs/deploy/REMOTE_WORKER.md`.
+- Guarda termica/RAM aborta jobs, mata a arvore do sd-cli e coloca o worker em
+  `cooling`; sem sensor apenas avisa.
+- Ledger de creditos com `SELECT ... FOR UPDATE`, idempotencia e reset mensal;
+  ajustes administrativos auditados sem prompt/email.
+- Avatar sai do banco e vai para S3 via proxy, sem bucket publico/URL assinada.
+- C2PA e opcional no grupo `provenance`; `C2PA_REQUIRED=true` falha fechado.
+- CI ganhou Dependabot, CodeQL, gitleaks, gates de auditoria e build Docker.
+- Varredura de segredos permanece limpa; nenhum `.env`/modelo/imagem de teste
+  novo e nenhum blob > 5 MB.

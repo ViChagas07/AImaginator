@@ -682,6 +682,62 @@
 - [ ] Branch `feat/local-flux-engine`, commits organizados e push.
   (Executado ao final; a `main` nao recebe commits.)
 
+## Fase 9 - plataforma e operacao
+
+### Dependencias
+- [x] FastAPI 0.162, Starlette 1.10, LangGraph 1.2; `pip-audit` 279/30 -> 3/2
+  (langsmith e pytest em excecoes datadas). npm producao 0; dev 8 moderadas.
+- [x] `crewai`/`langchain` removidos; fallback sequencial mantido.
+
+### Disponibilidade, worker remoto e motor hospedado
+- [x] Heartbeat de worker com id/capacidades/engine/estado/last_seen/TTL e
+  thread no processo principal; estados idle/busy/cooling testados com relogio
+  falso.
+- [x] `EngineAvailabilityService`, `/api/v1/status`, 503 `engine_offline` e
+  `maintenance` sem consumir credito/cota; mensagens nos 11 locales.
+- [x] `WORKER_MODE=remote` com exigencia de TLS no dev_guard e
+  `docs/deploy/REMOTE_WORKER.md` (SQL/IAM/broker de menor privilegio).
+- [x] `HttpHostedEngine` (POST + polling) e fallback ordenado, testado com
+  transporte HTTP falso.
+
+### Guarda termica
+- [x] `HardwareSensorPort`, LibreHardwareMonitor/none, settings, aborto por
+  temperatura/RAM, cooling e metricas; teste com sensor falso.
+- [x] `tools/hw_exporter.py` criado (comando manual, nao executado).
+
+### Creditos, planos e uso
+- [x] Migration `credit_ledger`, `users.plan/role/credits_period_start/
+  avatar_object_key`; saldo materializado com `FOR UPDATE`.
+- [x] Reset mensal idempotente no acesso e startup; ledger para consume/refund/
+  admin_adjust.
+- [x] `GET /api/v1/users/me/usage` e painel de uso no frontend.
+
+### Admin
+- [x] `require_admin`, rotas de sinalizados, stats, block/unblock, creditos,
+  workers, manutencao, auditoria e fila de denuncias placeholder.
+- [x] `admin_audit_log`; respostas sem prompt/email; UI `/[locale]/admin`.
+
+### i18n
+- [x] GLOSSARY, REVIEW_CHECKLIST, `_review.json` e teste de paridade.
+- [x] Pseudo-localizacao opt-in e teste de overflow 360 px nos 11 idiomas.
+
+### C2PA e legado
+- [x] Grupo opcional `provenance`; `C2PA_REQUIRED` fail-closed; tools de
+  certificado DEV e verificacao.
+- [x] Backfill `--dry-run`/`--apply` idempotente; avatar no S3 via proxy.
+
+### CI/CD e supply chain
+- [x] Dependabot, CodeQL, gitleaks, gates pip/npm, build Docker com Trivy
+  informativo, compose prod-like, Alertmanager opcional e CHANGELOG.
+
+### Testes finais
+- [x] `pytest tests`: **489 coletados, 485 passed, 4 skipped**.
+- [x] `specs/evals`: **7 coletados, 5 passed, 2 skipped** (sem LLM real).
+- [x] Vitest: **45 passed**; Playwright: **36 passed**.
+- [x] `tsc`: limpo; lint 0 erros (2 warnings preexistentes); `next build` ok.
+- [x] `ruff check .`: limpo.
+- [x] Nenhum modelo real/FLUX/smoke executado.
+
 ## Entrega
 
 Branch: `feat/local-flux-engine`. Commits organizados e push conforme Bloco 9.

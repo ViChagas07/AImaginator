@@ -634,3 +634,55 @@ consideradas comprometidas e **rotacionadas**:
   novas no [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
   (OAuth 2.0 Client IDs → **Reset secret**) e preencha o `.env`. Enquanto
   vazias, o SSO Google fica desabilitado (a API sobe normalmente).
+
+## Plataforma (Fase 9)
+
+### Status e disponibilidade
+`GET /api/v1/status` e publico e informa `feature_enabled`, `maintenance` e
+disponibilidade por kind (`generate`, `edit`, `upscale`). Sem worker vivo para
+o kind, a criacao responde 503 `engine_offline` sem consumir credito/cota.
+Cada worker publica heartbeat no Redis (id, capacidades, engine, estado,
+last_seen) com TTL curto. `MAINTENANCE_MODE` ou a chave Redis
+`system:maintenance` colocam a plataforma em manutencao.
+
+### Worker remoto e motor hospedado
+`WORKER_MODE=remote` permite GPU em casa falando com broker/Redis/Postgres/S3
+na nuvem, exigindo TLS (`amqps`, `rediss`, `sslmode=require`) e credenciais de
+menor privilegio. Ver `docs/deploy/REMOTE_WORKER.md`. `IMAGE_ENGINE=hosted`
+usa um contrato HTTP simples (POST + polling) e `IMAGE_ENGINE_FALLBACK=hosted`
+permite fallback quando nao ha worker local vivo.
+
+### Guarda termica e de RAM
+Com `THERMAL_GUARD_ENABLED=true`, o worker consulta `HW_SENSOR_URL`
+(LibreHardwareMonitor) antes e durante o job. Acima de `START_TEMP_MAX_C`
+espera resfriar; acima de `ABORT_TEMP_C` ou abaixo de `MIN_FREE_RAM_ABORT_MB`
+mata a arvore do sd-cli, devolve credito/cota e fica em `cooling` por
+`COOLDOWN_AFTER_ABORT_SECONDS`. Sensor ausente apenas avisa. O exporter manual
+fica em `tools/hw_exporter.py`.
+
+### Creditos, planos e uso
+Todo consumo/refund/adjust passa pelo ledger `credit_ledger` com chave
+idempotente e `SELECT ... FOR UPDATE`; `users.generation_credits` e o saldo
+materializado. Planos `free`/`pro` configuram creditos mensais, prompts diarios
+e upscale diario. O reset mensal e preguicoso e idempotente. O frontend mostra
+o consumo em Configuracoes.
+
+### Admin
+`ADMIN_EMAILS` promove administradores no startup. O console em
+`/[locale]/admin` permite ver usuarios sinalizados, estatisticas agregadas,
+bloquear/desbloquear, ajustar creditos, ver workers, alternar manutencao e
+consultar a fila de denuncias (placeholder). Toda acao grava
+`admin_audit_log`; respostas nao incluem prompt, email ou IP.
+
+### C2PA, avatar e backfill
+C2PA fica no grupo opcional `provenance` (`poetry install --with provenance`).
+`C2PA_REQUIRED=true` falha fechado; `false` publica sem assinatura. O avatar e
+reencodado para PNG 256px, sem EXIF, gravado em `avatars/{user_id}` e servido
+por proxy (sem bucket publico). Geracoes antigas sem original retornam
+`original_unavailable`; o backfill manual fica em
+`tools/backfill_originals.py --dry-run|--apply`.
+
+### CI/CD e supply chain
+`.github/workflows/` contem CI, CodeQL, gitleaks e auditorias com gates
+High/Critical; Dependabot e build Docker (sem push) tambem estao configurados.
+Excecoes de auditoria ficam em `.github/security-exceptions.json` com validade.

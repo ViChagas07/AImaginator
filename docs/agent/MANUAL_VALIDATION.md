@@ -105,3 +105,25 @@ pytest tests/integration/test_e2e_infra.py -s
 
 O bloqueio de texto chega como `content_blocked_*` no SSE; o de imagem de
 origem chega como `source_image_blocked_*`.
+
+
+## Fase 9 - plataforma
+
+1. Suba a infra local e a API/worker; confira `GET /api/v1/status`.
+2. Se for testar worker remoto, siga `docs/deploy/REMOTE_WORKER.md` e use
+   `WORKER_MODE=remote` com TLS; nunca aponte o worker para host sem TLS.
+3. Para a guarda termica, configure `HW_SENSOR_URL` e
+   `THERMAL_GUARD_ENABLED=true`; valide `START_TEMP_MAX_C`,
+   `ABORT_TEMP_C` e `MIN_FREE_RAM_ABORT_MB` com carga controlada.
+4. Valide planos/creditos em `GET /api/v1/users/me/usage` e no painel de
+   Configuracoes. O reset mensal e idempotente; ajustes admin geram auditoria.
+5. Teste o console admin com um usuario comum (deve receber 403) e um admin
+   (`ADMIN_EMAILS`). Confirme que nenhuma resposta contem prompt/email.
+6. Para C2PA: `poetry install --with provenance`, gere um certificado DEV com
+   `tools/gen_dev_c2pa_cert.py`, ligue `C2PA_ENABLED=true` e valide com
+   `tools/verify_c2pa.py`. Producao exige certificado de CA confiavel.
+7. Avatar: envie uma imagem em Configuracoes e confirme que a URL e o proxy
+   `/api/v1/users/{id}/avatar`, sem bucket publico.
+8. Backfill: rode primeiro
+   `poetry run python tools/backfill_originals.py --dry-run` e depois
+   `--apply` apos revisar o relatorio.
