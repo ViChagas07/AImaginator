@@ -19,6 +19,7 @@ class GenerationStatus(StrEnum):
     PROCESSING = "processing"
     DONE = "done"
     FAILED = "failed"
+    CANCELED = "canceled"
 
 
 class StylePreset(StrEnum):
@@ -51,10 +52,23 @@ ASPECT_RATIO_DIMENSIONS: dict[AspectRatio, tuple[int, int]] = {
 
 # Transicoes de status validas (maquina de estados do dominio).
 _ALLOWED_TRANSITIONS: dict[GenerationStatus, frozenset[GenerationStatus]] = {
-    GenerationStatus.QUEUED: frozenset({GenerationStatus.PROCESSING, GenerationStatus.FAILED}),
-    GenerationStatus.PROCESSING: frozenset({GenerationStatus.DONE, GenerationStatus.FAILED}),
+    GenerationStatus.QUEUED: frozenset(
+        {
+            GenerationStatus.PROCESSING,
+            GenerationStatus.FAILED,
+            GenerationStatus.CANCELED,
+        }
+    ),
+    GenerationStatus.PROCESSING: frozenset(
+        {
+            GenerationStatus.DONE,
+            GenerationStatus.FAILED,
+            GenerationStatus.CANCELED,
+        }
+    ),
     GenerationStatus.DONE: frozenset(),
     GenerationStatus.FAILED: frozenset(),
+    GenerationStatus.CANCELED: frozenset(),
 }
 
 
@@ -86,6 +100,8 @@ class Generation:
     credits_refunded: bool = False
     upscale_refunded: bool = False
     anonymous_session_id: str | None = None
+    is_favorite: bool = False
+    hidden_at: datetime | None = None
     deleted_at: datetime | None = None
     status: GenerationStatus = GenerationStatus.QUEUED
     credits_cost: int = 1
@@ -121,8 +137,22 @@ class Generation:
         self.error_message = error
         self.error_code = error_code
         self.updated_at = datetime.now(UTC)
-        if new_status in (GenerationStatus.DONE, GenerationStatus.FAILED):
+        if new_status in (
+            GenerationStatus.DONE,
+            GenerationStatus.FAILED,
+            GenerationStatus.CANCELED,
+        ):
             self.completed_at = self.updated_at
+
+    def hide(self) -> None:
+        self.hidden_at = datetime.now(UTC)
+        self.updated_at = self.hidden_at
+
+    def can_retry(self) -> bool:
+        return self.status is GenerationStatus.FAILED and any(
+            (self.error_code or "").startswith(prefix)
+            for prefix in ("engine_", "queue_", "hardware_", "thermal_", "resource_")
+        )
 
     def attach_result(self, image_url: str, *, object_key: str | None = None) -> None:
         self.result_image_url = image_url

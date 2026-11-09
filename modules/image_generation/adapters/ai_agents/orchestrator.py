@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Any, TypedDict
 
 from modules.image_generation.adapters.ai_agents.guardrails import (
@@ -60,11 +60,13 @@ from modules.image_generation.domain.image_bytes import validate_image_bytes
 from modules.image_generation.domain.prompt_assistant import AssistantInput
 from modules.image_generation.domain.prompt_guard import PromptInjectionGuard
 from modules.image_generation.domain.scope_guard import ScopeGuardrail
+from modules.image_generation.domain.style_presets import apply_style_preset
 from modules.observability.metrics import UPLOAD_FAILURES_TOTAL
 from modules.observability.timing import stage_timer
 from shared_kernel.errors import DomainError
 from shared_kernel.security_errors import (
     ContentBlockedError,
+    GenerationCanceledError,
     ImageBlockedError,
     ImageModerationUnavailableError,
     OutOfScopeError,
@@ -109,6 +111,7 @@ class LangGraphImageAgent(ImageAgentPort):
         prompt_assistant: PromptAssistantPort | None = None,
         llm_unloader: LlmUnloaderPort | None = None,
         thermal_guard: ThermalGuard | None = None,
+        cancel_check: Callable[[], Awaitable[bool]] | None = None,
         block_confidence: float = 0.5,
         image_moderator: ImageModeratorPort | None = None,
         image_moderation_enabled: bool = True,
@@ -128,6 +131,7 @@ class LangGraphImageAgent(ImageAgentPort):
         self._prompt_assistant = prompt_assistant
         self._llm_unloader = llm_unloader
         self._thermal_guard = thermal_guard
+        self._cancel_check = cancel_check
         self._block_confidence = block_confidence
         self._image_moderator = image_moderator
         self._image_moderation_enabled = image_moderation_enabled
@@ -297,11 +301,17 @@ class LangGraphImageAgent(ImageAgentPort):
             state["progress"] = 85
             return state
 
+        if self._cancel_check is not None and await self._cancel_check():
+            raise GenerationCanceledError("Geracao cancelada.")
         if self._thermal_guard is not None:
             await self._thermal_guard.before_job(locale=generation.locale)
 
         width, height = ASPECT_RATIO_DIMENSIONS[generation.aspect_ratio]
         engine_prompt = state.get("engine_prompt") or generation.prompt
+        if generation.kind is GenerationKind.GENERATE:
+            engine_prompt = apply_style_preset(
+                engine_prompt, generation.style_preset
+            )
 
         async def noop(_: int) -> None:
             return
@@ -311,6 +321,11 @@ class LangGraphImageAgent(ImageAgentPort):
         async def on_progress(percent: int) -> None:
             state["progress"] = min(max(percent, 5), 95)
             await progress_callback(percent)
+
+        async def guarded_progress(percent: int) -> None:
+            if self._cancel_check is not None and await self._cancel_check():
+                raise GenerationCanceledError("Geracao cancelada.")
+            await on_progress(percent)
 
         if generation.kind is GenerationKind.EDIT:
             if self._editor is None:
@@ -327,7 +342,7 @@ class LangGraphImageAgent(ImageAgentPort):
                     width=width,
                     height=height,
                     seed=generation.seed,
-                    on_progress=on_progress,
+                    on_progress=guarded_progress,
                 )
         else:
             if self._generator is None:
@@ -338,7 +353,7 @@ class LangGraphImageAgent(ImageAgentPort):
                     width=width,
                     height=height,
                     seed=generation.seed,
-                    on_progress=on_progress,
+                    on_progress=guarded_progress,
                 )
 
         generation.seed = result.seed

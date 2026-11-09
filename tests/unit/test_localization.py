@@ -44,6 +44,7 @@ _EXPECTED_KEYS = {
     "hardware_busy",
     "thermal_abort",
     "resource_abort",
+    "canceled",
 }
 
 

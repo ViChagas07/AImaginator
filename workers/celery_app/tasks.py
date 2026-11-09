@@ -41,6 +41,13 @@ def _run_async(coro) -> Any:
     return asyncio.run(coro)
 
 
+async def _is_canceled(redis_client, generation_id: str) -> bool:
+    value = await redis_client.get(f"cancel:{generation_id}")
+    return value in (b"1", "1")
+
+
+
+
 async def _process_generation_async(generation_id: str, kind: str = "generate") -> None:
     from uuid import UUID
 
@@ -105,6 +112,7 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                 prompt_assistant=assistant,
                 cooling_callback=lambda seconds, code: mark_cooling(settings, seconds, code),
                 http_client=http_client,
+                cancel_check=lambda: _is_canceled(redis_client, generation_id),
             )
         else:
             provider = gen_wiring.build_image_provider(

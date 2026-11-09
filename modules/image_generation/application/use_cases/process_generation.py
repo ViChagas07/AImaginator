@@ -152,6 +152,7 @@ class ProcessGeneration:
                     "hardware_busy",
                     "thermal_abort",
                     "resource_abort",
+                    "canceled",
                 }:
                     safe_message = message_for(error_code, generation.locale)
             else:
@@ -180,6 +181,11 @@ class ProcessGeneration:
             if generation.status is not GenerationStatus.DONE:
                 await self._refund_credit(generation, reason=error_code)
                 await self._refund_quota(generation, reason=error_code)
+            final_status = (
+                GenerationStatus.CANCELED
+                if error_code == "canceled"
+                else GenerationStatus.FAILED
+            )
             if generation.status in (
                 GenerationStatus.QUEUED,
                 GenerationStatus.PROCESSING,
@@ -187,16 +193,18 @@ class ProcessGeneration:
                 generation.warning_level = warning_level
                 generation.warning_message = warning_message
                 generation.transition_to(
-                    GenerationStatus.FAILED, error=safe_message, error_code=error_code
+                    final_status, error=safe_message, error_code=error_code
                 )
                 await self._generations.save(generation)
                 await self._commit_if_available()
-            GENERATIONS_TOTAL.labels(kind=generation.kind.value, status="failed").inc()
+            GENERATIONS_TOTAL.labels(
+                kind=generation.kind.value, status=final_status.value
+            ).inc()
             GENERATION_DURATION.labels(kind=generation.kind.value).observe(
                 max(0.0, time.monotonic() - started)
             )
             await publish(
-                GenerationStatus.FAILED,
+                final_status,
                 100,
                 error=safe_message,
                 error_code=error_code,

@@ -81,6 +81,7 @@ from modules.image_generation.domain.prompt_topic_guard import (
 from modules.image_generation.domain.url_policy import UrlPolicy
 from modules.rate_limiting.bulkhead import bulkhead_registry
 from modules.rate_limiting.circuit_breaker import CircuitBreaker
+from shared_kernel.security_errors import GenerationCanceledError
 
 
 def build_prompt_guard(*, max_length: int = 2000) -> PromptInjectionGuard:
@@ -286,17 +287,26 @@ def _hosted_engine(settings: Settings, http_client) -> HttpHostedEngine:
     )
 
 
+def _resource_checker(thermal_guard, cancel_check):
+    if thermal_guard is None and cancel_check is None:
+        return None
+
+    async def _check() -> None:
+        if thermal_guard is not None:
+            await thermal_guard.check_running(locale="pt-BR")
+        if cancel_check is not None and await cancel_check():
+            raise GenerationCanceledError("Geracao cancelada.")
+
+    return _check
+
+
 def build_image_generator(
-    settings: Settings, *, thermal_guard=None, http_client=None
+    settings: Settings, *, thermal_guard=None, http_client=None, cancel_check=None
 ) -> ImageGeneratorPort:
     if settings.image_engine == "hosted":
         primary = _hosted_engine(settings, http_client)
     elif settings.image_engine == "sdcpp":
-        resource_check = (
-            (lambda: thermal_guard.check_running(locale="pt-BR"))
-            if thermal_guard is not None
-            else None
-        )
+        resource_check = _resource_checker(thermal_guard, cancel_check)
         primary = SdCppImageGenerator(
             settings,
             resource_check=resource_check,
@@ -310,16 +320,12 @@ def build_image_generator(
 
 
 def build_image_editor(
-    settings: Settings, *, thermal_guard=None, http_client=None
+    settings: Settings, *, thermal_guard=None, http_client=None, cancel_check=None
 ) -> ImageEditorPort:
     if settings.image_engine == "hosted":
         primary = _hosted_engine(settings, http_client)
     elif settings.image_engine == "sdcpp":
-        resource_check = (
-            (lambda: thermal_guard.check_running(locale="pt-BR"))
-            if thermal_guard is not None
-            else None
-        )
+        resource_check = _resource_checker(thermal_guard, cancel_check)
         primary = SdCppImageEditor(
             settings,
             resource_check=resource_check,
@@ -367,6 +373,7 @@ def build_engine_image_agent(
     prompt_assistant: PromptAssistantPort | None = None,
     cooling_callback=None,
     http_client=None,
+    cancel_check=None,
 ) -> LangGraphImageAgent:
     thermal_guard = build_thermal_guard(settings, cooling_callback=cooling_callback)
     return LangGraphImageAgent(
@@ -379,6 +386,7 @@ def build_engine_image_agent(
         prompt_assistant=prompt_assistant,
         llm_unloader=build_llm_unloader(settings),
         thermal_guard=thermal_guard,
+        cancel_check=cancel_check,
         block_confidence=settings.llm_block_confidence,
         image_moderator=build_image_moderator(settings),
         image_moderation_enabled=settings.image_moderation_enabled,

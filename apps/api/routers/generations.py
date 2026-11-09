@@ -37,6 +37,7 @@ from apps.api.dependencies import (
     PromptGuardDep,
     PromptQuotaStoreDep,
     QueueReconcilerDep,
+    RedisDep,
     SettingsDep,
     TaskQueueDep,
     UpscaleQuotaDep,
@@ -48,7 +49,13 @@ from apps.api.dependencies import (
     resolve_anonymous_session,
     set_anonymous_session_cookie,
 )
-from modules.image_generation.application.schemas import MAX_PROMPT_LENGTH
+from modules.image_generation.application.schemas import (
+    MAX_PROMPT_LENGTH,
+    GenerationProgressEvent,
+)
+from modules.image_generation.application.use_cases.cancel_generation import (
+    CancelGeneration,
+)
 from modules.image_generation.contracts import (
     CreateEditFromUpload,
     CreateUpscale,
@@ -63,7 +70,13 @@ from modules.image_generation.contracts import (
     GetGeneration,
     ListUserGenerations,
 )
-from modules.image_generation.domain.entities import AspectRatio, StylePreset
+from modules.image_generation.domain.entities import (
+    AspectRatio,
+    Generation,
+    GenerationKind,
+    GenerationStatus,
+    StylePreset,
+)
 from modules.image_generation.domain.storage_errors import StorageUnavailableError
 from modules.prompt_quota.contracts import ConsumePromptQuota, RefundPromptQuota
 from modules.rate_limiting.token_bucket import TokenBucket
@@ -388,6 +401,85 @@ async def create_edit_upload(
         locale=locale,
         ip_hash=ip_hash,
     )
+
+
+@router.post("/generations/{generation_id}/retry")
+async def retry_generation(
+    generation_id: UUID,
+    current_user: CurrentUserDep,
+    generations: GenerationRepoDep,
+    users: UserRepoDep,
+    queue: TaskQueueDep,
+    guard: PromptGuardDep,
+    events: EventPublisherDep,
+    credits: CreditLedgerDep,
+    store: PromptQuotaStoreDep,
+    settings: SettingsDep,
+) -> dict:
+    original = await generations.get_by_id(generation_id)
+    if original is None or original.user_id != current_user.id:
+        from shared_kernel.errors import NotFoundError
+
+        raise NotFoundError("Geracao nao encontrada.")
+    if not original.can_retry():
+        from shared_kernel.errors import DomainError
+
+        raise DomainError("Esta geracao nao pode ser retentada.")
+    if original.kind is not GenerationKind.GENERATE:
+        from shared_kernel.errors import DomainError
+
+        raise DomainError("Retentativa disponivel apenas para geracoes.")
+    guard.validate(original.prompt)
+    await credits.reset_if_due(current_user.id)
+    generation = Generation(
+        user_id=current_user.id,
+        kind=GenerationKind.GENERATE,
+        prompt=original.prompt,
+        negative_prompt=original.negative_prompt,
+        style_preset=original.style_preset,
+        aspect_ratio=original.aspect_ratio,
+        seed=original.seed,
+        title=original.title,
+        locale=original.locale,
+    )
+    await credits.consume(
+        current_user.id,
+        ref_type="generation",
+        ref_id=str(generation.id),
+        idempotency_key=f"consume:{generation.id}",
+    )
+    await ConsumePromptQuota(store, total=settings.plan_daily_prompts(current_user.plan)).execute(
+        f"user:{current_user.id}"
+    )
+    await generations.save(generation)
+    queue.enqueue_generation(generation.id, kind="generate")
+    await events.publish_progress(
+        GenerationProgressEvent(
+            generation_id=generation.id,
+            status=GenerationStatus.QUEUED,
+            progress=0,
+        )
+    )
+    return {"id": str(generation.id), "status": "queued"}
+
+
+@router.post("/generations/{generation_id}/cancel")
+async def cancel_generation(
+    generation_id: UUID,
+    current_user: CurrentUserDep,
+    generations: GenerationRepoDep,
+    events: EventPublisherDep,
+    redis: RedisDep,
+    credits: CreditLedgerDep,
+    store: PromptQuotaStoreDep,
+) -> dict:
+    return await CancelGeneration(
+        generations=generations,
+        events=events,
+        redis=redis,
+        credits=credits,
+        quota_refund=RefundPromptQuota(store),
+    ).execute(user_id=current_user.id, generation_id=generation_id)
 
 
 @router.get("/generations", response_model=GenerationPage)

@@ -158,3 +158,8 @@ class ResourceAbortError(DomainError):
 class C2PARequiredError(DomainError):
     code = "c2pa_required"
     http_status = 500
+
+
+class GenerationCanceledError(DomainError):
+    code = "canceled"
+    http_status = 409

@@ -800,6 +800,22 @@ _PLATFORM_MESSAGES: dict[str, dict[str, str]] = {
 for _locale, _messages in _PLATFORM_MESSAGES.items():
     _MESSAGES[_locale].update(_messages)
 
+_CANCEL_MESSAGES: dict[str, str] = {
+    "pt-BR": "Geracao cancelada.",
+    "en": "Generation canceled.",
+    "es": "Generacion cancelada.",
+    "fr": "Generation annulee.",
+    "de": "Generierung abgebrochen.",
+    "it": "Generazione annullata.",
+    "ja": "生成をキャンセルしました。",
+    "zh": "生成已取消。",
+    "ko": "생성이 취소되었습니다.",
+    "ru": "Генерация отменена.",
+    "ar": "تم إلغاء الإنشاء.",
+}
+for _locale, _message in _CANCEL_MESSAGES.items():
+    _MESSAGES[_locale]["canceled"] = _message
+
 WARNING_LEVEL_MESSAGES = {
     1: "warning_level_1",
     2: "temporarily_blocked",
