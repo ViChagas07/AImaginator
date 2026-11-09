@@ -1,0 +1,16 @@
+[I] loading diffusion model from 'C:\ai\models\flux\flux1-kontext-dev-Q4_0.gguf' --- diffusion_engine.cpp:692
+[I] load C:\ai\models\flux\flux1-kontext-dev-Q4_0.gguf using gguf format --- model_loader.cpp:216
+[I] loading clip_l from 'C:\ai\models\flux\clip_l.safetensors' --- diffusion_engine.cpp:713
+[I] load C:\ai\models\flux\clip_l.safetensors using safetensors format --- model_loader.cpp:222
+[I] loading t5xxl from 'C:\ai\models\flux\t5xxl_fp8_e4m3fn.safetensors' --- diffusion_engine.cpp:734
+[I] load C:\ai\models\flux\t5xxl_fp8_e4m3fn.safetensors using safetensors format --- model_loader.cpp:222
+[I] loading vae from 'C:\ai\models\flux\ae.safetensors' --- diffusion_engine.cpp:763
+[I] load C:\ai\models\flux\ae.safetensors using safetensors format --- model_loader.cpp:222
+  |##################################################| 106/106 - 450.85MB/s
+  |################                                  |  62/196 - 140.83MB/s
+  |#########################                         |  96/196 - 140.16MB/s
+  |####################################              | 138/196 - 154.43MB/s
+  |#############################################     | 173/196 - 152.12MB/s
+  |======>                                           | 1/8 -  78.31s/it - ETA 09:08
+  |============>                                     | 2/8 -  43.85s/it - ETA 06:06
+  |==================>                               | 3/8 -  43.84s/it - ETA 04:36

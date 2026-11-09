@@ -34,6 +34,7 @@ from modules.image_generation.domain.engine_errors import (
 )
 from modules.image_generation.domain.image_bytes import JPEG_SIGNATURE
 from modules.observability.metrics import ENGINE_PEAK_RAM_BYTES, RAM_FREE_BYTES
+from shared_kernel.security_errors import GenerationCanceledError
 
 logger = logging.getLogger(__name__)
 
@@ -200,6 +201,12 @@ class _SdCppBase:
                 },
             )
             raise EngineTimeoutError() from None
+        except GenerationCanceledError:
+            await self._kill_process_tree(process)
+            raise
+        except BaseException:
+            await self._kill_process_tree(process)
+            raise
         finally:
             sampler.cancel()
             if watcher is not None:
@@ -233,19 +240,67 @@ class _SdCppBase:
     ) -> None:
         last_progress = 10
         assert process.stdout is not None
+        buffer = ""
         while True:
-            raw_line = await process.stdout.readline()
-            if not raw_line:
+            chunk = await process.stdout.read(4096)
+            if not chunk:
                 break
-            line = raw_line.decode("utf-8", errors="replace")
-            output.append(line)
-            parsed = parse_progress_line(line)
-            if parsed is None:
-                continue
-            mapped = progress_for_step(parsed)
-            if mapped > last_progress:
-                last_progress = mapped
-                await on_progress(mapped)
+            buffer += chunk.decode("utf-8", errors="replace")
+            while True:
+                endings = [
+                    index
+                    for index in (buffer.find("\r"), buffer.find("\n"))
+                    if index >= 0
+                ]
+                if not endings:
+                    break
+                index = min(endings)
+                line, buffer = buffer[:index], buffer[index + 1 :]
+                last_progress = await self._handle_output_line(
+                    line, output, on_progress, last_progress
+                )
+        if buffer:
+            await self._handle_output_line(buffer, output, on_progress, last_progress)
+
+    async def _handle_output_line(
+        self,
+        line: str,
+        output: list[str],
+        on_progress: ProgressCallback,
+        last_progress: int,
+    ) -> int:
+        if not line:
+            return last_progress
+        output.append(line + "\n")
+        logger.debug(
+            "sdcpp_raw_output", extra={"line": line, "ts": time.time()}
+        )
+        lowered = line.lower()
+        if any(
+            token in lowered
+            for token in ("loading", "vae", "model", "auto-fit", "params")
+        ):
+            logger.info(
+                "sdcpp_model_log", extra={"line": line, "ts": time.time()}
+            )
+        parsed = parse_progress_line(line)
+        if parsed is None:
+            return last_progress
+        mapped = progress_for_step(parsed)
+        if mapped > last_progress:
+            logger.info(
+                "sdcpp_progress",
+                extra={
+                    "step": parsed.current,
+                    "total": parsed.total,
+                    "seconds_per_step": parsed.seconds_per_step,
+                    "progress": mapped,
+                    "ts": time.time(),
+                },
+            )
+            await on_progress(mapped)
+            return mapped
+        return last_progress
 
     async def _watch_resources(self, process) -> BaseException | None:
         while process.returncode is None:

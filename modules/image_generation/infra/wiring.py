@@ -379,9 +379,17 @@ def build_engine_image_agent(
     return LangGraphImageAgent(
         prompt_guard=guard,
         generator=build_image_generator(
-            settings, thermal_guard=thermal_guard, http_client=http_client
+            settings,
+            thermal_guard=thermal_guard,
+            http_client=http_client,
+            cancel_check=cancel_check,
         ),
-        editor=build_image_editor(settings, thermal_guard=thermal_guard, http_client=http_client),
+        editor=build_image_editor(
+            settings,
+            thermal_guard=thermal_guard,
+            http_client=http_client,
+            cancel_check=cancel_check,
+        ),
         storage=storage,
         prompt_assistant=prompt_assistant,
         llm_unloader=build_llm_unloader(settings),

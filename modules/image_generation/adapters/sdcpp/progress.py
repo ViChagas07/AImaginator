@@ -11,7 +11,8 @@ import re
 from dataclasses import dataclass
 
 _STEP_RE = re.compile(
-    r"\|\s*(\d+)\s*/\s*(\d+)\s*(?:-\s*([0-9]+(?:\.[0-9]+)?)\s*s/it)?",
+    r"\|\s*(\d+)\s*/\s*(\d+)"
+    r"(?:\s*-\s*([0-9]+(?:\.[0-9]+)?)\s*s/it\b|\s*(?=\||$))",
     re.IGNORECASE,
 )
 
