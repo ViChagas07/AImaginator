@@ -40,6 +40,12 @@ export function readStatus(payload: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+export function readAnonymousToken(payload: unknown): string | null {
+  const record = asRecord(payload);
+  const value = record?.anonymous_token;
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
 export function readErrorMessage(payload: unknown): string | null {
   const record = asRecord(payload);
   const value = record?.error ?? record?.error_message;

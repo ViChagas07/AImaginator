@@ -141,6 +141,7 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                     monthly_credits=settings.plan_monthly_credits,
                 ),
                 commit=session.commit,
+                cancel_check=lambda: _is_canceled(redis_client, generation_id),
             )
             await use_case.execute(UUID(generation_id), raise_on_failure=False)
     finally:

@@ -84,6 +84,7 @@ class ProcessGeneration:
         quota_refund: PromptQuotaRefundPort | None = None,
         credits: CreditLedgerService | None = None,
         commit: Callable[[], Awaitable[None]] | None = None,
+        cancel_check: Callable[[], Awaitable[bool]] | None = None,
     ) -> None:
         self._generations = generations
         self._agent = image_agent
@@ -94,6 +95,7 @@ class ProcessGeneration:
         self._quota_refund = quota_refund
         self._credits = credits
         self._commit = commit
+        self._cancel_check = cancel_check
 
     async def _commit_if_available(self) -> None:
         if self._commit is not None:
@@ -251,6 +253,10 @@ class ProcessGeneration:
                 await publish(GenerationStatus.PROCESSING, min(max(percent, 5), 99))
 
             result_url = await self._agent.run_generation(generation, on_progress)
+            if self._cancel_check is not None and await self._cancel_check():
+                raise GenerationCanceledError(
+                    message_for("canceled", generation.locale)
+                )
             if self._storage is not None and generation.result_object_key:
                 result_url = await self._storage.presigned_get_url(generation.result_object_key)
 
@@ -358,6 +364,10 @@ class ProcessGeneration:
                 return
 
             self._record_failure_metrics(generation, error_code)
+            await self._discard_result(generation)
+            generation.result_image_url = None
+            generation.result_object_key = None
+            generation.original_object_key = None
             generation.status = final_status
             generation.error_message = safe_message
             generation.error_code = error_code

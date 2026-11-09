@@ -8,6 +8,7 @@ import {
   ApiGenerationItem,
   GenerationRecord,
   parseGenerationOutput,
+  readAnonymousToken,
   readApiError,
   readErrorMessage,
   readNextCursor,
@@ -118,20 +119,9 @@ export function parseSeedInput(seed: string): number | undefined {
   return parsed;
 }
 
-async function ensureAnonymousToken(): Promise<void> {
-  if (getAccessToken() || getAnonymousToken()) return;
-  try {
-    const response = await authedFetch(`${API_BASE_URL}/api/v1/prompt-quota`, {
-      cache: "no-store",
-    });
-    if (!response.ok) return;
-    const data = (await response.json()) as {anonymous_token?: unknown};
-    if (typeof data.anonymous_token === "string" && data.anonymous_token) {
-      saveAnonymousToken(data.anonymous_token);
-    }
-  } catch {
-    // Sem token o POST ainda pode criar a sessao; se falhar, o erro real aparece.
-  }
+function persistAnonymousToken(payload: unknown) {
+  const token = readAnonymousToken(payload);
+  if (token) saveAnonymousToken(token);
 }
 
 let source: EventSource | null = null;
@@ -508,7 +498,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   },
 
   async startGeneration(prompt, errors, locale) {
-    await ensureAnonymousToken();
     closeSource();
     set({
       prompt,
@@ -544,6 +533,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         return;
       }
       const data = (await res.json()) as unknown;
+      persistAnonymousToken(data);
       const created = parseGenerationOutput(data);
       if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
         set({status: "failed", error: errors.failed});
@@ -602,6 +592,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         return;
       }
       const data = (await res.json()) as unknown;
+      persistAnonymousToken(data);
       const created = parseGenerationOutput(data);
       if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
         set({status: "failed", error: errors.failed});
@@ -644,6 +635,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         return;
       }
       const data = (await res.json()) as unknown;
+      persistAnonymousToken(data);
       const created = parseGenerationOutput(data);
       if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
         set({status: "failed", error: errors.failed});
@@ -755,6 +747,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         return;
       }
       const data = (await res.json()) as unknown;
+      persistAnonymousToken(data);
       const created = parseGenerationOutput(data);
       if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
         set({status: "failed", error: errors.failed});
@@ -804,6 +797,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         return;
       }
       const data = (await res.json()) as unknown;
+      persistAnonymousToken(data);
       const created = parseGenerationOutput(data);
       if (!created || typeof (data as {stream_url?: unknown}).stream_url !== "string") {
         set({status: "failed", error: errors.failed});

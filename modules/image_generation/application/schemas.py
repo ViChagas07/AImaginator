@@ -71,6 +71,7 @@ class GenerationOutput(BaseModel):
     created_at: datetime
     completed_at: datetime | None
     stream_url: str | None = None
+    anonymous_token: str | None = None
 
 
 class GenerationPage(BaseModel):

@@ -139,7 +139,7 @@ async def create_generation(
     )
     await limiter.consume(f"anon:{anonymous_id}")
     total = settings.anonymous_prompt_chances_per_day
-    return await GenerateImageAnonymous(
+    created = await GenerateImageAnonymous(
         generations=generations,
         task_queue=queue,
         prompt_guard=guard,
@@ -152,6 +152,7 @@ async def create_generation(
         locale=locale,
         ip_hash=ip_hash,
     )
+    return created.model_copy(update={"anonymous_token": token})
 
 
 @router.post(
@@ -265,13 +266,16 @@ async def create_variation(
         prompt_quota=ConsumePromptQuota(store, total=settings.anonymous_prompt_chances_per_day),
         quota_refund=RefundPromptQuota(store),
     )
-    return await CreateVariation(generations=generations, generate_anonymous=generate_anon).execute(
+    created = await CreateVariation(
+        generations=generations, generate_anonymous=generate_anon
+    ).execute(
         generation_id=generation_id,
         user=None,
         anonymous_session_id=anonymous_id,
         locale=locale,
         ip_hash=ip_hash,
     )
+    return created.model_copy(update={"anonymous_token": token})
 
 
 @router.post(
