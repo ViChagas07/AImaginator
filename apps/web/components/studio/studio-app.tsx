@@ -23,6 +23,7 @@ import {
 } from "@/stores/generation";
 import type {GenerationRecord} from "@/lib/generation-contract";
 import {AIGeneratingLoader} from "@/components/ui/ai-generating-loader";
+import {LoginGateModal} from "@/components/studio/login-gate-modal";
 import {
   ASPECT_RATIOS,
   STYLE_PRESETS,
@@ -67,6 +68,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const gen = useGenerationStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const refinePanelRef = useRef<HTMLElement>(null);
+  const [dismissedResultUrl, setDismissedResultUrl] = useState<string | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<UploadErrorCode | null>(null);
   const [refineTarget, setRefineTarget] = useState<GenerationRecord | null>(null);
@@ -122,6 +124,16 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
       if (uploadPreview) URL.revokeObjectURL(uploadPreview);
     };
   }, [uploadPreview]);
+
+  const requireLoginToSave =
+    process.env.NODE_ENV === "production" &&
+    process.env.NEXT_PUBLIC_REQUIRE_LOGIN_TO_SAVE !== "false";
+
+  const showLoginGate =
+    requireLoginToSave &&
+    gen.status === "done" &&
+    auth.status === "unauthenticated" &&
+    gen.resultUrl !== dismissedResultUrl;
 
   async function acceptFile(file: File | null) {
     if (!file) return;
@@ -814,6 +826,11 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
           </>
         )}
       </section>
+
+      <LoginGateModal
+        open={showLoginGate}
+        onDismiss={() => setDismissedResultUrl(gen.resultUrl)}
+      />
     </div>
   );
 }

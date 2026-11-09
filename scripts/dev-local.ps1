@@ -166,6 +166,7 @@ if ($Dev) {
 `$Host.UI.RawUI.WindowTitle = 'AImaginator Web ($portText)'
 Set-Location -LiteralPath '$webDirQ'
 `$env:NEXT_TELEMETRY_DISABLED = '1'
+`$env:NEXT_PUBLIC_REQUIRE_LOGIN_TO_SAVE = 'false'
 npm run dev -- -p $portText *>> '$webLogQ'
 "@
     $mode = 'dev'
@@ -175,6 +176,7 @@ npm run dev -- -p $portText *>> '$webLogQ'
 `$Host.UI.RawUI.WindowTitle = 'AImaginator Web ($portText)'
 Set-Location -LiteralPath '$webDirQ'
 `$env:NEXT_TELEMETRY_DISABLED = '1'
+`$env:NEXT_PUBLIC_REQUIRE_LOGIN_TO_SAVE = 'false'
 npm run build *>> '$webLogQ'
 if (`$LASTEXITCODE -ne 0) { Write-Host 'Build falhou. Veja logs\web.log ou rode com -Dev.'; return }
 npm run start -- -p $portText *>> '$webLogQ'

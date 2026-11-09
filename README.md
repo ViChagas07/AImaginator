@@ -184,6 +184,12 @@ npm run dev            # http://localhost:3000
 > `NEXT_PUBLIC_API_BASE_URL=http://localhost:8001` e
 > `NEXT_PUBLIC_STORAGE_ORIGIN=http://localhost:9002`.
 
+> O aviso de login para salvar a arte é **somente de produção**. No
+> desenvolvimento local, defina `NEXT_PUBLIC_REQUIRE_LOGIN_TO_SAVE=false` no
+> `apps/web/.env.local`; o `dev-local.ps1` também força esse valor. Assim não é
+> necessário fazer login no Google para gerar, visualizar ou baixar imagens
+> localmente.
+
 ### Subir tudo sem o VS Code (worker host + frontend)
 
 Para liberar RAM, feche o VS Code e outros apps pesados antes do teste. Os
