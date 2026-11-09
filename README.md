@@ -686,3 +686,17 @@ por proxy (sem bucket publico). Geracoes antigas sem original retornam
 `.github/workflows/` contem CI, CodeQL, gitleaks e auditorias com gates
 High/Critical; Dependabot e build Docker (sem push) tambem estao configurados.
 Excecoes de auditoria ficam em `.github/security-exceptions.json` com validade.
+
+
+## Produto (Fase 10, parcial)
+
+- Biblioteca pessoal: colecoes, favoritos, tags, busca full-text, soft delete
+  em lote e export ZIP (somente marca d'agua, limite 50).
+- Compartilhamento: links com token de 256 bits, expiracao/revogacao, prompt
+  opt-in, pagina publica `/s/{token}` e OpenGraph sem dados pessoais.
+- Denuncias: motivos de moderacao, anti-spam e fila admin auditada.
+- Presets deterministicos de estilo aplicados em codigo depois do assistente.
+- Cancelamento com status CANCELED, refunds e SSE; retry de geracao.
+- UI entregue nesta fase: chips de estilo, botao cancelar e pagina publica.
+- Pendente: UI completa de colecoes/filtros/selecao, retry de edicao/upscale,
+  notificacoes do navegador e sugestao automatica de proporcao.

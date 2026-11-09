@@ -95,3 +95,16 @@
 - Pendencias: calibracao termica e de limiares com hardware real, revisao
   nativa das traducoes (review status `pending`), certificado C2PA de CA
   confiavel, deploy real do worker remoto e testes E2E com infraestrutura.
+
+
+## Fase 10 - produto (parcial)
+
+Entregue no backend: colecoes/favoritos/tags, busca full-text, soft delete em
+lote, export ZIP, links publicos com token hasheado, denuncias com fila admin,
+presets deterministicos, cancelamento com CANCELED/refunds e retry de geracao.
+No frontend: chips de estilo, cancelamento, pagina publica de compartilhamento
+com denuncia e metadata OpenGraph.
+
+Lacunas declaradas: UI completa de biblioteca (selecao/filtros/colecoes),
+retry para edicao/upscale, notificacoes do navegador e proporcao sugerida.
+Testes: backend 499/495/4; evals 7/5/2; vitest 45; Playwright 37.

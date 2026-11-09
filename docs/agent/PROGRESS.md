@@ -738,6 +738,43 @@
 - [x] `ruff check .`: limpo.
 - [x] Nenhum modelo real/FLUX/smoke executado.
 
+## Fase 10 - produto: biblioteca, compartilhamento, denuncias e presets
+
+### Backend entregue
+- [x] Tabelas `collections`, `collection_items`, `generation_tags`,
+  `share_links`, `reports`; `generations.is_favorite/hidden_at`; indices e
+  full-text (`to_tsvector`) em Postgres.
+- [x] APIs de colecoes (criar/renomear/apagar/mover), favoritos, tags, busca
+  com filtros/cursor, soft delete em lote e export ZIP (50, somente resultado
+  com marca d'agua).
+- [x] Links publicos com token de 256 bits armazenado como SHA-256, expiracao,
+  revogacao, `allow_prompt` opt-in e presign curto; imagem oculta invalida.
+- [x] Denuncias por imagem publica/galeria com rate limit por usuario/IP,
+  fila admin, hide/remove_link/penalty/discard auditados.
+- [x] Presets deterministicos em codigo (`style_presets.py`) e aplicacao no
+  orquestrador somente apos o assistente; catalogo fechado.
+- [x] Status CANCELED, endpoint de cancelamento, flag Redis, kill via resource
+  check, refund idempotente e evento SSE; retry backend para geracoes.
+- [x] UI de chips de estilo, cancelamento e pagina publica `/s/{token}` com
+  denuncia; metadata OpenGraph sem dados pessoais.
+
+### Lacunas conhecidas desta fase
+- [ ] UI completa da biblioteca (selecao multipla, filtros, barra de acoes,
+  pagina de colecoes) nao foi construida; APIs prontas.
+- [ ] Retry exposto apenas para `GENERATE`; edicao/upscale ficam para a
+  proxima iteracao.
+- [ ] Notificacoes do navegador e sugestao automatica de proporcao nao foram
+  implementadas.
+- [ ] Novas chaves i18n usam fallback em ingles e seguem `pending` no
+  `_review.json`; falta revisao nativa.
+- [ ] E2E de colecoes/busca/cancelar/retry com backend mockado nao foi
+  adicionado; apenas link publico/denuncia tem Playwright.
+
+### Testes
+- [x] `pytest tests`: **499 coletados, 495 passed, 4 skipped**.
+- [x] `specs/evals`: **7 coletados, 5 passed, 2 skipped**.
+- [x] Vitest **45 passed**; Playwright **37 passed**; build/tsc/lint/ruff ok.
+
 ## Entrega
 
 Branch: `feat/local-flux-engine`. Commits organizados e push conforme Bloco 9.

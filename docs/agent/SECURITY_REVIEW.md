@@ -104,3 +104,17 @@ forte, C2PA desligado, calibracao/traducao manuais).
 - CI ganhou Dependabot, CodeQL, gitleaks, gates de auditoria e build Docker.
 - Varredura de segredos permanece limpa; nenhum `.env`/modelo/imagem de teste
   novo e nenhum blob > 5 MB.
+
+
+## Fase 10 - links publicos e denuncias
+
+- Tokens de compartilhamento tem 256 bits, sao armazenados como SHA-256 (nunca
+  em claro), revogaveis/expirados e entregam apenas a versao com marca d'agua
+  via presign curto. Prompt so aparece com `allow_prompt=true`.
+- Imagem oculta/removida invalida links; respostas publicas nao expoem dono,
+  email, IDs internos ou `original_object_key`.
+- Denuncias tem rate limit por usuario/IP e fila admin auditada
+  (`hide`, `remove_link`, `penalty`, `discard`).
+- Riscos residuais: token na URL pode aparecer em referrer/historico do
+  navegador; abuse de denuncias exige calibracao; UI completa de biblioteca e
+  notificacoes ainda pendente.
