@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
@@ -24,6 +25,16 @@ from infra.database import Base
 
 class GenerationModel(Base):
     __tablename__ = "generations"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('generate','edit','upscale')",
+            name="ck_generations_kind",
+        ),
+        CheckConstraint(
+            "status IN ('queued','processing','done','failed','canceled')",
+            name="ck_generations_status",
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     user_id: Mapped[UUID | None] = mapped_column(
