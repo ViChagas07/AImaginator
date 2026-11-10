@@ -82,3 +82,10 @@ class CircuitOpenError(AImaginatorError):
 
     code = "service_unavailable"
     http_status = 503
+
+
+class GenerationFinalizationError(AImaginatorError):
+    """Falha ao persistir um estado terminal; nao deve reexecutar o pipeline."""
+
+    code = "finalize_failed"
+    http_status = 500

@@ -69,7 +69,7 @@ def migrated_schema() -> tuple[str, str]:
     _run_async(_create_schema(base_url, schema))
     try:
         target = os.environ.get("ALEMBIC_TARGET_REVISION", "head")
-        subprocess.run(
+        subprocess.run(  # noqa: S603 - target vem de env de teste controlado
             [sys.executable, "-m", "alembic", "upgrade", target],
             cwd=_REPO_ROOT,
             env={
@@ -204,6 +204,7 @@ async def test_processing_to_canceled_against_postgres(session_factory) -> None:
             events=events,
             quota_refund=quota,
             commit=session.commit,
+            rollback=session.rollback,
             cancel_check=_true,
         )
         await use_case.execute(gen_id, raise_on_failure=False)
@@ -231,6 +232,7 @@ async def test_processing_to_done_against_postgres(session_factory) -> None:
             image_agent=_DoneAgent(),
             events=SpyEventPublisher(),
             commit=session.commit,
+            rollback=session.rollback,
         )
         await use_case.execute(gen_id, raise_on_failure=False)
         await session.commit()

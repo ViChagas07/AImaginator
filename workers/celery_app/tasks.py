@@ -20,8 +20,9 @@ from modules.observability.correlation import (
     clear_generation_context,
 )
 from modules.observability.logging_config import get_logger
-from shared_kernel.errors import AImaginatorError
+from shared_kernel.errors import AImaginatorError, GenerationFinalizationError
 from workers.celery_app.celery import celery_app
+from workers.celery_app.finalization import ensure_failed_after_retries_sync
 
 logger = get_logger(__name__)
 
@@ -141,6 +142,7 @@ async def _process_generation_async(generation_id: str, kind: str = "generate") 
                     monthly_credits=settings.plan_monthly_credits,
                 ),
                 commit=session.commit,
+                rollback=session.rollback,
                 cancel_check=lambda: _is_canceled(redis_client, generation_id),
             )
             await use_case.execute(UUID(generation_id), raise_on_failure=False)
@@ -189,19 +191,32 @@ async def _purge_expired_sources_async() -> int:
 def process_generation_task(self: Task, generation_id: str, kind: str = "generate") -> None:
     try:
         _run_async(_process_generation_async(generation_id, kind))
+    except GenerationFinalizationError as exc:
+        logger.error(
+            "generation_finalization_failed",
+            generation_id=generation_id,
+            code=exc.code,
+        )
+        ensure_failed_after_retries_sync(generation_id, exc.code)
+        _send_to_dlq(generation_id, exc.code)
+        raise
     except AImaginatorError as exc:
         logger.error(
             "generation_processing_domain_failed",
             generation_id=generation_id,
             code=exc.code,
         )
+        ensured = ensure_failed_after_retries_sync(generation_id, exc.code)
         if exc.code not in _USER_REFUSAL_CODES:
             _send_to_dlq(generation_id, exc.code)
+        if not ensured:
+            raise
     except Exception as exc:
         logger.exception("generation_processing_failed", generation_id=generation_id)
         if self.request.retries >= _MAX_RETRIES:
+            ensure_failed_after_retries_sync(generation_id, type(exc).__name__)
             _send_to_dlq(generation_id, type(exc).__name__)
-            return
+            raise
         raise self.retry(exc=exc, countdown=min(2**self.request.retries * 5, 120)) from exc
 
 
