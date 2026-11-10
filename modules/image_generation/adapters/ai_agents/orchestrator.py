@@ -18,6 +18,7 @@ Pipeline (maquina de estados, spec secao 12):
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Any, TypedDict
@@ -161,13 +162,33 @@ class LangGraphImageAgent(ImageAgentPort):
         progress_callback = state.get("on_progress_callback") or noop
         await progress_callback(7)
         with stage_timer("assistant_llm", correlation_id=str(generation.id)):
-            result = await self._prompt_assistant.analyze(
-                AssistantInput(
-                    text=generation.prompt,
-                    kind=generation.kind,
-                    locale=generation.locale,
+            analyze = asyncio.create_task(
+                self._prompt_assistant.analyze(
+                    AssistantInput(
+                        text=generation.prompt,
+                        kind=generation.kind,
+                        locale=generation.locale,
+                    )
                 )
             )
+            try:
+                while True:
+                    done, _ = await asyncio.wait({analyze}, timeout=1.0)
+                    if done:
+                        result = analyze.result()
+                        break
+                    if self._cancel_check is not None and await self._cancel_check():
+                        analyze.cancel()
+                        with contextlib.suppress(asyncio.CancelledError):
+                            await analyze
+                        raise GenerationCanceledError(
+                            message_for("canceled", generation.locale)
+                        )
+            finally:
+                if not analyze.done():
+                    analyze.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await analyze
         refusal = result.refusal_code(block_confidence=self._block_confidence)
         if refusal is not None:
             if refusal == "out_of_scope":
