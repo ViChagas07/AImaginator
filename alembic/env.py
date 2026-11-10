@@ -7,6 +7,7 @@ autogenerate enxergue as tabelas de todos os contextos.
 from __future__ import annotations
 
 import asyncio
+import os
 from logging.config import fileConfig
 
 from sqlalchemy.ext.asyncio import async_engine_from_config
@@ -46,10 +47,19 @@ def do_run_migrations(connection) -> None:
         context.run_migrations()
 
 
+def _connect_args() -> dict:
+    """Isola migracoes de teste em um schema sem exigir CREATEDB/superuser."""
+    search_path = os.environ.get("ALEMBIC_SEARCH_PATH", "").strip()
+    if not search_path:
+        return {}
+    return {"server_settings": {"search_path": search_path}}
+
+
 async def run_migrations_online() -> None:
     connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
+        connect_args=_connect_args(),
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

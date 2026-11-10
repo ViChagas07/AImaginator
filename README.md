@@ -571,6 +571,37 @@ cd apps/web && npm run lint && npm run test -- --run && npm run build
 > O teste anti N+1 roda em CI contra Postgres real (`RUN_DB_TESTS=1`) e falha
 > se qualquer query passar a emitir mais SELECTs que o esperado (spec 9.2).
 
+### Testes de persistencia terminal contra Postgres real
+
+Os testes de `tests/integration/test_generation_status_persistence.py` cobrem
+`QUEUED -> CANCELED`, `PROCESSING -> CANCELED`, `PROCESSING -> DONE`, a corrida
+`CANCELED` vs `DONE` e o drift entre `GenerationStatus`/`GenerationKind` e as
+constraints do banco. Eles criam um schema temporario, rodam
+`alembic upgrade head` nele e o removem no final; **nao exigem CREATEDB** e nao
+tocam no schema `public` nem nos dados de dev.
+
+```bash
+# PowerShell (o fixture cria e derruba o schema temporario)
+$env:RUN_DB_TESTS = "1"
+$env:DATABASE_URL = "postgresql+asyncpg://aimaginator:aimaginator_dev@localhost:5433/aimaginator"
+poetry run pytest tests/integration/test_generation_status_persistence.py -q
+```
+
+Sem `RUN_DB_TESTS=1` o modulo e pulado de proposito (`skipped`). No CI a
+variavel ja vale `1`, entao os testes rodam e a suite falha se algum valor do
+enum deixar de ser aceito pelas constraints.
+
+Para reproduzir o bug em um banco no head anterior:
+
+```bash
+$env:ALEMBIC_TARGET_REVISION = "20261110_130000"
+poetry run pytest tests/integration/test_generation_status_persistence.py -q
+# deve falhar com CheckViolationError em ck_generations_status
+```
+
+Depois, sem `ALEMBIC_TARGET_REVISION` (ou com `head`), os mesmos testes devem
+passar.
+
 ## Variáveis de ambiente
 
 Todas as credenciais vivem em `.env` (gitignored) e são lidas exclusivamente
