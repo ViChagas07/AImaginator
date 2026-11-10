@@ -593,7 +593,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
             type="button"
             onClick={() => setCancelTargetId(gen.result?.id ?? null)}
             disabled={gen.canceling}
-            className="rounded-md border border-foreground/10 px-3 py-1.5 text-xs text-muted hover:text-foreground disabled:opacity-50"
+            className="rounded-md bg-destructive px-3 py-1.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
           >
             {gen.canceling ? t("canceling") : t("cancel")}
           </button>
