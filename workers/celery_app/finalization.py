@@ -38,7 +38,7 @@ async def _ensure_failed_after_retries(generation_id: str, error_code: str) -> b
     from modules.image_generation.adapters.repositories.generation_repository import (
         SQLAlchemyGenerationRepository,
     )
-    from modules.image_generation.application.localization import message_for
+    from modules.image_generation.domain.engine_errors import EngineFailedError
     from modules.image_generation.domain.entities import GenerationStatus
 
     settings = get_settings()
@@ -60,7 +60,7 @@ async def _ensure_failed_after_retries(generation_id: str, error_code: str) -> b
                 await _publish_terminal(redis_client, generation)
                 return True
 
-            message = message_for("engine_failed", generation.locale)
+            message = EngineFailedError().message
             changed = await repo.transition_if_status(
                 generation.id,
                 from_statuses=(GenerationStatus.QUEUED, GenerationStatus.PROCESSING),

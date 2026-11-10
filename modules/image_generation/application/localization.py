@@ -39,44 +39,44 @@ _LANGUAGE_ALIASES = {
 _MESSAGES: dict[str, dict[str, str]] = {
     "pt-BR": {
         "content_blocked_nsfw": (
-            "Nao consigo criar esse tipo de conteudo. Se quiser, descreva uma "
+            "Não consigo criar esse tipo de conteúdo. Se quiser, descreva uma "
             "imagem com outro tema."
         ),
         "content_blocked_gore": (
-            "Nao consigo criar imagens com violencia grafica. Posso ajudar com "
+            "Não consigo criar imagens com violência gráfica. Posso ajudar com "
             "outra ideia visual."
         ),
         "content_blocked_hate": (
-            "Nao consigo criar conteudo de odio ou que ataque pessoas. Vamos "
+            "Não consigo criar conteúdo de ódio ou que ataque pessoas. Vamos "
             "tentar outra ideia?"
         ),
         "content_blocked_self_harm": (
-            "Nao consigo criar esse tipo de conteudo. Se voce estiver passando "
-            "por um momento dificil, procure uma pessoa de confianca ou um "
-            "servico de apoio."
+            "Não consigo criar esse tipo de conteúdo. Se você estiver passando "
+            "por um momento difícil, procure uma pessoa de confiança ou um "
+            "serviço de apoio."
         ),
         "out_of_scope": (
-            "Sou especializado em criacao e edicao de imagens. Me diga qual "
-            "imagem voce gostaria de criar ou editar."
+            "Sou especializado em criação e edição de imagens. Me diga qual "
+            "imagem você gostaria de criar ou editar."
         ),
         "prompt_rejected": (
-            "Nao consegui interpretar esse pedido com seguranca. Tente reformular "
-            "a descricao da imagem."
+            "Não consegui interpretar esse pedido com segurança. Tente reformular "
+            "a descrição da imagem."
         ),
         "assistant_unavailable": (
-            "O assistente esta indisponivel no momento. Tente novamente em "
+            "O assistente está indisponível no momento. Tente novamente em "
             "instantes."
         ),
         "temporarily_blocked": (
-            "Voce atingiu o limite de tentativas bloqueadas. Tente novamente mais "
+            "Você atingiu o limite de tentativas bloqueadas. Tente novamente mais "
             "tarde."
         ),
         "warning_level_1": (
-            "Aviso: alguns pedidos recentes foram recusados pela politica de "
-            "conteudo. Continue descrevendo apenas imagens permitidas."
+            "Aviso: alguns pedidos recentes foram recusados pela política de "
+            "conteúdo. Continue descrevendo apenas imagens permitidas."
         ),
         "account_under_review": (
-            "Sua conta foi temporariamente limitada para revisao. Tente novamente "
+            "Sua conta foi temporariamente limitada para revisão. Tente novamente "
             "mais tarde."
         ),
     },
@@ -410,7 +410,7 @@ _MESSAGES: dict[str, dict[str, str]] = {
 
 
 _EXTRA_MESSAGES = {
-    "pt-BR": "Dados invalidos. Revise os campos e tente novamente.",
+    "pt-BR": "Dados inválidos. Revise os campos e tente novamente.",
     "en": "Invalid input. Check the fields and try again.",
     "es": "Datos no validos. Revisa los campos e intentalo de nuevo.",
     "fr": "Donnees invalides. Verifie les champs et reessaie.",
@@ -428,16 +428,16 @@ for _locale, _message in _EXTRA_MESSAGES.items():
 
 _IMAGE_MESSAGES = {
     "pt-BR": {
-        "image_blocked_nsfw": "A imagem gerada foi bloqueada pela politica de conteudo.",
-        "image_blocked_gore": "A imagem gerada foi bloqueada por conter violencia grafica.",
-        "image_blocked_hate": "A imagem gerada foi bloqueada por conter odio.",
-        "image_blocked_self_harm": "A imagem gerada foi bloqueada por conter autolesao.",
-        "source_image_blocked_nsfw": "A imagem enviada foi bloqueada pela politica de conteudo.",
-        "source_image_blocked_gore": "A imagem enviada foi bloqueada por conter violencia grafica.",
-        "source_image_blocked_hate": "A imagem enviada foi bloqueada por conter odio.",
-        "source_image_blocked_self_harm": "A imagem enviada foi bloqueada por conter autolesao.",
-        "image_moderation_unavailable": "Nao foi possivel verificar a imagem agora. Tente novamente em instantes.",
-        "upscale_limit_reached": "Voce atingiu o limite diario de ampliacoes. Tente novamente mais tarde."
+        "image_blocked_nsfw": "A imagem gerada foi bloqueada pela política de conteúdo.",
+        "image_blocked_gore": "A imagem gerada foi bloqueada por conter violência gráfica.",
+        "image_blocked_hate": "A imagem gerada foi bloqueada por conter ódio.",
+        "image_blocked_self_harm": "A imagem gerada foi bloqueada por conter autolesão.",
+        "source_image_blocked_nsfw": "A imagem enviada foi bloqueada pela política de conteúdo.",
+        "source_image_blocked_gore": "A imagem enviada foi bloqueada por conter violência gráfica.",
+        "source_image_blocked_hate": "A imagem enviada foi bloqueada por conter ódio.",
+        "source_image_blocked_self_harm": "A imagem enviada foi bloqueada por conter autolesão.",
+        "image_moderation_unavailable": "Não foi possível verificar a imagem agora. Tente novamente em instantes.",
+        "upscale_limit_reached": "Você atingiu o limite diário de ampliações. Tente novamente mais tarde."
     },
     "en": {
         "image_blocked_nsfw": "The generated image was blocked by the content policy.",
@@ -567,8 +567,8 @@ for _locale, _messages in _IMAGE_MESSAGES.items():
 
 _FEATURE_MESSAGES = {
     "pt-BR": {
-        "feature_disabled": "A geracao de imagens esta temporariamente indisponivel.",
-        "original_unavailable": "O original privado desta geracao nao esta disponivel. Regenere a imagem para refinar ou ampliar."
+        "feature_disabled": "A geração de imagens está temporariamente indisponível.",
+        "original_unavailable": "O original privado desta geração não está disponível. Regenere a imagem para refinar ou ampliar."
     },
     "en": {
         "feature_disabled": "Image generation is temporarily unavailable.",
@@ -618,11 +618,11 @@ for _locale, _messages in _FEATURE_MESSAGES.items():
 _QUEUE_MESSAGES: dict[str, dict[str, str]] = {
     "pt-BR": {
         "queue_publish_failed": (
-            "Nao foi possivel iniciar a geracao agora. Seu credito foi "
+            "Não foi possível iniciar a geração agora. Seu crédito foi "
             "devolvido; tente novamente."
         ),
         "queue_lost": (
-            "A geracao anterior foi perdida na fila. Seu credito foi devolvido; " "tente novamente."
+            "A geração anterior foi perdida na fila. Seu crédito foi devolvido; " "tente novamente."
         ),
     },
     "en": {
@@ -719,11 +719,11 @@ for _locale, _messages in _QUEUE_MESSAGES.items():
 
 _PLATFORM_MESSAGES: dict[str, dict[str, str]] = {
     "pt-BR": {
-        "engine_offline": "O motor de imagem esta offline no momento. Tente novamente em instantes.",
-        "maintenance": "O AImaginator esta em manutencao. Volte em breve.",
-        "hardware_busy": "O hardware esta ocupado ou quente demais. Aguarde alguns minutos.",
-        "thermal_abort": "A geracao foi interrompida por protecao termica. Tente novamente mais tarde.",
-        "resource_abort": "A geracao foi interrompida por falta de memoria. Tente novamente mais tarde.",
+        "engine_offline": "O motor de imagem está offline no momento. Tente novamente em instantes.",
+        "maintenance": "O AImaginator está em manutenção. Volte em breve.",
+        "hardware_busy": "O hardware está ocupado ou quente demais. Aguarde alguns minutos.",
+        "thermal_abort": "A geração foi interrompida por proteção térmica. Tente novamente mais tarde.",
+        "resource_abort": "A geração foi interrompida por falta de memória. Tente novamente mais tarde.",
     },
     "en": {
         "engine_offline": "The image engine is offline right now. Please try again shortly.",
@@ -801,10 +801,10 @@ for _locale, _messages in _PLATFORM_MESSAGES.items():
     _MESSAGES[_locale].update(_messages)
 
 _CANCEL_MESSAGES: dict[str, str] = {
-    "pt-BR": "Geracao cancelada.",
+    "pt-BR": "Geração cancelada.",
     "en": "Generation canceled.",
-    "es": "Generacion cancelada.",
-    "fr": "Generation annulee.",
+    "es": "Generación cancelada.",
+    "fr": "Génération annulée.",
     "de": "Generierung abgebrochen.",
     "it": "Generazione annullata.",
     "ja": "生成をキャンセルしました。",

@@ -27,6 +27,7 @@ from modules.image_generation.application.ports.llm_client import (
 )
 from modules.image_generation.application.schemas import GenerationProgressEvent
 from modules.image_generation.application.services.moderation import ModerationService
+from modules.image_generation.domain.engine_errors import EngineFailedError
 from modules.image_generation.domain.entities import (
     Generation,
     GenerationStatus,
@@ -211,7 +212,7 @@ class ProcessGeneration:
         reason: str,
     ) -> bool:
         """Fallback: FAILED com refund unico depois do commit do estado."""
-        message = message_for("engine_failed", generation.locale)
+        message = EngineFailedError().message
         try:
             changed = await self._transition(
                 generation,
