@@ -85,6 +85,7 @@ beforeEach(() => {
   window.localStorage.removeItem("aimaginator.access_token");
   FakeEventSource.instances = [];
   vi.stubGlobal("EventSource", FakeEventSource);
+  window.localStorage.removeItem("aimaginator.anonymous_session");
   useGenerationStore.setState({
     prompt: "",
     mode: "generate",
@@ -95,6 +96,7 @@ beforeEach(() => {
     progress: 0,
     result: null,
     resultUrl: null,
+    sessionResults: [],
     error: null,
     warning: null,
   });
@@ -211,5 +213,87 @@ describe("generation store", () => {
     expect(state.progress).toBe(100);
     expect(state.resultUrl).toBe("https://cdn.example/g2.png");
     expect(state.result?.seed).toBe(999);
+  });
+
+  it("keeps previous images visible and puts the newest first", async () => {
+    let created = 0;
+    const fetchMock = vi.fn(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("/stream-ticket")) {
+          const id = url.split("/generations/")[1]?.split("/")[0] ?? "g1";
+          return jsonResponse(
+            {
+              ticket: "ticket-test-1234567890",
+              stream_url: `/api/v1/generations/${id}/stream`,
+              expires_in: 60,
+            },
+            200,
+          );
+        }
+        if (init?.method === "PATCH") {
+          const id = url.split("/generations/")[1] ?? "g1";
+          return jsonResponse(
+            generation(id, {
+              status: "done",
+              title: "Nome novo",
+              result_image_url: `https://cdn.example/${id}.png`,
+            }),
+            200,
+          );
+        }
+        created += 1;
+        const id = `g${created}`;
+        return jsonResponse(generation(id, {prompt: `prompt ${id}`}));
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await useGenerationStore
+      .getState()
+      .startGeneration("primeiro castelo", errors, "pt-BR");
+    await vi.waitFor(() => expect(FakeEventSource.instances).toHaveLength(1));
+    FakeEventSource.instances[0].emit("result", {
+      result_image_url: "https://cdn.example/g1.png",
+      seed: 1,
+      parent_generation_id: null,
+    });
+    expect(useGenerationStore.getState().sessionResults.map((item) => item.id)).toEqual([
+      "g1",
+    ]);
+
+    await useGenerationStore
+      .getState()
+      .startGeneration("segundo castelo", errors, "pt-BR");
+    expect(useGenerationStore.getState().sessionResults.map((item) => item.id)).toEqual([
+      "g1",
+    ]);
+    expect(useGenerationStore.getState().resultUrl).toBeNull();
+
+    await vi.waitFor(() => expect(FakeEventSource.instances).toHaveLength(2));
+    FakeEventSource.instances[1].emit("result", {
+      result_image_url: "https://cdn.example/g2.png",
+      seed: 2,
+      parent_generation_id: null,
+    });
+
+    const state = useGenerationStore.getState();
+    expect(state.sessionResults.map((item) => item.id)).toEqual(["g2", "g1"]);
+    expect(state.sessionResults[0].imageUrl).toBe("https://cdn.example/g2.png");
+
+    window.localStorage.setItem("aimaginator.anonymous_session", "anon-token");
+    const renamed = await useGenerationStore
+      .getState()
+      .renameGeneration("g1", "Nome novo");
+    expect(renamed).toBe(true);
+    expect(
+      useGenerationStore
+        .getState()
+        .sessionResults.find((item) => item.id === "g1")?.title,
+    ).toBe("Nome novo");
+
+    const patchCall = fetchMock.mock.calls.find(([, init]) => init?.method === "PATCH");
+    const headers = new Headers(patchCall?.[1]?.headers);
+    expect(headers.get("X-Anonymous-Session")).toBe("anon-token");
   });
 });

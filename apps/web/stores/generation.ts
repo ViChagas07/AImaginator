@@ -59,6 +59,7 @@ type GenerationState = {
   canceling: boolean;
   result: GenerationRecord | null;
   resultUrl: string | null;
+  sessionResults: HistoryItem[];
   error: string | null;
   warning: string | null;
   history: HistoryItem[];
@@ -94,6 +95,7 @@ type GenerationState = {
   ) => Promise<void>;
   loadHistory: (reset?: boolean) => Promise<void>;
   showResult: (item: GenerationRecord) => void;
+  renameGeneration: (generationId: string, title: string) => Promise<boolean>;
   cancelGeneration: (errors: GenerationErrorMessages) => Promise<boolean>;
   reset: () => void;
   setPrompt: (p: string) => void;
@@ -107,6 +109,14 @@ type GenerationState = {
 
 export function isGeneratingStatus(status: GenerationStatus): boolean {
   return status === "queued" || status === "processing";
+}
+
+function upsertSessionResult(
+  results: HistoryItem[],
+  item: HistoryItem | null,
+): HistoryItem[] {
+  if (!item || item.status !== "done" || !item.imageUrl) return results;
+  return [item, ...results.filter((entry) => entry.id !== item.id)];
 }
 
 export function parseSeedInput(seed: string): number | undefined {
@@ -187,21 +197,26 @@ async function pollGeneration(
       if (status === "done") {
         const url = readResultUrl(payload);
         const current = get().result;
+        const completed = current
+          ? {
+              ...current,
+              status: "done",
+              imageUrl: url ?? current.imageUrl,
+              seed: readSeed(payload) ?? current.seed,
+              parentGenerationId:
+                readParentGenerationId(payload) ?? current.parentGenerationId,
+            }
+          : null;
         set({
           status: "done",
           progress: 100,
           stage: "done",
           resultUrl: url,
-          result: current
-            ? {
-                ...current,
-                status: "done",
-                imageUrl: url ?? current.imageUrl,
-                seed: readSeed(payload) ?? current.seed,
-                parentGenerationId:
-                  readParentGenerationId(payload) ?? current.parentGenerationId,
-              }
-            : current,
+          result: completed,
+          sessionResults: upsertSessionResult(
+            get().sessionResults,
+            completed,
+          ),
           streamDegraded: false,
           canceling: false,
           error: null,
@@ -332,6 +347,16 @@ async function connectStream(
     closeSource();
     const current = get().result;
     const url = readResultUrl(payload);
+    const completed = current
+      ? {
+          ...current,
+          status: "done",
+          imageUrl: url ?? current.imageUrl,
+          seed: readSeed(payload) ?? current.seed,
+          parentGenerationId:
+            readParentGenerationId(payload) ?? current.parentGenerationId,
+        }
+      : null;
     set({
       status: "done",
       progress: 100,
@@ -340,16 +365,8 @@ async function connectStream(
       canceling: false,
       error: null,
       resultUrl: url,
-      result: current
-        ? {
-            ...current,
-            status: "done",
-            imageUrl: url ?? current.imageUrl,
-            seed: readSeed(payload) ?? current.seed,
-            parentGenerationId:
-              readParentGenerationId(payload) ?? current.parentGenerationId,
-          }
-        : current,
+      result: completed,
+      sessionResults: upsertSessionResult(get().sessionResults, completed),
     });
     if (getAccessToken()) void get().loadHistory(true);
   });
@@ -406,6 +423,19 @@ async function connectStream(
       set({status: "failed", error: errors.failed, streamDegraded: false});
       return;
     }
+    if (streamError && streamError !== "stream_timeout") {
+      set({
+        status: "failed",
+        progress: 100,
+        stage: "failed",
+        canceling: false,
+        streamDegraded: false,
+        error: streamError,
+        warning: readWarningMessage(payload),
+      });
+      if (getAccessToken()) void get().loadHistory(true);
+      return;
+    }
 
     // Queda de rede, stream_timeout ou ticket consumido: polling assume.
     void pollGeneration(generationId, locale, errors, set, get);
@@ -439,6 +469,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   canceling: false,
   result: null,
   resultUrl: null,
+  sessionResults: [],
   error: null,
   warning: null,
   history: [],
@@ -459,6 +490,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       prompt: item.prompt,
       result: item,
       resultUrl: item.imageUrl,
+      sessionResults: upsertSessionResult(get().sessionResults, item),
       status:
         item.status === "failed"
           ? "failed"
@@ -476,6 +508,44 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       warning: null,
     }),
 
+  async renameGeneration(generationId, title) {
+    const headers = new Headers({"content-type": "application/json"});
+    const anon = getAnonymousToken();
+    if (anon) headers.set("X-Anonymous-Session", anon);
+    try {
+      const res = await authedFetch(
+        `${API_BASE_URL}/api/v1/generations/${encodeURIComponent(generationId)}`,
+        {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({title}),
+        },
+      );
+      if (!res.ok) return false;
+      const updated = parseGenerationOutput(await res.json());
+      if (!updated) return false;
+      set((state) => ({
+        result:
+          state.result?.id === updated.id
+            ? {...state.result, ...updated}
+            : state.result,
+        resultUrl:
+          state.result?.id === updated.id
+            ? updated.imageUrl ?? state.resultUrl
+            : state.resultUrl,
+        sessionResults: state.sessionResults.map((item) =>
+          item.id === updated.id ? updated : item,
+        ),
+        history: state.history.map((item) =>
+          item.id === updated.id ? updated : item,
+        ),
+      }));
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   reset: () => {
     closeSource();
     set({
@@ -492,6 +562,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       canceling: false,
       result: null,
       resultUrl: null,
+      sessionResults: [],
       error: null,
       warning: null,
       upscaleRemaining: null,

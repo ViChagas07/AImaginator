@@ -35,6 +35,7 @@ async function mockApi(
   },
 ) {
   const captured: Captured[] = [];
+  let createdCount = 0;
   await page.addInitScript((events) => {
     (window as unknown as {__sseEvents: SseEvent[]}).__sseEvents = events;
     class MockEventSource {
@@ -198,14 +199,32 @@ async function mockApi(
 
     if (url.pathname === "/api/v1/generations" && method === "POST") {
       const payload = request.postDataJSON() as Record<string, unknown>;
+      createdCount += 1;
       await route.fulfill({
         status: 202,
         contentType: "application/json",
         body: JSON.stringify(
-          generation("gen-1", {
+          generation(`gen-${createdCount}`, {
             prompt: payload.prompt,
             aspect_ratio: payload.aspect_ratio,
             seed: payload.seed ?? null,
+          }),
+        ),
+      });
+      return;
+    }
+
+    if (url.pathname.match(/^\/api\/v1\/generations\/[^/]+$/) && method === "PATCH") {
+      const id = url.pathname.split("/").pop() ?? "gen-1";
+      const payload = request.postDataJSON() as Record<string, unknown>;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          generation(id, {
+            status: "done",
+            title: payload.title,
+            result_image_url: TINY_PNG,
           }),
         ),
       });
@@ -276,6 +295,56 @@ test.describe("studio", () => {
     });
   });
 
+  test("keeps previous images visible with the newest first", async ({page}) => {
+    await mockApi(page, {
+      authenticated: true,
+      events: progressEvents,
+    });
+    await gotoStudio(page);
+
+    await page.getByLabel("Prompt").fill("primeiro castelo");
+    await page.locator('[data-testid="studio-form"] button[type="submit"]').click();
+    await expect(page.getByRole("img", {name: "primeiro castelo"})).toBeVisible();
+
+    await page.getByLabel("Prompt").fill("segundo castelo");
+    await page.locator('[data-testid="studio-form"] button[type="submit"]').click();
+    await expect(page.getByRole("img", {name: "primeiro castelo"})).toBeVisible();
+    await expect(page.getByRole("img", {name: "segundo castelo"})).toBeVisible();
+
+    const cards = page.getByTestId("session-gallery").locator("li");
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0).getByRole("img")).toHaveAttribute(
+      "alt",
+      "segundo castelo",
+    );
+    await expect(cards.nth(1).getByRole("img")).toHaveAttribute(
+      "alt",
+      "primeiro castelo",
+    );
+  });
+
+  test("renames a generated image as an anonymous user", async ({page}) => {
+    const captured = await mockApi(page, {
+      authenticated: false,
+      events: progressEvents,
+    });
+    await gotoStudio(page);
+
+    await page.getByLabel("Prompt").fill("um castelo sem nome");
+    await page.locator('[data-testid="studio-form"] button[type="submit"]').click();
+    await expect(page.getByRole("img", {name: "um castelo sem nome"})).toBeVisible();
+
+    await page.getByRole("button", {name: "Renomear"}).click();
+    await page.getByLabel("Novo nome").fill("Minha obra");
+    await page.getByRole("button", {name: "Salvar nome"}).click();
+
+    await expect(page.getByText("Minha obra")).toBeVisible();
+    const patch = captured.find(
+      (item) => item.method === "PATCH" && item.path === "/api/v1/generations/gen-1",
+    );
+    expect(JSON.parse(patch?.body ?? "{}")).toEqual({title: "Minha obra"});
+  });
+
   test("generates a variation and refines the result", async ({page}) => {
     const captured = await mockApi(page, {
       authenticated: true,
@@ -290,6 +359,7 @@ test.describe("studio", () => {
     await expect
       .poll(() => captured.some((item) => item.path.endsWith("/variations")))
       .toBe(true);
+    await expect(page.getByTestId("session-gallery").locator("li")).toHaveCount(2);
 
     await expect(page.getByRole("button", {name: "Refinar"}).first()).toBeVisible();
     await page.getByRole("button", {name: "Refinar"}).first().click();

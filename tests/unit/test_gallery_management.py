@@ -53,6 +53,38 @@ class TestRenameGeneration:
                 user_id=uuid4(), generation_id=uuid4(), title="x"
             )
 
+    async def test_sessao_anonima_dona_renomeia(self) -> None:
+        repo = InMemoryGenerationRepository()
+        arte = _arte(None, anonymous_session_id="anon-session-1")
+        await repo.save(arte)
+
+        output = await RenameGeneration(repo).execute(
+            anonymous_session_id="anon-session-1",
+            generation_id=arte.id,
+            title="Arte anonima",
+        )
+        assert output.title == "Arte anonima"
+
+    async def test_outra_sessao_anonima_403(self) -> None:
+        repo = InMemoryGenerationRepository()
+        arte = _arte(None, anonymous_session_id="anon-session-1")
+        await repo.save(arte)
+        with pytest.raises(ForbiddenError):
+            await RenameGeneration(repo).execute(
+                anonymous_session_id="anon-session-2",
+                generation_id=arte.id,
+                title="x",
+            )
+
+    async def test_usuario_nao_renomeia_arte_anonima(self) -> None:
+        repo = InMemoryGenerationRepository()
+        arte = _arte(None, anonymous_session_id="anon-session-1")
+        await repo.save(arte)
+        with pytest.raises(ForbiddenError):
+            await RenameGeneration(repo).execute(
+                user_id=uuid4(), generation_id=arte.id, title="x"
+            )
+
 
 @pytest.mark.unit
 class TestDeleteGeneration:

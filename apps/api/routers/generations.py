@@ -4,6 +4,7 @@
 - POST /api/v1/generations/edits  -> 202 (edicao com imagem por URL, anti-SSRF)
 - GET  /api/v1/generations        -> historico paginado por cursor
 - GET  /api/v1/generations/{id}   -> detalhe (ownership)
+- PATCH /api/v1/generations/{id}  -> renomeia o titulo (dono ou sessao anonima)
 """
 
 from __future__ import annotations
@@ -70,6 +71,8 @@ from modules.image_generation.contracts import (
     GenerationPage,
     GetGeneration,
     ListUserGenerations,
+    RenameGeneration,
+    RenameGenerationInput,
 )
 from modules.image_generation.domain.entities import (
     AspectRatio,
@@ -502,6 +505,28 @@ async def cancel_generation(
         else status.HTTP_200_OK
     )
     return JSONResponse(result, status_code=status_code)
+
+
+@router.patch("/generations/{generation_id}", response_model=GenerationOutput)
+async def rename_generation(
+    generation_id: UUID,
+    data: RenameGenerationInput,
+    request: Request,
+    settings: SettingsDep,
+    current_user: OptionalCurrentUserDep,
+    generations: GenerationRepoDep,
+    storage: ObjectStorageDep,
+) -> GenerationOutput:
+    """Renomeia a imagem (titulo) para o dono autenticado ou sessao anonima."""
+    anonymous_id = None
+    if current_user is None:
+        anonymous_id, _ = resolve_anonymous_session(request, settings)
+    return await RenameGeneration(generations, storage=storage).execute(
+        user_id=current_user.id if current_user is not None else None,
+        anonymous_session_id=anonymous_id,
+        generation_id=generation_id,
+        title=data.title,
+    )
 
 
 @router.get("/generations", response_model=GenerationPage)

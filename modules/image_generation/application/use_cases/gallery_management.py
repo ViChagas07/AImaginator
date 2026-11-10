@@ -22,11 +22,20 @@ class RenameGeneration:
         self._generations = generations
         self._storage = storage
 
-    async def execute(self, *, user_id: UUID, generation_id: UUID, title: str) -> GenerationOutput:
+    async def execute(
+        self,
+        *,
+        generation_id: UUID,
+        title: str,
+        user_id: UUID | None = None,
+        anonymous_session_id: str | None = None,
+    ) -> GenerationOutput:
         generation = await self._generations.get_by_id(generation_id)
         if generation is None:
             raise NotFoundError("Arte nao encontrada.")
-        if generation.user_id != user_id:
+        if not generation.belongs_to(
+            user_id, anonymous_session_id=anonymous_session_id
+        ):
             raise ForbiddenError("Acesso negado a esta arte.")
         generation.rename(title)
         await self._generations.save(generation)

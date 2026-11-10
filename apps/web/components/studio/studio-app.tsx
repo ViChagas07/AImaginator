@@ -3,10 +3,12 @@
 import {useEffect, useMemo, useRef, useState} from "react";
 import {useLocale, useTranslations} from "next-intl";
 import {
+  Check,
   Download,
   ImagePlus,
   Loader2,
   Maximize2,
+  Pencil,
   RefreshCw,
   Send,
   Sparkles,
@@ -64,11 +66,13 @@ function downloadHref(url: string, id: string): string {
 export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const t = useTranslations("studio");
   const tErrors = useTranslations("errors");
+  const tGallery = useTranslations("gallery");
   const locale = useLocale();
   const auth = useAuthStore();
   const gen = useGenerationStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const refinePanelRef = useRef<HTMLElement>(null);
+  const sessionGalleryRef = useRef<HTMLUListElement>(null);
   const [dismissedResultUrl, setDismissedResultUrl] = useState<string | null>(null);
   const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
@@ -77,10 +81,13 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
   const [refineInstruction, setRefineInstruction] = useState("");
   const [seedInvalid, setSeedInvalid] = useState(false);
   const [featureEnabled, setFeatureEnabled] = useState(true);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState("");
 
   const isAuthenticated = auth.status === "authenticated";
   const isGenerating = isGeneratingStatus(gen.status);
   const isEditMode = gen.mode === "edit";
+  const newestSessionId = gen.sessionResults[0]?.id ?? null;
   const indeterminateProgress =
     isGenerating && (gen.progress <= 0 || gen.streamDegraded);
   const stageLabel =
@@ -136,6 +143,11 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
       if (uploadPreview) URL.revokeObjectURL(uploadPreview);
     };
   }, [uploadPreview]);
+
+  useEffect(() => {
+    if (!newestSessionId) return;
+    sessionGalleryRef.current?.scrollTo({left: 0, behavior: "smooth"});
+  }, [newestSessionId]);
 
   const requireLoginToSave =
     process.env.NODE_ENV === "production" &&
@@ -221,6 +233,18 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
     setRefineInstruction("");
   }
 
+  function startRename(item: GenerationRecord) {
+    setRenamingId(item.id);
+    setRenameDraft(item.title ?? "");
+  }
+
+  async function commitRename(id: string) {
+    const title = renameDraft.trim();
+    if (!title) return;
+    const renamed = await gen.renameGeneration(id, title);
+    if (renamed) setRenamingId(null);
+  }
+
   function handleSeedChange(value: string) {
     gen.setSeed(value);
     if (!value.trim()) {
@@ -230,10 +254,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
     setSeedInvalid(!/^\d+$/.test(value) || Number(value) > 2 ** 32 - 1);
   }
 
-  const result = gen.result;
   const clientUploadMessage = uploadErrorMessage(uploadError, t);
-  const canVariation = isAuthenticated && result?.kind === "generate";
-  const canRefine = isAuthenticated && Boolean(result);
 
   if (auth.status === "unknown") {
     return (
@@ -588,84 +609,163 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
             {gen.warning}
           </p>
         )}
-        {result && gen.resultUrl && (
+        {gen.sessionResults.length > 0 && (
           <div className="space-y-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={gen.resultUrl}
-              alt={result.prompt || t("resultAlt")}
-              className="max-h-[480px] w-full rounded-xl border border-foreground/10 object-contain sm:w-auto"
-            />
-            <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
-              {result.seed !== null && (
-                <span>{t("seedValue", {seed: result.seed})}</span>
-              )}
-              <span>{t("aspectRatioPreview", {ratio: result.aspectRatio})}</span>
-              {result.parentGenerationId && (
-                <span>
-                  {t("historyChain", {
-                    prompt:
-                      gen.history.find(
-                        (item) => item.id === result.parentGenerationId,
-                      )?.prompt ?? t("historyChainUnknown"),
-                  })}
-                </span>
-              )}
-            </div>
-            <div
-              aria-label={t("resultActionsLabel")}
-              className="flex flex-wrap gap-2"
+            <ul
+              ref={sessionGalleryRef}
+              data-testid="session-gallery"
+              aria-label={t("resultLabel")}
+              dir="ltr"
+              className="flex gap-4 overflow-x-auto pb-2"
             >
-              <a
-                href={downloadHref(gen.resultUrl, result.id)}
-                download
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-md border border-foreground/10 bg-surface px-3 py-2 text-sm text-foreground hover:bg-white/[0.06] focus-visible:border-accent-to"
-              >
-                <Download className="h-4 w-4" aria-hidden />
-                {t("download")}
-              </a>
-              {canVariation && (
-                <button
-                  type="button"
-                  disabled={isGenerating}
-                  onClick={() =>
-                    void gen.startVariation(result.id, errorMessages, locale)
-                  }
-                  className="inline-flex items-center gap-2 rounded-md border border-foreground/10 bg-surface px-3 py-2 text-sm text-foreground hover:bg-white/[0.06] focus-visible:border-accent-to disabled:opacity-50"
-                >
-                  <RefreshCw className="h-4 w-4" aria-hidden />
-                  {t("generateVariation")}
-                </button>
-              )}
-              {canRefine && (
-                <button
-                  type="button"
-                  disabled={isGenerating}
-                  onClick={() => openRefine(result)}
-                  className="inline-flex items-center gap-2 rounded-md border border-foreground/10 bg-surface px-3 py-2 text-sm text-foreground hover:bg-white/[0.06] focus-visible:border-accent-to disabled:opacity-50"
-                >
-                  <WandSparkles className="h-4 w-4" aria-hidden />
-                  {t("refine")}
-                </button>
-              )}
-              {isAuthenticated && (
-                <button
-                  type="button"
-                  disabled={isGenerating}
-                  onClick={() =>
-                    void gen.startUpscale(result.id, errorMessages, locale)
-                  }
-                  className="inline-flex items-center gap-2 rounded-md border border-foreground/10 bg-surface px-3 py-2 text-sm text-foreground hover:bg-white/[0.06] focus-visible:border-accent-to disabled:opacity-50"
-                >
-                  <Maximize2 className="h-4 w-4" aria-hidden />
-                  {isGenerating && result.kind === "upscale"
-                    ? t("upscaling")
-                    : t("upscale")}
-                </button>
-              )}
-            </div>
+              {gen.sessionResults.map((item) => {
+                const parent = item.parentGenerationId
+                  ? gen.history.find(
+                      (candidate) => candidate.id === item.parentGenerationId,
+                    ) ??
+                    gen.sessionResults.find(
+                      (candidate) => candidate.id === item.parentGenerationId,
+                    )
+                  : null;
+                return (
+                  <li
+                    key={item.id}
+                    className="w-72 max-w-[85vw] shrink-0 overflow-hidden rounded-xl border border-foreground/10 bg-surface"
+                  >
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title ?? (item.prompt || t("resultAlt"))}
+                        className="aspect-square w-full object-cover"
+                      />
+                    ) : null}
+                    <div className="space-y-2 p-3 text-start">
+                      {renamingId === item.id ? (
+                        <form
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void commitRename(item.id);
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <input
+                            value={renameDraft}
+                            onChange={(event) => setRenameDraft(event.target.value)}
+                            placeholder={item.prompt}
+                            aria-label={tGallery("renameLabel")}
+                            className="min-w-0 flex-1 rounded border border-foreground/10 bg-surface-raised px-2 py-1 text-xs text-foreground placeholder:text-muted focus-visible:border-accent-to focus-visible:outline-none"
+                          />
+                          <button
+                            type="submit"
+                            aria-label={tGallery("saveRename")}
+                            title={tGallery("saveRename")}
+                            className="text-muted hover:text-foreground"
+                          >
+                            <Check className="h-4 w-4" aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRenamingId(null)}
+                            aria-label={tGallery("cancelRename")}
+                            title={tGallery("cancelRename")}
+                            className="text-muted hover:text-foreground"
+                          >
+                            <X className="h-4 w-4" aria-hidden />
+                          </button>
+                        </form>
+                      ) : (
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="line-clamp-2 text-sm text-foreground">
+                            {item.title ?? item.prompt}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => startRename(item)}
+                            aria-label={tGallery("rename")}
+                            title={tGallery("rename")}
+                            className="shrink-0 text-muted hover:text-foreground focus-visible:border-accent-to"
+                          >
+                            <Pencil className="h-3.5 w-3.5" aria-hidden />
+                          </button>
+                        </div>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                        {item.seed !== null && (
+                          <span>{t("seedValue", {seed: item.seed})}</span>
+                        )}
+                        <span>{t("aspectRatioPreview", {ratio: item.aspectRatio})}</span>
+                      </div>
+                      {item.parentGenerationId && (
+                        <p className="line-clamp-1 text-xs text-muted">
+                          {t("historyChain", {
+                            prompt: parent?.prompt ?? t("historyChainUnknown"),
+                          })}
+                        </p>
+                      )}
+                      <div
+                        aria-label={t("resultActionsLabel")}
+                        className="flex flex-wrap gap-1.5"
+                      >
+                        {item.imageUrl && (
+                          <a
+                            href={downloadHref(item.imageUrl, item.id)}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-md border border-foreground/10 bg-surface px-2 py-1.5 text-xs text-foreground hover:bg-white/[0.06] focus-visible:border-accent-to"
+                          >
+                            <Download className="h-3.5 w-3.5" aria-hidden />
+                            {t("download")}
+                          </a>
+                        )}
+                        {isAuthenticated && item.kind === "generate" && (
+                          <button
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={() =>
+                              void gen.startVariation(item.id, errorMessages, locale)
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-md border border-foreground/10 bg-surface px-2 py-1.5 text-xs text-foreground hover:bg-white/[0.06] focus-visible:border-accent-to disabled:opacity-50"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                            {t("generateVariation")}
+                          </button>
+                        )}
+                        {isAuthenticated && (
+                          <button
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={() => openRefine(item)}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-foreground/10 bg-surface px-2 py-1.5 text-xs text-foreground hover:bg-white/[0.06] focus-visible:border-accent-to disabled:opacity-50"
+                          >
+                            <WandSparkles className="h-3.5 w-3.5" aria-hidden />
+                            {t("refine")}
+                          </button>
+                        )}
+                        {isAuthenticated && (
+                          <button
+                            type="button"
+                            disabled={isGenerating}
+                            onClick={() =>
+                              void gen.startUpscale(item.id, errorMessages, locale)
+                            }
+                            className="inline-flex items-center gap-1.5 rounded-md border border-foreground/10 bg-surface px-2 py-1.5 text-xs text-foreground hover:bg-white/[0.06] focus-visible:border-accent-to disabled:opacity-50"
+                          >
+                            <Maximize2 className="h-3.5 w-3.5" aria-hidden />
+                            {isGenerating &&
+                            gen.result?.id === item.id &&
+                            item.kind === "upscale"
+                              ? t("upscaling")
+                              : t("upscale")}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
             {gen.upscaleRemaining !== null && (
               <p className="text-xs text-muted">
                 {t("upscaleRemaining", {count: gen.upscaleRemaining})}
