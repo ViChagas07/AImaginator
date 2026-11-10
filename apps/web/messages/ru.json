@@ -272,7 +272,8 @@
     "generationNetwork": "Сетевая ошибка при обращении к API. Проверьте соединение и попробуйте снова.",
     "queuePublishFailed": "Не удалось запустить генерацию сейчас. Кредит возвращён; попробуйте ещё раз.",
     "queueLost": "Предыдущая генерация потерялась в очереди. Кредит возвращён; попробуйте ещё раз.",
-    "generationAlreadyFinished": "Could not cancel: the generation already finished."
+    "generationAlreadyFinished": "Could not cancel: the generation already finished.",
+    "generationCancelTimeout": "Отмена занимает больше времени, чем ожидалось. Генерация может завершиться в фоновом режиме; повторите попытку или обновите страницу."
   },
   "language": {
     "selectorLabel": "Выбрать язык"

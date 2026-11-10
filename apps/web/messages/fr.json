@@ -272,7 +272,8 @@
     "generationNetwork": "Erreur réseau lors de la connexion à l'API. Vérifiez votre connexion et réessayez.",
     "queuePublishFailed": "Impossible de démarrer la génération pour le moment. Votre crédit a été remboursé ; réessayez.",
     "queueLost": "La génération précédente a été perdue dans la file. Votre crédit a été remboursé ; réessayez.",
-    "generationAlreadyFinished": "Could not cancel: the generation already finished."
+    "generationAlreadyFinished": "Could not cancel: the generation already finished.",
+    "generationCancelTimeout": "L'annulation prend plus de temps que prévu. La génération peut encore se terminer en arrière-plan ; réessayez ou actualisez la page."
   },
   "language": {
     "selectorLabel": "Sélectionner la langue"

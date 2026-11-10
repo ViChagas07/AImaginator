@@ -272,7 +272,8 @@
     "generationNetwork": "APIへの接続でネットワークエラーが発生しました。接続を確認してもう一度お試しください。",
     "queuePublishFailed": "現在、生成を開始できませんでした。クレジットは返金されました。もう一度お試しください。",
     "queueLost": "前回の生成はキューで失われました。クレジットは返金されました。もう一度お試しください。",
-    "generationAlreadyFinished": "Could not cancel: the generation already finished."
+    "generationAlreadyFinished": "Could not cancel: the generation already finished.",
+    "generationCancelTimeout": "キャンセルに時間がかかっています。生成はバックグラウンドで完了する可能性があります。再試行するか、ページを更新してください。"
   },
   "language": {
     "selectorLabel": "言語を選択"

@@ -272,7 +272,8 @@
     "generationNetwork": "خطأ في الشبكة أثناء الاتصال بواجهة برمجة التطبيقات. تحقق من اتصالك وحاول مرة أخرى.",
     "queuePublishFailed": "تعذر بدء الإنشاء الآن. تم استرداد رصيدك؛ حاول مرة أخرى.",
     "queueLost": "فقدت عملية الإنشاء السابقة في قائمة الانتظار. تم استرداد رصيدك؛ حاول مرة أخرى.",
-    "generationAlreadyFinished": "Could not cancel: the generation already finished."
+    "generationAlreadyFinished": "Could not cancel: the generation already finished.",
+    "generationCancelTimeout": "يستغرق الإلغاء وقتًا أطول من المتوقع. قد تكتمل العملية في الخلفية؛ حاول مرة أخرى أو حدّث الصفحة."
   },
   "language": {
     "selectorLabel": "اختيار اللغة"

@@ -271,6 +271,7 @@
     "generationFailed": "Generation failed. Try again.",
     "generationNetwork": "Network error while contacting the API. Check your connection and try again.",
     "generationAlreadyFinished": "Could not cancel: the generation already finished.",
+    "generationCancelTimeout": "Cancellation is taking longer than expected. The generation may still finish in the background; try again or refresh the page.",
     "queuePublishFailed": "We couldn't start the generation right now. Your credit was refunded; please try again.",
     "queueLost": "The previous generation was lost in the queue. Your credit was refunded; please try again."
   },

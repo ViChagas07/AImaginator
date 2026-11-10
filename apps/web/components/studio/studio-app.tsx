@@ -95,6 +95,7 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
       failed: tErrors("generationFailed"),
       network: tErrors("generationNetwork"),
       alreadyFinished: tErrors("generationAlreadyFinished"),
+      cancelTimeout: tErrors("generationCancelTimeout"),
     }),
     [tErrors],
   );
@@ -852,7 +853,10 @@ export function StudioApp({initialPrompt}: {initialPrompt?: string}) {
         open={cancelModalOpen}
         canceling={gen.canceling}
         error={gen.error}
-        onConfirm={() => void gen.cancelGeneration(errorMessages)}
+        onConfirm={async () => {
+          const requested = await gen.cancelGeneration(errorMessages);
+          if (requested) setCancelTargetId(null);
+        }}
         onClose={() => setCancelTargetId(null)}
       />
     </div>

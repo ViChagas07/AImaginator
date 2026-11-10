@@ -271,6 +271,7 @@
     "generationFailed": "A geração falhou. Tente novamente.",
     "generationNetwork": "Falha de rede ao contatar a API. Verifique sua conexão e tente novamente.",
     "generationAlreadyFinished": "Não foi possível cancelar: a geração já terminou.",
+    "generationCancelTimeout": "O cancelamento está demorando mais que o esperado. A geração pode terminar em segundo plano; tente novamente ou atualize a página.",
     "queuePublishFailed": "Não foi possível iniciar a geração agora. Seu crédito foi devolvido; tente novamente.",
     "queueLost": "A geração anterior foi perdida na fila. Seu crédito foi devolvido; tente novamente."
   },

@@ -272,7 +272,8 @@
     "generationNetwork": "Netzwerkfehler bei der Verbindung zur API. Bitte Verbindung prüfen und erneut versuchen.",
     "queuePublishFailed": "Die Generierung konnte gerade nicht gestartet werden. Dein Guthaben wurde erstattet; bitte versuche es erneut.",
     "queueLost": "Die vorherige Generierung ging in der Warteschlange verloren. Dein Guthaben wurde erstattet; bitte versuche es erneut.",
-    "generationAlreadyFinished": "Could not cancel: the generation already finished."
+    "generationAlreadyFinished": "Could not cancel: the generation already finished.",
+    "generationCancelTimeout": "Das Abbrechen dauert länger als erwartet. Die Generierung kann im Hintergrund noch abgeschlossen werden; versuche es erneut oder aktualisiere die Seite."
   },
   "language": {
     "selectorLabel": "Sprache auswählen"

@@ -272,7 +272,8 @@
     "generationNetwork": "连接 API 时发生网络错误。请检查连接后重试。",
     "queuePublishFailed": "现在无法启动生成。积分已退还，请重试。",
     "queueLost": "之前的生成在队列中丢失。积分已退还，请重试。",
-    "generationAlreadyFinished": "Could not cancel: the generation already finished."
+    "generationAlreadyFinished": "Could not cancel: the generation already finished.",
+    "generationCancelTimeout": "取消操作耗时较长。生成可能仍在后台完成；请重试或刷新页面。"
   },
   "language": {
     "selectorLabel": "选择语言"

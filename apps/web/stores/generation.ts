@@ -41,6 +41,7 @@ export type GenerationErrorMessages = {
   failed: string;
   network: string;
   alreadyFinished?: string;
+  cancelTimeout?: string;
 };
 
 type GenerationState = {
@@ -93,7 +94,7 @@ type GenerationState = {
   ) => Promise<void>;
   loadHistory: (reset?: boolean) => Promise<void>;
   showResult: (item: GenerationRecord) => void;
-  cancelGeneration: (errors: GenerationErrorMessages) => Promise<void>;
+  cancelGeneration: (errors: GenerationErrorMessages) => Promise<boolean>;
   reset: () => void;
   setPrompt: (p: string) => void;
   setMode: (mode: GenerationMode) => void;
@@ -661,7 +662,9 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
   async cancelGeneration(errors) {
     const current = get().result;
-    if (!current || !isGeneratingStatus(get().status) || get().canceling) return;
+    if (!current || !isGeneratingStatus(get().status) || get().canceling) {
+      return false;
+    }
     set({canceling: true, error: null});
     try {
       const headers = new Headers();
@@ -679,9 +682,19 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       }
       const status = readStatus(payload);
       if (res.status === 202 || status === "cancel_requested") {
-        // O worker precisa confirmar; a UI continua em "Cancelando...".
+        // O worker confirma por polling; o SSE antigo nao segura a UI.
+        closeSource();
         set({canceling: true});
-        return;
+        void pollGeneration(current.id, undefined, errors, set, get);
+        setTimeout(() => {
+          if (get().canceling && get().result?.id === current.id) {
+            set({
+              canceling: false,
+              error: errors.cancelTimeout ?? errors.network,
+            });
+          }
+        }, 30_000);
+        return true;
       }
       if (status === "canceled") {
         closeSource();
@@ -694,7 +707,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           error: null,
         });
         if (getAccessToken()) void get().loadHistory(true);
-        return;
+        return true;
       }
       if (
         res.status === 409 ||
@@ -706,7 +719,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           error: errors.alreadyFinished ?? errors.failed,
         });
         void pollGeneration(current.id, undefined, errors, set, get);
-        return;
+        return false;
       }
       if (!res.ok) {
         const apiError = readApiError(payload);
@@ -714,11 +727,13 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           canceling: false,
           error: apiError.message ?? apiError.code ?? errors.http(res.status),
         });
-        return;
+        return false;
       }
       set({canceling: false});
+      return false;
     } catch {
       set({canceling: false, error: errors.network});
+      return false;
     }
   },
 
